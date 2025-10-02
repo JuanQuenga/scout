@@ -1,0 +1,187 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>PayMore Tools</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        background: #0c0a09;
+        color: #e7e5e4;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .hdr {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 16px;
+        border-bottom: 1px solid #292524;
+        background: linear-gradient(135deg, #1c1917 0%, #0f0f0f 100%);
+        flex-shrink: 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      }
+      .logo {
+        height: 20px;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+      }
+      .header-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        justify-content: flex-end;
+      }
+      .header-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #fafaf9;
+        margin: 0;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+      .settings-btn {
+        padding: 6px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .settings-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+      .settings-btn svg {
+        width: 16px;
+        height: 16px;
+        color: #d6d3d1;
+      }
+      #chat {
+        height: calc(100% - 56px);
+        display: flex;
+        flex-direction: column;
+      }
+      #msgs {
+        flex: 1;
+        overflow: auto;
+        padding: 10px;
+      }
+      #row {
+        display: flex;
+        gap: 8px;
+        padding: 8px;
+        border-top: 1px solid #292524;
+      }
+      #inp {
+        flex: 1;
+        background: #0c0a09;
+        color: #e7e5e4;
+        border: 1px solid #44403c;
+        border-radius: 8px;
+        padding: 8px;
+      }
+      button {
+        background: #292524;
+        color: #e7e5e4;
+        border: 1px solid #44403c;
+        border-radius: 8px;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+      .msg {
+        margin-bottom: 10px;
+      }
+      .who {
+        font-size: 11px;
+        color: #78716c;
+        margin-bottom: 2px;
+      }
+      .bubble {
+        background: #1c1917;
+        border: 1px solid #292524;
+        border-radius: 8px;
+        padding: 8px;
+        white-space: pre-wrap;
+      }
+      #frame {
+        width: 100%;
+        height: calc(100% - 56px - 36px);
+        border: 0;
+        display: block;
+        background: #0c0a09;
+        flex: 1;
+        min-height: 0;
+      }
+      #tool-header {
+        padding: 8px 12px;
+        background: #1c1917;
+        border-bottom: 1px solid #292524;
+        font-size: 12px;
+        color: #78716c;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      #current-tool {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hdr">
+      <img src="assets/images/paymore.svg" class="logo" />
+      <div class="header-content">
+        <button
+          id="btn-settings"
+          title="Extension settings"
+          class="settings-btn"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-settings-icon lucide-settings"
+          >
+            <path
+              d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
+            />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div id="tool-header">
+      <span id="current-tool">Loading...</span>
+    </div>
+    <iframe
+      id="frame"
+      src="about:blank"
+      allow="camera *; clipboard-write *; autoplay *;"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+    ></iframe>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

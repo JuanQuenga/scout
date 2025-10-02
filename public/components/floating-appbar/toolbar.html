@@ -1,0 +1,473 @@
+<style>
+  /* Tailwind-inspired utility classes for floating toolbar */
+  #paymore-toolbar {
+    position: fixed;
+    right: -100px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2147483646;
+    opacity: 1;
+    visibility: visible;
+    transition: right 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  #paymore-toolbar.visible {
+    opacity: 1;
+    visibility: visible;
+    right: 9px;
+  }
+
+  #paymore-toolbar.hidden {
+    opacity: 0;
+    visibility: hidden;
+    right: -100px;
+  }
+
+  .pm-tb {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px;
+    background: #1c1917;
+    border: 1px solid #44403c;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    user-select: none;
+  }
+
+  .pm-tb-close {
+    width: 40px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: #292524;
+    border: 1px solid #57534e;
+    color: #e7e5e4;
+    cursor: pointer;
+    position: relative;
+    margin-bottom: 2px;
+    transition: all 0.2s ease;
+  }
+
+  .pm-tb-close:hover {
+    background: #3a3532;
+    border-color: #78716c;
+  }
+
+  .pm-tb-divider {
+    width: 100%;
+    height: 1px;
+    background: #44403c;
+    margin: 0 0 2px 0;
+    border-radius: 0.5px;
+  }
+
+  .pm-tb-item {
+    position: relative;
+  }
+
+  .pm-tb-btn {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: #292524;
+    border: 1px solid #57534e;
+    color: #e7e5e4;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+
+  .pm-tb-btn:hover {
+    background: #3a3532;
+    border-color: #78716c;
+  }
+
+  .pm-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 9999px;
+    font-size: 11px;
+    line-height: 18px;
+    text-align: center;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    display: none;
+  }
+
+  .pm-tip {
+    position: absolute;
+    right: 110%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1c1917;
+    border: 1px solid #44403c;
+    color: #f5f5f4;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  .pm-tb-item:hover .pm-tip {
+    opacity: 1;
+    transform: translateY(-50%) translateX(-2px);
+  }
+
+  .pm-icon {
+    width: 22px;
+    height: 22px;
+    display: block;
+    object-fit: contain;
+    object-position: center;
+    margin: 0 auto;
+  }
+
+  /* Compact on small viewports */
+  @media (max-height: 640px) {
+    .pm-tb {
+      gap: 4px;
+      padding: 4px;
+    }
+    .pm-tb-btn {
+      width: 36px;
+      height: 36px;
+    }
+  }
+
+  /* Horizontal orientation */
+  .pm-tb.pm-horizontal {
+    flex-direction: row;
+  }
+  .pm-tb.pm-horizontal .pm-tb-close {
+    margin-bottom: 0;
+    margin-right: 6px;
+  }
+  .pm-tb.pm-horizontal .pm-tb-divider {
+    width: 1px;
+    height: 100%;
+    margin: 0 6px;
+  }
+
+  /* Shake animation for attention */
+  @keyframes pm-shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-2px);
+    }
+    40% {
+      transform: translateX(2px);
+    }
+    60% {
+      transform: translateX(-2px);
+    }
+    80% {
+      transform: translateX(2px);
+    }
+  }
+  .pm-attn {
+    background: #7c2d12 !important;
+    border-color: #f97316 !important;
+    animation: pm-shake 0.6s linear 2;
+  }
+</style>
+
+<div id="paymore-toolbar" aria-hidden="true">
+  <div class="pm-tb" role="toolbar">
+    <!-- Close button with tooltip -->
+    <div class="pm-tb-item">
+      <button class="pm-tb-close" id="pm-tb-close" aria-label="Dismiss Toolbar">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M18 6L6 18" />
+          <path d="M6 6l12 12" />
+        </svg>
+      </button>
+      <div class="pm-tip">Dismiss Toolbar</div>
+    </div>
+
+    <!-- Divider -->
+    <div class="pm-tb-divider"></div>
+
+    <div class="pm-tb-item" id="pm-tb-customize-item" style="display: none">
+      <button
+        class="pm-tb-btn"
+        id="pm-tb-customize"
+        aria-label="Customize Toolbar"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M12 5v14" />
+          <path d="M5 12h14" />
+        </svg>
+      </button>
+      <div class="pm-tip">Customize Toolbar</div>
+    </div>
+
+    <div class="pm-tb-item">
+      <button class="pm-tb-btn" id="pm-tb-help" aria-label="Help">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+          <path d="M12 17h.01" />
+        </svg>
+      </button>
+      <div class="pm-tip">Help</div>
+    </div>
+
+    <!-- Grok AI Assistant removed -->
+
+    <div class="pm-tb-item">
+      <button class="pm-tb-btn" id="pm-tb-top-offers" aria-label="Top Offers">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"
+          />
+          <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+          <path d="M12 17.5v-11" />
+        </svg>
+      </button>
+      <div class="pm-tip">Top Offers</div>
+    </div>
+
+    <div class="pm-tb-item">
+      <button class="pm-tb-btn" id="pm-tb-pricing" aria-label="Checkout Prices">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"
+          />
+          <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+          <path d="M12 17.5v-11" />
+        </svg>
+      </button>
+      <div class="pm-tip">Checkout Prices</div>
+    </div>
+
+    <div class="pm-tb-item">
+      <button
+        class="pm-tb-btn"
+        id="pm-tb-minreqs"
+        aria-label="Minimum Requirements"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="7" y="2" width="10" height="20" rx="2" />
+          <path d="M11 7h2" />
+        </svg>
+      </button>
+      <div class="pm-tip">Minimum Requirements</div>
+    </div>
+
+    <div class="pm-tb-item">
+      <button
+        class="pm-tb-btn"
+        id="pm-tb-controller"
+        aria-label="Controller Testing"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M6.5 12.5c0 1.7.9 3 2 3h7c1.1 0 2-1.3 2-3V8c0-1.7-1.5-3-3.3-3H9.8C8 5 6.5 6.3 6.5 8v4.5z"
+          />
+          <path d="M8 10h.01" />
+          <path d="M12 10h.01" />
+          <path d="M16 10h.01" />
+        </svg>
+      </button>
+      <div class="pm-tip">Controller Testing</div>
+    </div>
+
+    <div class="pm-tb-item">
+      <button class="pm-tb-btn" id="pm-tb-qr" aria-label="Mobile Scanner">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3" y="3" width="6" height="6" rx="1" />
+          <rect x="15" y="3" width="6" height="6" rx="1" />
+          <rect x="3" y="15" width="6" height="6" rx="1" />
+          <rect x="15" y="15" width="6" height="6" rx="1" />
+        </svg>
+      </button>
+      <div class="pm-tip">Mobile Scanner</div>
+    </div>
+
+    <div class="pm-tb-item">
+      <button class="pm-tb-btn" id="pm-tb-upc" aria-label="UPC Search">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M3 5v14" />
+          <path d="M8 5v14" />
+          <path d="M12 5v14" />
+          <path d="M17 5v14" />
+          <path d="M21 5v14" />
+        </svg>
+      </button>
+      <div class="pm-tip">UPC Search</div>
+    </div>
+
+    <div class="pm-tb-item">
+      <button class="pm-tb-btn" id="pm-tb-links" aria-label="Quick Links">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+          />
+          <path
+            d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+          />
+        </svg>
+      </button>
+      <div class="pm-tip">Quick Links</div>
+    </div>
+
+    <div class="pm-tb-item">
+      <button class="pm-tb-btn" id="pm-tb-ebay" aria-label="eBay Categories">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M12 2l9 4-9 4-9-4 9-4z" />
+          <path d="M12 10l9 4-9 4-9-4 9-4z" />
+          <path d="M12 18l9 4-9 0-9-4 9 0z" />
+        </svg>
+      </button>
+      <div class="pm-tip">eBay Categories</div>
+    </div>
+
+    <div class="pm-tb-item">
+      <button
+        class="pm-tb-btn"
+        id="pm-tb-pricecharting"
+        aria-label="Price Charting"
+      >
+        <img id="pm-pc-icon" class="pm-icon" alt="Price Charting" />
+      </button>
+      <div class="pm-tip">Price Charting</div>
+    </div>
+
+    <div class="pm-tb-item">
+      <button
+        class="pm-tb-btn"
+        id="pm-tb-search"
+        aria-label="Shopify Storefront"
+      >
+        <img id="pm-shopify-icon" class="pm-icon" alt="Shopify Storefront" />
+      </button>
+      <div class="pm-tip">Shopify Storefront</div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* For content scripts that inject into host pages, you may want to disable preflight
+   by building a separate CSS file with `corePlugins: { preflight: false }` */
