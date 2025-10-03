@@ -21,6 +21,7 @@ export function Settings({ toolbarOnly = false }: { toolbarOnly?: boolean }) {
 
   const [scannerBaseUrl, setScannerBaseUrl] = useState(HOSTED_URL);
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
+  const [toolbarTheme, setToolbarTheme] = useState<string>("stone");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -30,6 +31,7 @@ export function Settings({ toolbarOnly = false }: { toolbarOnly?: boolean }) {
       {
         scannerBaseUrl: HOSTED_URL,
         enabledToolbarTools: TOOLBAR_TOOLS.map((t) => t.id),
+        toolbarTheme: "stone",
       },
       (result: any) => {
         const url =
@@ -45,26 +47,38 @@ export function Settings({ toolbarOnly = false }: { toolbarOnly?: boolean }) {
               "null"
           ) ||
           TOOLBAR_TOOLS.map((t) => t.id);
+        const theme =
+          result.toolbarTheme ||
+          (typeof localStorage !== "undefined" &&
+            localStorage.getItem("toolbarTheme")) ||
+          "stone";
 
         setScannerBaseUrl(url);
         setEnabledTools(
           Array.isArray(tools) ? tools : TOOLBAR_TOOLS.map((t) => t.id)
         );
+        setToolbarTheme(String(theme));
       }
     );
   }, []);
 
-  const persistSettings = (nextTools: string[], nextUrl?: string) => {
+  const persistSettings = (
+    nextTools: string[],
+    nextUrl?: string,
+    nextTheme?: string
+  ) => {
     try {
       chrome.storage.local.set({
         scannerBaseUrl: nextUrl ?? scannerBaseUrl,
         enabledToolbarTools: nextTools,
+        toolbarTheme: nextTheme ?? toolbarTheme,
       });
     } catch (_) {}
     try {
       if (typeof localStorage !== "undefined") {
         if (nextUrl) localStorage.setItem("scannerBaseUrl", String(nextUrl));
         localStorage.setItem("enabledToolbarTools", JSON.stringify(nextTools));
+        localStorage.setItem("toolbarTheme", String(nextTheme ?? toolbarTheme));
       }
     } catch (_) {}
   };
@@ -158,6 +172,44 @@ export function Settings({ toolbarOnly = false }: { toolbarOnly?: boolean }) {
                 );
               })}
             </div>
+
+            <div className="mt-4 pt-4 border-t border-stone-200">
+              <div className="mb-2 text-sm font-medium">Toolbar Color</div>
+              <div className="grid grid-cols-6 gap-2">
+                {[
+                  { id: "stone", bg: "bg-stone-800" },
+                  { id: "zinc", bg: "bg-zinc-800" },
+                  { id: "slate", bg: "bg-slate-800" },
+                  { id: "blue", bg: "bg-blue-700" },
+                  { id: "emerald", bg: "bg-emerald-700" },
+                  { id: "rose", bg: "bg-rose-700" },
+                  { id: "violet", bg: "bg-violet-700" },
+                  { id: "orange", bg: "bg-orange-700" },
+                  { id: "indigo", bg: "bg-indigo-700" },
+                  { id: "teal", bg: "bg-teal-700" },
+                  { id: "cyan", bg: "bg-cyan-700" },
+                  { id: "amber", bg: "bg-amber-700" },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    aria-label={`Theme ${opt.id}`}
+                    onClick={() => {
+                      setToolbarTheme(opt.id);
+                      persistSettings(enabledTools, undefined, opt.id);
+                    }}
+                    className={`h-8 w-8 rounded-md border ${
+                      toolbarTheme === opt.id
+                        ? "ring-2 ring-offset-2 ring-primary"
+                        : "border-stone-300"
+                    } ${opt.bg}`}
+                  />
+                ))}
+              </div>
+              <div className="mt-2 text-xs text-muted-foreground">
+                Affects the floating toolbar colors on web pages.
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -212,7 +264,8 @@ export function Settings({ toolbarOnly = false }: { toolbarOnly?: boolean }) {
           onClick={() => {
             const defaults = TOOLBAR_TOOLS.map((t) => t.id);
             setEnabledTools(defaults);
-            persistSettings(defaults);
+            setToolbarTheme("stone");
+            persistSettings(defaults, undefined, "stone");
           }}
         >
           Reset

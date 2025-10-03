@@ -205,6 +205,13 @@ function initializeExtension() {
       const toolbar = document.getElementById("paymore-toolbar");
       if (toolbar) {
         setupToolbar(toolbar);
+        try {
+          // Apply saved theme immediately after mount
+          chrome.storage?.local?.get({ toolbarTheme: "stone" }, (cfg) => {
+            const theme = String(cfg?.toolbarTheme || "stone");
+            applyToolbarTheme(toolbar as HTMLElement, theme);
+          });
+        } catch (_) {}
         return;
       }
 
@@ -215,6 +222,12 @@ function initializeExtension() {
             o.disconnect();
           } catch (_) {}
           setupToolbar(t);
+          try {
+            chrome.storage?.local?.get({ toolbarTheme: "stone" }, (cfg) => {
+              const theme = String(cfg?.toolbarTheme || "stone");
+              applyToolbarTheme(t as HTMLElement, theme);
+            });
+          } catch (_) {}
         }
       });
       obs.observe(document.documentElement || document.body, {
@@ -229,6 +242,12 @@ function initializeExtension() {
             obs.disconnect();
           } catch (_) {}
           setupToolbar(t);
+          try {
+            chrome.storage?.local?.get({ toolbarTheme: "stone" }, (cfg) => {
+              const theme = String(cfg?.toolbarTheme || "stone");
+              applyToolbarTheme(t as HTMLElement, theme);
+            });
+          } catch (_) {}
         }
       }, 2500);
     } catch (e) {
@@ -402,6 +421,30 @@ function initializeExtension() {
 
     // Apply user toolbar preferences once the DOM nodes exist
     applyEnabledToolbarTools();
+  }
+
+  /**
+   * Applies theme class to the toolbar container
+   */
+  function applyToolbarTheme(toolbarEl: HTMLElement, theme: string) {
+    try {
+      const themes = [
+        "stone",
+        "zinc",
+        "slate",
+        "blue",
+        "emerald",
+        "rose",
+        "violet",
+        "orange",
+        "indigo",
+        "teal",
+        "cyan",
+        "amber",
+      ];
+      themes.forEach((t) => toolbarEl.classList.remove(`pm-theme-${t}`));
+      toolbarEl.classList.add(`pm-theme-${theme}`);
+    } catch (_) {}
   }
 
   function isThisTabActive() {
@@ -1463,15 +1506,27 @@ function initializeExtension() {
 
   // Listen for storage changes
   const storageListener = (changes: any, area: string) => {
-    if (area === "local" && changes.enabledToolbarTools) {
-      const next = changes.enabledToolbarTools.newValue;
-      const sanitized = sanitizeToolbarIds(next);
-      if (sanitized !== null) {
-        enabledToolbarToolsCache = sanitized;
-      } else {
-        enabledToolbarToolsCache = [...DEFAULT_ENABLED_TOOLS];
+    if (area === "local") {
+      if (changes.enabledToolbarTools) {
+        const next = changes.enabledToolbarTools.newValue;
+        const sanitized = sanitizeToolbarIds(next);
+        if (sanitized !== null) {
+          enabledToolbarToolsCache = sanitized;
+        } else {
+          enabledToolbarToolsCache = [...DEFAULT_ENABLED_TOOLS];
+        }
+        applyEnabledToolbarTools();
       }
-      applyEnabledToolbarTools();
+      if (changes.toolbarTheme) {
+        try {
+          const toolbarEl = document.getElementById("paymore-toolbar");
+          if (toolbarEl)
+            applyToolbarTheme(
+              toolbarEl,
+              String(changes.toolbarTheme.newValue || "stone")
+            );
+        } catch (_) {}
+      }
     }
   };
   chrome.storage.onChanged.addListener(storageListener);

@@ -4,20 +4,27 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 
 ## Latest Release
 
-### v1.0.4 (Current)
+### v1.0.5 (Current)
+
+**Release Date:** October 03, 2025
+**Download:** [GitHub Release Link](https://github.com/JuanQuenga/paymore-chrome/blob/main/releases/paymore-chrome-v1.0.5.zip)
+
+**What's New:**
+
+- Patch release: minor fixes and dependency updates
+- Updated package version to v1.0.5
+
+## Previous Releases
+
+### v1.0.4
 
 **Release Date:** October 03, 2025
 **Download:** [GitHub Release Link](https://github.com/JuanQuenga/paymore-chrome/blob/main/releases/paymore-chrome-v1.0.4.zip)
 
 **What's New:**
 
-- Initial release
-- Core functionality for Paymore staff
-- Inventory management tools
-- Price checking features
-- Mobile scanner integration
-
-## Previous Releases
+- Bug fixes and stability improvements
+- Minor UI tweaks
 
 ### v1.0.0
 
