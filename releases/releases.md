@@ -7,7 +7,7 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 ### v1.0.4 (Current)
 
 **Release Date:** October 03, 2025
-**Download:** [GitHub Release Link](https://github.com/juanquenga/paymore/releases/download/v1.0.4/paymore-chrome-v1.0.4.zip)
+**Download:** [GitHub Release Link](https://github.com/JuanQuenga/paymore-chrome/blob/main/releases/paymore-chrome-v1.0.4.zip)
 
 **What's New:**
 
@@ -22,7 +22,7 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 ### v1.0.0
 
 **Release Date:** October 03, 2025
-**Download:** [GitHub Release Link](https://github.com/juanquenga/paymore/releases/download/v1.0.0/paymore-chrome-v1.0.0.zip)
+**Download:** [GitHub Release Link](https://github.com/JuanQuenga/paymore-chrome/blob/main/releases/paymore-chrome-v1.0.0.zip)
 
 **What's New:**
 
@@ -33,7 +33,7 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 ### v0.9.0 (Beta)
 
 **Release Date:** [Insert Date]  
-**Download:** [GitHub Release Link](https://github.com/juanquenga/paymore/releases/download/v0.9.0/paymore-chrome-v0.9.0.zip)
+**Download:** [GitHub Release Link](https://github.com/JuanQuenga/paymore-chrome/blob/main/releases/paymore-chrome-v0.9.0.zip)
 
 **What's New:**
 
@@ -44,7 +44,7 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 ### v0.8.0 (Alpha)
 
 **Release Date:** [Insert Date]  
-**Download:** [GitHub Release Link](https://github.com/juanquenga/paymore/releases/download/v0.8.0/paymore-chrome-v0.8.0.zip)
+**Download:** [GitHub Release Link](https://github.com/JuanQuenga/paymore-chrome/blob/main/releases/paymore-chrome-v0.8.0.zip)
 
 **What's New:**
 
