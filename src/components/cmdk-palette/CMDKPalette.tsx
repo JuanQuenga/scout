@@ -165,11 +165,24 @@ export function CMDKPalette({
       const tool = TOOLBAR_TOOLS.find((t) => t.id === toolId);
       if (tool) {
         if (tool.id === "settings") {
-          // Special handling for settings - open options page
+          // Special handling for settings - ask background to open options popup
           try {
-            chrome.runtime.openOptionsPage();
+            chrome.runtime.sendMessage({ type: "OPEN_OPTIONS" }, (response) => {
+              const err = chrome.runtime.lastError;
+              if (err) {
+                console.error(
+                  "Error requesting options popup from background:",
+                  err
+                );
+              } else if (!response?.success) {
+                console.error(
+                  "Background failed to open options popup",
+                  response
+                );
+              }
+            });
           } catch (e) {
-            console.error("Error opening options page:", e);
+            console.error("Error sending options popup request:", e);
           }
         } else {
           // Send message to open tool in sidebar

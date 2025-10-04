@@ -42,6 +42,7 @@ export default defineConfig({
     },
     action: {
       default_icon: "assets/images/brand.png",
+      default_popup: "popup.html",
     },
     side_panel: {
       default_path: "sidepanel.html",

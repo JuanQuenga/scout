@@ -50,6 +50,30 @@ export default defineBackground({
       indexSize: 0,
       isInitialized: false,
     };
+    const DEFAULT_ACTION_POPUP = "popup.html";
+    const OPTIONS_ACTION_POPUP = "options.html";
+
+    async function openOptionsAsActionPopup() {
+      const manifest = chrome.runtime?.getManifest?.();
+      const restoredPopup =
+        (manifest?.action && manifest.action.default_popup) ||
+        DEFAULT_ACTION_POPUP;
+
+      try {
+        await chrome.action.setPopup({ popup: OPTIONS_ACTION_POPUP });
+        await chrome.action.openPopup();
+        return true;
+      } catch (error) {
+        log("Failed to open options popup via action", error);
+        return false;
+      } finally {
+        try {
+          await chrome.action.setPopup({ popup: restoredPopup });
+        } catch (restoreError) {
+          log("Failed to restore default action popup", restoreError);
+        }
+      }
+    }
 
     /**
      * Logs debug messages when DEBUG mode is enabled
@@ -91,7 +115,9 @@ export default defineBackground({
         });
       } else if (command === "open-options") {
         log("Open options command triggered");
-        chrome.runtime.openOptionsPage();
+        openOptionsAsActionPopup().catch((error) =>
+          log("openOptions command handler error", error)
+        );
       }
     });
 
@@ -505,38 +531,14 @@ export default defineBackground({
           return true;
         }
         case "OPEN_OPTIONS": {
-          // Open extension options page; use fallback to popup window if needed
-          try {
-            chrome.runtime.openOptionsPage(() => {
-              const err = chrome.runtime.lastError;
-              if (err) {
-                // Fallback to opening options as a popup window
-                try {
-                  chrome.windows.create({
-                    url: chrome.runtime.getURL("options.html"),
-                    type: "popup",
-                    width: 480,
-                    height: 640,
-                    focused: true,
-                  });
-                } catch (_) {}
-              }
-              sendResponse({ success: true });
+          openOptionsAsActionPopup()
+            .then((opened) => {
+              sendResponse({ success: opened });
+            })
+            .catch((error) => {
+              log("OPEN_OPTIONS handler error", error);
+              sendResponse({ success: false, error: String(error) });
             });
-          } catch (e) {
-            try {
-              chrome.windows.create({
-                url: chrome.runtime.getURL("options.html"),
-                type: "popup",
-                width: 480,
-                height: 640,
-                focused: true,
-              });
-              sendResponse({ success: true });
-            } catch (err) {
-              sendResponse({ success: false, error: String(err) });
-            }
-          }
           return true;
         }
         case "hideControllerModal":
