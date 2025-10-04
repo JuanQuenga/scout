@@ -57,15 +57,6 @@ export const searchProviders: SearchProvider[] = [
     name: "eBay",
     trigger: ["ebay", "eb"],
     searchUrl:
-      "https://www.ebay.com/sch/i.html?_nkw={query}&_sacat=0&_from=R40&_dmd=2&rt=nc",
-    icon: Tag,
-    color: "bg-green-600",
-  },
-  {
-    id: "ebay-sold",
-    name: "eBay (sold)",
-    trigger: ["ebay", "eb"],
-    searchUrl:
       "https://www.ebay.com/sch/i.html?_nkw={query}&_sacat=0&_from=R40&_dmd=2&rt=nc&LH_Sold=1&LH_Complete=1",
     icon: Tag,
     color: "bg-green-800",
