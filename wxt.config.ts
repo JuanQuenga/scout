@@ -18,7 +18,7 @@ export default defineConfig({
   ],
   manifest: {
     name: "Paymore",
-    version: "1.0.6",
+    version: "1.0.7",
     description: "Chrome extension for Paymore Employees.",
     permissions: [
       "storage",
@@ -68,7 +68,7 @@ export default defineConfig({
           default: "Ctrl+Shift+H",
           mac: "Command+Shift+H",
         },
-        description: "Toggle toolbar visibility",
+        description: "Dismiss/show toolbar",
       },
     },
     // Expose toolbar and assets to content scripts

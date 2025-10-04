@@ -438,17 +438,17 @@ export function CMDKPalette({
                 </Command.Group>
               ))}
 
-            {/* Tab results */}
-            {filteredTabs.length > 0 && (
-              <Command.Group heading="Tabs" className="cmdk-group">
-                {filteredTabs.map((tab) => (
+            {/* Bookmarks */}
+            {filteredBookmarks.length > 0 && (
+              <Command.Group heading="Bookmarks" className="cmdk-group">
+                {filteredBookmarks.map((bookmark) => (
                   <Command.Item
-                    key={tab.id}
-                    value={`tab-${tab.id}`}
+                    key={bookmark.id}
+                    value={`bookmark-${bookmark.id}`}
                     onSelect={handleSelect}
                     className="cmdk-item"
                   >
-                    <TabItem tab={tab} />
+                    <BookmarkItem bookmark={bookmark} />
                   </Command.Item>
                 ))}
               </Command.Group>
@@ -470,33 +470,17 @@ export function CMDKPalette({
               </Command.Group>
             )}
 
-            {/* Bookmarks */}
-            {filteredBookmarks.length > 0 && (
-              <Command.Group heading="Bookmarks" className="cmdk-group">
-                {filteredBookmarks.map((bookmark) => (
+            {/* Tab results */}
+            {filteredTabs.length > 0 && (
+              <Command.Group heading="Tabs" className="cmdk-group">
+                {filteredTabs.map((tab) => (
                   <Command.Item
-                    key={bookmark.id}
-                    value={`bookmark-${bookmark.id}`}
+                    key={tab.id}
+                    value={`tab-${tab.id}`}
                     onSelect={handleSelect}
                     className="cmdk-item"
                   >
-                    <BookmarkItem bookmark={bookmark} />
-                  </Command.Item>
-                ))}
-              </Command.Group>
-            )}
-
-            {/* Recent History */}
-            {filteredHistory.length > 0 && (
-              <Command.Group heading="Recent History" className="cmdk-group">
-                {filteredHistory.map((item) => (
-                  <Command.Item
-                    key={item.id}
-                    value={`history-${item.id}`}
-                    onSelect={handleSelect}
-                    className="cmdk-item"
-                  >
-                    <HistoryItemComponent item={item} />
+                    <TabItem tab={tab} />
                   </Command.Item>
                 ))}
               </Command.Group>
@@ -533,6 +517,22 @@ export function CMDKPalette({
                       </div>
                     </Command.Item>
                   ))}
+              </Command.Group>
+            )}
+
+            {/* Recent History */}
+            {filteredHistory.length > 0 && (
+              <Command.Group heading="Recent History" className="cmdk-group">
+                {filteredHistory.map((item) => (
+                  <Command.Item
+                    key={item.id}
+                    value={`history-${item.id}`}
+                    onSelect={handleSelect}
+                    className="cmdk-item"
+                  >
+                    <HistoryItemComponent item={item} />
+                  </Command.Item>
+                ))}
               </Command.Group>
             )}
           </>

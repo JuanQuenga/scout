@@ -34,7 +34,7 @@ export const searchProviders: SearchProvider[] = [
     trigger: ["paymore", "pm", "pay"],
     searchUrl: "https://paymore.com/shop/search/?q={query}",
     icon: Store,
-    color: "bg-indigo-600",
+    color: "bg-green-700",
   },
   {
     id: "amazon",
@@ -57,9 +57,18 @@ export const searchProviders: SearchProvider[] = [
     name: "eBay",
     trigger: ["ebay", "eb"],
     searchUrl:
-      "https://www.ebay.com/sch/i.html?_nkw={query}&_sacat=0&_from=R40&_dmd=2&rt=nc&LH_Sold=1&LH_Complete=1",
+      "https://www.ebay.com/sch/i.html?_nkw={query}&_sacat=0&_from=R40&_dmd=2&rt=nc",
     icon: Tag,
     color: "bg-green-600",
+  },
+  {
+    id: "ebay-sold",
+    name: "eBay (sold only)",
+    trigger: ["ebay", "eb"],
+    searchUrl:
+      "https://www.ebay.com/sch/i.html?_nkw={query}&_sacat=0&_from=R40&_dmd=2&rt=nc&LH_Sold=1&LH_Complete=1",
+    icon: Tag,
+    color: "bg-green-800",
   },
   {
     id: "pricecharting",
@@ -68,7 +77,7 @@ export const searchProviders: SearchProvider[] = [
     searchUrl:
       "https://www.pricecharting.com/search-products?q={query}&type=prices",
     icon: DollarSign,
-    color: "bg-green-600",
+    color: "bg-blue-600",
   },
   {
     id: "upcitemdb",
@@ -76,7 +85,7 @@ export const searchProviders: SearchProvider[] = [
     trigger: ["upc", "upcitemdb", "barcode"],
     searchUrl: "https://www.upcitemdb.com/search?q={query}",
     icon: Barcode,
-    color: "bg-purple-600",
+    color: "bg-gray-600",
   },
   {
     id: "youtube",
@@ -92,7 +101,7 @@ export const searchProviders: SearchProvider[] = [
     trigger: ["github", "gh"],
     searchUrl: "https://github.com/search?q={query}",
     icon: Github,
-    color: "bg-gray-800",
+    color: "bg-stone-800",
   },
   {
     id: "twitter",

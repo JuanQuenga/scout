@@ -4,7 +4,37 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 
 ## Latest Release
 
-### v1.0.6 (Current)
+### v1.0.7 (Current)
+
+**Release Date:** October 04, 2025
+**Download:** [paymore-chrome-v1.0.7.zip](./paymore-chrome-v1.0.7.zip)
+
+**What's New:**
+
+### Features
+
+- Version bump and maintenance release
+
+### Improvements
+
+- Updated version numbers across configuration files
+
+### Bug Fixes
+
+- General maintenance and stability improvements
+
+### Installation
+
+1. Download [paymore-chrome-v1.0.7.zip](./paymore-chrome-v1.0.7.zip)
+2. Unzip the file
+3. Open Chrome and navigate to `chrome://extensions/`
+4. Enable "Developer mode" (toggle in top right)
+5. Click "Load unpacked"
+6. Select the unzipped `chrome-mv3` folder
+
+Note: The packed version for Chrome Web Store submission is located at `.output/paymore-chrome-v1.0.7-packed.zip`
+
+### v1.0.6
 
 **Release Date:** October 04, 2025
 **Download:** [paymore-chrome-v1.0.6.zip](./paymore-chrome-v1.0.6.zip)
@@ -12,6 +42,7 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 **What's New:**
 
 **🎉 CMDK Command Palette (Major Feature)**
+
 - Arc-style command palette accessible via `CMD+Shift+K` / `CTRL+Shift+K`
 - Quick Links from Google Sheets with 30-minute caching
 - Tab switching with search and filter
@@ -25,11 +56,13 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 - Improved empty states with helpful messages
 
 **⌨️ Keyboard Shortcuts**
+
 - `CMD+Shift+K` / `CTRL+Shift+K` - Open CMDK popup
 - `CMD+Shift+T` / `CTRL+Shift+T` - Toggle toolbar visibility with slide animation
 - `CMD+Shift+O` / `CTRL+Shift+O` - Open extension options
 
 **🎨 UI/UX Improvements**
+
 - CMDK now opens as extension popup (no CSS conflicts)
 - Toolbar slide-in/slide-out animations restored
 - Green accent colors across all components
@@ -37,6 +70,7 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 - Skeleton loading for Quick Links
 
 **🔧 Technical Improvements**
+
 - CSV links cached in Chrome storage (instant load after first fetch)
 - Background refresh for Quick Links
 - Bookmarks and history permissions added
@@ -45,6 +79,7 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 - eBay search uses sold listings URL from context menu
 
 **📚 Documentation**
+
 - Updated CMDK_README.md with complete feature documentation
 - Deleted implementation plan (merged into README)
 - Added usage examples and troubleshooting guide
@@ -84,7 +119,7 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 
 ## Installation Instructions
 
-1. Download `paymore-chrome-v1.0.6.zip`
+1. Download `paymore-chrome-v1.0.7.zip`
 2. Extract the ZIP file to a folder on your computer
 3. Open Chrome and go to `chrome://extensions/`
 4. Enable "Developer mode" in the top right
@@ -94,7 +129,7 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 
 ### For Chrome Web Store Submission
 
-The packed version is located at `.output/paymore-chrome-v1.0.6-packed.zip` and is ready for Chrome Web Store upload via the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
+The packed version is located at `.output/paymore-chrome-v1.0.7-packed.zip` and is ready for Chrome Web Store upload via the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
 
 ## Keyboard Shortcuts Setup
 
@@ -110,13 +145,14 @@ After installation, you can customize keyboard shortcuts:
 ## Notes
 
 - Always download from official releases to ensure security
-- For the latest features and bug fixes, use the current release (v1.0.6)
+- For the latest features and bug fixes, use the current release (v1.0.7)
 - CMDK requires `bookmarks` and `history` permissions (granted on install)
 - Quick Links are cached for 30 minutes in Chrome storage
 - If you encounter issues, check the [CMDK_README.md](../CMDK_README.md) for troubleshooting
 
 ## Changelog Summary
 
+**v1.0.7** - Version bump and maintenance release
 **v1.0.6** - CMDK Command Palette, Keyboard Shortcuts, Bookmarks/History Integration
 **v1.0.5** - Patch release with minor fixes
 **v1.0.4** - Bug fixes and stability improvements

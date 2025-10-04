@@ -94,13 +94,6 @@ export const TOOLBAR_TOOLS = [
     buttonId: "pm-tb-search",
     img: "/assets/images/shopify-icon.png",
   },
-  {
-    id: "settings",
-    label: "Settings",
-    description: "Extension settings and preferences",
-    buttonId: "pm-tb-settings",
-    reactIcon: Settings,
-  },
 ] as const;
 
 export type ToolbarToolId = (typeof TOOLBAR_TOOLS)[number]["id"];
