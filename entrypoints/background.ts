@@ -61,6 +61,40 @@ export default defineBackground({
 
     log("Service worker booted", { time: new Date().toISOString() });
 
+    // Track previous active tab for CMDK "return to previous tab" feature
+    let previousActiveTabId = null;
+    let lastActiveTabId = null;
+    chrome.tabs.onActivated.addListener(({ tabId }) => {
+      try {
+        if (lastActiveTabId && lastActiveTabId !== tabId) {
+          previousActiveTabId = lastActiveTabId;
+        }
+        lastActiveTabId = tabId;
+      } catch (_) {}
+    });
+    // Clean up tracking if tabs are closed
+    try {
+      chrome.tabs.onRemoved.addListener((closedTabId) => {
+        if (previousActiveTabId === closedTabId) previousActiveTabId = null;
+        if (lastActiveTabId === closedTabId) lastActiveTabId = null;
+      });
+    } catch (_) {}
+
+    // Listen for keyboard commands
+    chrome.commands.onCommand.addListener((command) => {
+      if (command === "toggle-toolbar") {
+        log("Toggle toolbar command triggered");
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs.length > 0) {
+            chrome.tabs.sendMessage(tabs[0].id, { type: "TOGGLE_TOOLBAR" });
+          }
+        });
+      } else if (command === "open-options") {
+        log("Open options command triggered");
+        chrome.runtime.openOptionsPage();
+      }
+    });
+
     // Create a context menu item for searching selected text on eBay (sold listings)
     try {
       const EBAY_SOLD_BASE =
@@ -470,6 +504,41 @@ export default defineBackground({
           });
           return true;
         }
+        case "OPEN_OPTIONS": {
+          // Open extension options page; use fallback to popup window if needed
+          try {
+            chrome.runtime.openOptionsPage(() => {
+              const err = chrome.runtime.lastError;
+              if (err) {
+                // Fallback to opening options as a popup window
+                try {
+                  chrome.windows.create({
+                    url: chrome.runtime.getURL("options.html"),
+                    type: "popup",
+                    width: 480,
+                    height: 640,
+                    focused: true,
+                  });
+                } catch (_) {}
+              }
+              sendResponse({ success: true });
+            });
+          } catch (e) {
+            try {
+              chrome.windows.create({
+                url: chrome.runtime.getURL("options.html"),
+                type: "popup",
+                width: 480,
+                height: 640,
+                focused: true,
+              });
+              sendResponse({ success: true });
+            } catch (err) {
+              sendResponse({ success: false, error: String(err) });
+            }
+          }
+          return true;
+        }
         case "hideControllerModal":
           sendToActiveTab({ action: "hideControllerModal" });
           sendResponse({ success: true });
@@ -521,6 +590,66 @@ export default defineBackground({
             }
           });
           return true; // Keep message channel open for async response
+        case "GET_TABS":
+          // Get all tabs for CMDK palette
+          chrome.tabs.query({}, (tabs) => {
+            const tabInfo = tabs.map((tab) => ({
+              id: tab.id,
+              title: tab.title,
+              url: tab.url,
+              favIconUrl: tab.favIconUrl,
+              active: tab.active,
+              windowId: tab.windowId,
+            }));
+            sendResponse({ tabs: tabInfo });
+          });
+          return true; // Keep message channel open for async response
+        case "SWITCH_TAB":
+          // Switch to a specific tab
+          const tabId = message.tabId;
+          if (tabId) {
+            chrome.tabs.update(tabId, { active: true }, (tab) => {
+              if (tab) {
+                chrome.windows.update(tab.windowId, { focused: true });
+              }
+              sendResponse({ success: true });
+            });
+          } else {
+            sendResponse({ success: false, error: "No tabId provided" });
+          }
+          return true;
+        case "GET_PREVIOUS_TAB":
+          // Get the previous active tab ID
+          sendResponse({ tabId: previousActiveTabId });
+          break;
+        case "OPEN_TAB":
+          // Open a new tab with the given URL
+          const newTabUrl = message.url;
+          if (newTabUrl) {
+            chrome.tabs.create({ url: newTabUrl }, (tab) => {
+              sendResponse({ success: true, tabId: tab?.id });
+            });
+          } else {
+            sendResponse({ success: false, error: "No URL provided" });
+          }
+          return true;
+        case "FETCH_CSV_LINKS":
+          // Fetch CSV data (bypasses CORS in content scripts)
+          const csvUrl = message.url;
+          if (csvUrl) {
+            fetch(csvUrl)
+              .then((response) => response.text())
+              .then((data) => {
+                sendResponse({ success: true, data });
+              })
+              .catch((error) => {
+                log("CSV fetch error:", error);
+                sendResponse({ success: false, error: error.message });
+              });
+          } else {
+            sendResponse({ success: false, error: "No URL provided" });
+          }
+          return true; // Keep channel open for async response
         case "toggleDebug":
           DEBUG = !!message.value;
           chrome.storage.local.set({ debugLogs: DEBUG });

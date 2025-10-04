@@ -25,6 +25,7 @@ import {
 import React from "react";
 import { createRoot } from "react-dom/client";
 import Toolbar from "../src/components/toolbar/Toolbar";
+import { CMDKPalette } from "../src/components/cmdk-palette/CMDKPalette";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -327,6 +328,13 @@ function initializeExtension() {
 
     attach("pm-tb-controller", () => setActiveTool("controller-testing"));
     attach("pm-tb-help", () => setActiveTool("help"));
+    attach("pm-tb-settings", () => {
+      try {
+        chrome.runtime.openOptionsPage();
+      } catch (e) {
+        console.error("[Paymore CS] Failed to open options page:", e);
+      }
+    });
     attach("pm-tb-top-offers", () => setActiveTool("top-offers"));
     attach("pm-tb-pricing", () => setActiveTool("checkout-prices"));
     attach("pm-tb-minreqs", () => setActiveTool("min-reqs"));
@@ -409,14 +417,23 @@ function initializeExtension() {
     try {
       const wasClosed =
         localStorage.getItem("paymore-toolbar-closed") === "true";
-      if (wasClosed) hideToolbar();
-      else {
-        hideToolbar();
-        setTimeout(() => {
-          showToolbar();
-          setTimeout(hideToolbar, 2000);
-        }, 800);
-      }
+
+      // Check if toolbar was explicitly hidden via toggle command
+      chrome.storage.local.get({ toolbarHidden: false }, (cfg) => {
+        if (cfg.toolbarHidden) {
+          // Toolbar is toggled off - keep it hidden with animation classes
+          toolbar.classList.add("hidden");
+          toolbar.classList.remove("visible");
+        } else if (wasClosed) {
+          hideToolbar();
+        } else {
+          hideToolbar();
+          setTimeout(() => {
+            showToolbar();
+            setTimeout(hideToolbar, 2000);
+          }, 800);
+        }
+      });
     } catch (_) {}
 
     // Apply user toolbar preferences once the DOM nodes exist
@@ -1530,4 +1547,79 @@ function initializeExtension() {
     }
   };
   chrome.storage.onChanged.addListener(storageListener);
+
+  // ==================== CMDK Integration ====================
+  // Create CMDK container with isolation but preserve styles
+  const cmdkContainer = document.createElement("div");
+  cmdkContainer.id = "paymore-cmdk-root";
+  cmdkContainer.style.cssText = "position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2147483647; pointer-events: none;";
+  document.body.appendChild(cmdkContainer);
+
+  // Create React root for CMDK
+  const cmdkRoot = createRoot(cmdkContainer);
+  let isCMDKOpen = false;
+
+  // Render CMDK component
+  const renderCMDK = () => {
+    cmdkRoot.render(
+      React.createElement(CMDKPalette, {
+        isOpen: isCMDKOpen,
+        onClose: () => {
+          isCMDKOpen = false;
+          renderCMDK();
+        },
+      })
+    );
+  };
+
+  // Initial render
+  renderCMDK();
+
+  // Intercept CMD+K / CTRL+K keyboard shortcut
+  document.addEventListener("keydown", (e: KeyboardEvent) => {
+    // Check for CMD+K (Mac) or CTRL+K (Windows/Linux)
+    const isCmdK = (e.metaKey || e.ctrlKey) && e.key === "k";
+
+    if (isCmdK) {
+      // Prevent default browser behavior
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      // Toggle CMDK
+      isCMDKOpen = !isCMDKOpen;
+      renderCMDK();
+    }
+  }, true); // Use capture phase to intercept before other handlers
+
+  // Listen for CMDK toggle message from background script
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message.type === "TOGGLE_CMDK") {
+      isCMDKOpen = !isCMDKOpen;
+      renderCMDK();
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === "TOGGLE_TOOLBAR") {
+      const toolbar = document.getElementById("paymore-toolbar");
+      if (toolbar) {
+        const isCurrentlyHidden = toolbar.classList.contains("hidden");
+
+        if (isCurrentlyHidden) {
+          // Show toolbar with slide-in animation
+          toolbar.classList.remove("hidden");
+          toolbar.classList.add("visible");
+          chrome.storage.local.set({ toolbarHidden: false });
+        } else {
+          // Hide toolbar with slide-out animation
+          toolbar.classList.remove("visible");
+          toolbar.classList.add("hidden");
+          chrome.storage.local.set({ toolbarHidden: true });
+        }
+      }
+      sendResponse({ success: true });
+      return true;
+    }
+  });
 }

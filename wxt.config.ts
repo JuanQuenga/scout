@@ -18,7 +18,7 @@ export default defineConfig({
   ],
   manifest: {
     name: "Paymore",
-    version: "1.0.5",
+    version: "1.0.6",
     description: "Chrome extension for Paymore Employees.",
     permissions: [
       "storage",
@@ -29,6 +29,9 @@ export default defineConfig({
       "system.display",
       // Needed for adding right-click context menu actions
       "contextMenus",
+      // Needed for CMDK bookmarks and history
+      "bookmarks",
+      "history",
     ],
     host_permissions: ["<all_urls>"],
     icons: {
@@ -42,6 +45,30 @@ export default defineConfig({
     },
     side_panel: {
       default_path: "sidepanel.html",
+    },
+    options_page: "options.html",
+    commands: {
+      _execute_action: {
+        suggested_key: {
+          default: "Ctrl+Shift+K",
+          mac: "Command+Shift+K",
+        },
+        description: "Open Command Popup",
+      },
+      "open-options": {
+        suggested_key: {
+          default: "Ctrl+Shift+O",
+          mac: "Command+Shift+O",
+        },
+        description: "Open extension options",
+      },
+      "toggle-toolbar": {
+        suggested_key: {
+          default: "Ctrl+Shift+H",
+          mac: "Command+Shift+H",
+        },
+        description: "Toggle toolbar visibility",
+      },
     },
     // Expose toolbar and assets to content scripts
     web_accessible_resources: [

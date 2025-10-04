@@ -1,0 +1,211 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CMDK Overlay */
+.cmdk-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 999999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  animation: fadeIn 0.15s ease-out;
+  pointer-events: all; /* Re-enable pointer events for overlay */
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* CMDK Container */
+.cmdk-container {
+  width: 640px;
+  max-width: 90vw;
+  max-height: 70vh;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 16px 70px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .cmdk-container {
+    background: #1f2937;
+    border: 1px solid #374151;
+  }
+}
+
+/* CMDK Root */
+.cmdk-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Input Wrapper */
+.cmdk-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cmdk-input-wrapper {
+    border-bottom-color: #374151;
+  }
+}
+
+/* Provider Badge */
+.cmdk-provider-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+/* Input */
+.cmdk-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  color: #111827;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.cmdk-input::placeholder {
+  color: #9ca3af;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cmdk-input {
+    color: #f3f4f6;
+  }
+  .cmdk-input::placeholder {
+    color: #6b7280;
+  }
+}
+
+/* List */
+.cmdk-list {
+  overflow-y: auto;
+  max-height: calc(70vh - 60px);
+  padding: 8px 0;
+}
+
+.cmdk-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cmdk-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cmdk-list::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cmdk-list::-webkit-scrollbar-thumb {
+    background: #4b5563;
+  }
+}
+
+/* Group */
+.cmdk-group {
+  padding: 0;
+}
+
+.cmdk-group [cmdk-group-heading] {
+  padding: 8px 16px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cmdk-group [cmdk-group-heading] {
+    color: #9ca3af;
+  }
+}
+
+/* Item */
+.cmdk-item {
+  cursor: pointer;
+  user-select: none;
+  border-radius: 6px;
+  margin: 0 8px;
+  transition: background-color 0.1s ease;
+}
+
+.cmdk-item[data-selected="true"] {
+  background: #f3f4f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cmdk-item[data-selected="true"] {
+    background: #374151;
+  }
+}
+
+.cmdk-item:active {
+  background: #e5e7eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cmdk-item:active {
+    background: #4b5563;
+  }
+}
+
+/* Empty */
+.cmdk-empty {
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+/* Hide empty group headings */
+.cmdk-group:empty,
+.cmdk-group:has([cmdk-group-items]:empty) {
+  display: none;
+}
+
+/* Fullscreen CMDK for popup */
+.cmdk-fullscreen .cmdk-list {
+  max-height: calc(100vh - 60px);
+}

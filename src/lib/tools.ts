@@ -13,6 +13,7 @@ import {
   Scan,
   Gamepad2,
   TabletSmartphone,
+  Settings,
 } from "lucide-react";
 
 export const TOOLBAR_TOOLS = [
@@ -92,6 +93,13 @@ export const TOOLBAR_TOOLS = [
     description: "Search Shopify inventory",
     buttonId: "pm-tb-search",
     img: "/assets/images/shopify-icon.png",
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    description: "Extension settings and preferences",
+    buttonId: "pm-tb-settings",
+    reactIcon: Settings,
   },
 ] as const;
 

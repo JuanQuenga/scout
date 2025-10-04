@@ -107,6 +107,18 @@ export default function Toolbar() {
           <div className="pm-tip">Dismiss Toolbar</div>
         </div>
 
+        {/* Settings button placed directly under Dismiss */}
+        <div className="pm-tb-item">
+          <button
+            className="pm-tb-btn"
+            id="pm-tb-settings"
+            aria-label="Settings"
+          >
+            {getIconElement(TOOLBAR_TOOLS.find((t) => t.id === "settings"))}
+          </button>
+          <div className="pm-tip">Settings</div>
+        </div>
+
         <div className="pm-tb-divider" />
 
         {TOOLBAR_TOOLS.map((tool) => (
