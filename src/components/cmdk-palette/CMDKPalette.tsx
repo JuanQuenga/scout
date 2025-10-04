@@ -44,6 +44,7 @@ export function CMDKPalette({
   );
   const [providerQuery, setProviderQuery] = useState("");
   const [userNavigated, setUserNavigated] = useState(false);
+  const trimmedSearch = search.trim();
 
   useEffect(() => {
     if (isOpen) {
@@ -213,7 +214,7 @@ export function CMDKPalette({
       console.log("[CMDK] Search URL:", url);
       await TabManager.openNewTab(url);
       onClose();
-    } else if (!search.trim() && !activeProvider) {
+    } else if (!trimmedSearch && !activeProvider) {
       // Empty input + Enter = go back to previous tab
       console.log("[CMDK] Returning to previous tab");
       const previousTabId = await TabManager.getPreviousTab();
@@ -241,14 +242,49 @@ export function CMDKPalette({
   const filteredTools = activeProvider
     ? []
     : TOOLBAR_TOOLS.filter((tool) => {
-        if (!search.trim()) return true;
-        const lowerQuery = search.toLowerCase();
+        if (!trimmedSearch) return true;
+        const lowerQuery = trimmedSearch.toLowerCase();
         return (
           tool.label.toLowerCase().includes(lowerQuery) ||
           tool.description?.toLowerCase().includes(lowerQuery) ||
           tool.id.toLowerCase().includes(lowerQuery)
         );
       });
+
+  const getUrlFromInput = (input: string): string | null => {
+    const value = input.trim();
+    if (!value) return null;
+
+    try {
+      const hasScheme = /^[a-z][\w+.-]*:/i.test(value);
+      if (hasScheme) {
+        return new URL(value).href;
+      }
+
+      const looksLikeLocalhost = /^localhost(?:[:][0-9]+)?(?:\/.*)?$/i.test(value);
+      const looksLikeDomain =
+        /^[\w.-]+\.[a-z]{2,}(?::[0-9]+)?(?:\/.*)?$/i.test(value);
+
+      if (looksLikeLocalhost || looksLikeDomain) {
+        return new URL(`https://${value}`).href;
+      }
+    } catch (_) {}
+
+    return null;
+  };
+
+  const openUrlAndClose = async (url: string) => {
+    try {
+      await TabManager.openNewTab(url);
+    } finally {
+      onClose();
+    }
+  };
+
+  const openGoogleSearch = async (query: string) => {
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    await openUrlAndClose(url);
+  };
 
   // Group CSV links by category and sort alphabetically
   const csvLinksByCategory = filteredCSVLinks.reduce((acc, link) => {
@@ -283,11 +319,11 @@ export function CMDKPalette({
   if (!isOpen) return null;
 
   const content = (
-    <Command
-      shouldFilter={false}
-      onKeyDown={handleKeyDown}
-      className="cmdk-root"
-    >
+      <Command
+        shouldFilter={false}
+        onKeyDown={handleKeyDown}
+        className="cmdk-root"
+      >
       <div className="cmdk-input-wrapper">
         {activeProvider && (
           <div className={`cmdk-provider-badge ${activeProvider.color}`}>
@@ -322,10 +358,22 @@ export function CMDKPalette({
               if (activeProvider && providerQuery.trim()) {
                 e.preventDefault();
                 handleSearchSubmit();
-              } else if (!search.trim() && !activeProvider && !userNavigated) {
+              } else if (!trimmedSearch && !activeProvider && !userNavigated) {
                 // Empty input with no arrow key navigation - go to previous tab
                 e.preventDefault();
                 handleSearchSubmit();
+              } else if (!activeProvider && trimmedSearch) {
+                const urlCandidate = getUrlFromInput(trimmedSearch);
+                if (urlCandidate) {
+                  e.preventDefault();
+                  void openUrlAndClose(urlCandidate);
+                  return;
+                }
+
+                if (!hasVisibleItems) {
+                  e.preventDefault();
+                  void openGoogleSearch(trimmedSearch);
+                }
               }
               // Otherwise, let CMDK's default Enter behavior select the highlighted item
             }
@@ -343,6 +391,8 @@ export function CMDKPalette({
             <p className="text-xs text-gray-400 dark:text-gray-500">
               {activeProvider
                 ? `Press Enter to search ${activeProvider.name}`
+                : trimmedSearch
+                ? "Press Enter to search Google or open the typed URL."
                 : "Try a different search term"}
             </p>
           </div>
@@ -453,7 +503,7 @@ export function CMDKPalette({
             )}
 
             {/* Search providers */}
-            {search.trim() && (
+            {trimmedSearch && (
               <Command.Group heading="Search" className="cmdk-group">
                 {searchProviders
                   .filter((provider) =>
