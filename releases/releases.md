@@ -4,7 +4,49 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 
 ## Latest Release
 
-### v1.0.7 (Current)
+### v1.0.8 (Current)
+
+**Release Date:** October 04, 2025
+**Download:** [paymore-chrome-v1.0.8.zip](./paymore-chrome-v1.0.8.zip)
+
+**What's New:**
+
+### Features
+
+- **Search Provider Switching**: When a search provider is active in CMDK, all available search providers are now displayed in the list, making it easy to switch between them
+- **Active Provider Indicator**: The currently active search provider shows a green "Active" badge
+- **Quick Links Reverse Sort**: Categories now display in reverse alphabetical order (Warranty first, then Z→A) while links within categories remain alphabetically sorted
+
+### Improvements
+
+- **Backspace to Exit Search**: Press Backspace when the search query is empty to deactivate the current search provider
+- **Keyboard Shortcut Update**: Changed toolbar toggle shortcut from `CMD+Shift+H` to `CMD+Shift+L` (Mac) / `CTRL+Shift+H` to `CTRL+Shift+L` (Windows/Linux)
+- **Build Output Optimization**: Simplified build output directory structure to `.output/paymore-chrome/{files}` (removed nested `chrome-mv3` folder)
+- **Settings Button Fix**: Corrected settings toolbar button to properly open options popup using the action API
+- **Updated Tooltips**: Toolbar buttons now show keyboard shortcuts in tooltips (Dismiss: ⌘⇧L, Settings: ⌘⇧O)
+
+### Bug Fixes
+
+- Fixed CMDK settings tool handler to use correct message format (`action` instead of `type`)
+- Removed duplicate settings button from toolbar scroll area
+- Corrected build configuration to prevent double-nested output directories
+
+### Installation
+
+1. Download [paymore-chrome-v1.0.8.zip](./paymore-chrome-v1.0.8.zip)
+2. Unzip the file
+3. Open Chrome and navigate to `chrome://extensions/`
+4. Enable "Developer mode" (toggle in top right)
+5. Click "Load unpacked"
+6. Select the unzipped `paymore-chrome` folder
+
+Note: The packed version for Chrome Web Store submission is located at `.output/paymore-chrome-v1.0.8-packed.zip`
+
+---
+
+## Previous Releases
+
+### v1.0.7
 
 **Release Date:** October 04, 2025
 **Download:** [paymore-chrome-v1.0.7.zip](./paymore-chrome-v1.0.7.zip)
@@ -30,7 +72,7 @@ Download the latest and previous versions of the Paymore Chrome Extension.
 3. Open Chrome and navigate to `chrome://extensions/`
 4. Enable "Developer mode" (toggle in top right)
 5. Click "Load unpacked"
-6. Select the unzipped `chrome-mv3` folder
+6. Select the unzipped `paymore-chrome` folder
 
 Note: The packed version for Chrome Web Store submission is located at `.output/paymore-chrome-v1.0.7-packed.zip`
 

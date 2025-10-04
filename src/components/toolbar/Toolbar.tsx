@@ -104,7 +104,7 @@ export default function Toolbar() {
               <path d="M6 6l12 12" />
             </svg>
           </button>
-          <div className="pm-tip">Dismiss (⌘⇧H)</div>
+          <div className="pm-tip">Dismiss (⌘⇧L)</div>
         </div>
 
         {/* Settings button placed directly under Dismiss */}

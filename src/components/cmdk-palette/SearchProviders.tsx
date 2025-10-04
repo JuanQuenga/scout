@@ -63,7 +63,7 @@ export const searchProviders: SearchProvider[] = [
   },
   {
     id: "ebay-sold",
-    name: "eBay (sold only)",
+    name: "eBay (sold)",
     trigger: ["ebay", "eb"],
     searchUrl:
       "https://www.ebay.com/sch/i.html?_nkw={query}&_sacat=0&_from=R40&_dmd=2&rt=nc&LH_Sold=1&LH_Complete=1",
@@ -81,7 +81,7 @@ export const searchProviders: SearchProvider[] = [
   },
   {
     id: "upcitemdb",
-    name: "UPC Item DB",
+    name: "UPCItemDB",
     trigger: ["upc", "upcitemdb", "barcode"],
     searchUrl: "https://www.upcitemdb.com/search?q={query}",
     icon: Barcode,

@@ -25,7 +25,7 @@ The extension includes three powerful keyboard shortcuts:
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | `CMD+Shift+K` / `CTRL+Shift+K` | Open CMDK Popup | Launch the command palette for quick navigation and search |
-| `CMD+Shift+T` / `CTRL+Shift+T` | Toggle Toolbar | Show/hide the floating toolbar with slide animation |
+| `CMD+Shift+L` / `CTRL+Shift+L` | Toggle Toolbar | Show/hide the floating toolbar with slide animation |
 | `CMD+Shift+O` / `CTRL+Shift+O` | Open Options | Access extension settings and configuration |
 
 You can customize these shortcuts at `chrome://extensions/shortcuts`.

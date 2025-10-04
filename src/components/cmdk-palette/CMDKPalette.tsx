@@ -5,8 +5,16 @@ import { useEffect, useState } from "react";
 import { Command } from "cmdk";
 import { TabManager, TabInfo } from "@/src/utils/tab-manager";
 import { fetchCSVLinks, filterCSVLinks, CSVLink } from "@/src/utils/csv-links";
-import { getAllBookmarks, filterBookmarks, Bookmark } from "@/src/utils/bookmarks";
-import { getRecentHistory, filterHistory, HistoryItem } from "@/src/utils/history";
+import {
+  getAllBookmarks,
+  filterBookmarks,
+  Bookmark,
+} from "@/src/utils/bookmarks";
+import {
+  getRecentHistory,
+  filterHistory,
+  HistoryItem,
+} from "@/src/utils/history";
 import { TOOLBAR_TOOLS, ToolbarTool } from "@/src/lib/tools";
 import {
   searchProviders,
@@ -104,6 +112,14 @@ export function CMDKPalette({
       setUserNavigated(true);
     }
 
+    // Backspace to deactivate provider when query is empty
+    if (e.key === "Backspace" && activeProvider && providerQuery === "") {
+      e.preventDefault();
+      setActiveProvider(null);
+      setProviderQuery("");
+      setSearch("");
+    }
+
     // Tab key to activate provider
     if (e.key === "Tab" && !activeProvider) {
       const provider = findProviderByTrigger(search);
@@ -132,12 +148,25 @@ export function CMDKPalette({
       const tabId = parseInt(value.replace("tab-", ""));
       await TabManager.switchToTab(tabId);
       onClose();
+    } else if (value.startsWith("provider-switch-")) {
+      // Handle switching between providers when one is already active
+      const providerId = value.replace("provider-switch-", "");
+      const provider = searchProviders.find((p) => p.id === providerId);
+      if (provider) {
+        // When switching providers, preserve the current query if one exists
+        const currentQuery = activeProvider ? providerQuery : "";
+        setActiveProvider(provider);
+        setProviderQuery(currentQuery);
+        setSearch("");
+      }
     } else if (value.startsWith("provider-")) {
       const providerId = value.replace("provider-", "");
       const provider = searchProviders.find((p) => p.id === providerId);
       if (provider) {
+        // When switching providers, preserve the current query if one exists
+        const currentQuery = activeProvider ? providerQuery : "";
         setActiveProvider(provider);
-        setProviderQuery("");
+        setProviderQuery(currentQuery);
         setSearch("");
       }
     } else if (value.startsWith("csv-link-")) {
@@ -168,7 +197,7 @@ export function CMDKPalette({
         if (tool.id === "settings") {
           // Special handling for settings - ask background to open options popup
           try {
-            chrome.runtime.sendMessage({ type: "OPEN_OPTIONS" }, (response) => {
+            chrome.runtime.sendMessage({ action: "OPEN_OPTIONS" }, (response) => {
               const err = chrome.runtime.lastError;
               if (err) {
                 console.error(
@@ -191,7 +220,10 @@ export function CMDKPalette({
             { action: "openInSidebar", tool: tool.id },
             () => {
               if (chrome.runtime.lastError) {
-                console.error("Error opening sidebar:", chrome.runtime.lastError);
+                console.error(
+                  "Error opening sidebar:",
+                  chrome.runtime.lastError
+                );
               }
             }
           );
@@ -234,9 +266,7 @@ export function CMDKPalette({
   const filteredBookmarks = activeProvider
     ? []
     : filterBookmarks(bookmarks, search);
-  const filteredHistory = activeProvider
-    ? []
-    : filterHistory(history, search);
+  const filteredHistory = activeProvider ? [] : filterHistory(history, search);
 
   // Filter toolbar tools by search
   const filteredTools = activeProvider
@@ -261,9 +291,12 @@ export function CMDKPalette({
         return new URL(value).href;
       }
 
-      const looksLikeLocalhost = /^localhost(?:[:][0-9]+)?(?:\/.*)?$/i.test(value);
-      const looksLikeDomain =
-        /^[\w.-]+\.[a-z]{2,}(?::[0-9]+)?(?:\/.*)?$/i.test(value);
+      const looksLikeLocalhost = /^localhost(?:[:][0-9]+)?(?:\/.*)?$/i.test(
+        value
+      );
+      const looksLikeDomain = /^[\w.-]+\.[a-z]{2,}(?::[0-9]+)?(?:\/.*)?$/i.test(
+        value
+      );
 
       if (looksLikeLocalhost || looksLikeDomain) {
         return new URL(`https://${value}`).href;
@@ -294,18 +327,16 @@ export function CMDKPalette({
     return acc;
   }, {} as Record<string, CSVLink[]>);
 
-  // Sort categories alphabetically, but put "Warranty" first
+  // Sort categories in reverse alphabetical order, but put "Warranty" first
   const sortedCategories = Object.keys(csvLinksByCategory).sort((a, b) => {
     if (a.toLowerCase() === "warranty") return -1;
     if (b.toLowerCase() === "warranty") return 1;
-    return a.localeCompare(b);
+    return b.localeCompare(a); // Reversed: b comes before a
   });
 
   // Sort links within each category alphabetically by title
   sortedCategories.forEach((category) => {
-    csvLinksByCategory[category].sort((a, b) =>
-      a.title.localeCompare(b.title)
-    );
+    csvLinksByCategory[category].sort((a, b) => a.title.localeCompare(b.title));
   });
 
   // Check if there are any visible items
@@ -319,11 +350,11 @@ export function CMDKPalette({
   if (!isOpen) return null;
 
   const content = (
-      <Command
-        shouldFilter={false}
-        onKeyDown={handleKeyDown}
-        className="cmdk-root"
-      >
+    <Command
+      shouldFilter={false}
+      onKeyDown={handleKeyDown}
+      className="cmdk-root"
+    >
       <div className="cmdk-input-wrapper">
         {activeProvider && (
           <div className={`cmdk-provider-badge ${activeProvider.color}`}>
@@ -386,17 +417,53 @@ export function CMDKPalette({
           <div className="flex flex-col items-center justify-center py-8 px-4">
             <SearchIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
             <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-              {activeProvider ? "Type your search query" : "No results found"}
+              No results found
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              {activeProvider
-                ? `Press Enter to search ${activeProvider.name}`
-                : trimmedSearch
+              {trimmedSearch
                 ? "Press Enter to search Google or open the typed URL."
                 : "Try a different search term"}
             </p>
           </div>
         </Command.Empty>
+
+        {activeProvider && (
+          <>
+            {/* Show all search providers when one is active - for switching */}
+            <Command.Group heading="Search Providers" className="cmdk-group">
+              {searchProviders.map((provider) => (
+                <Command.Item
+                  key={provider.id}
+                  value={`provider-switch-${provider.id}`}
+                  onSelect={handleSelect}
+                  keywords={[provider.name, ...provider.trigger]}
+                  className="cmdk-item"
+                >
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <div className={`p-2 rounded ${provider.color}`}>
+                      <provider.icon className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {provider.name}
+                        {provider.id === activeProvider.id && (
+                          <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                            Active
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {provider.id === activeProvider.id
+                          ? "Press Enter to search"
+                          : "Click to switch"}
+                      </p>
+                    </div>
+                  </div>
+                </Command.Item>
+              ))}
+            </Command.Group>
+          </>
+        )}
 
         {!activeProvider && (
           <>

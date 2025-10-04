@@ -64,6 +64,8 @@ function toolToDisplayName(tool) {
       return "UPC Search";
     case "links":
       return "Quick Links";
+    case "top-offers":
+      return "Top Offers";
     default:
       return "PayMore";
   }

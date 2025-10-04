@@ -39,7 +39,7 @@ Run the production build command:
 pnpm build
 ```
 
-This creates the production build in `.output/chrome-mv3/` directory.
+This creates the production build in `.output/paymore-chrome/` directory.
 
 ### Step 3: Create the Packed Zip (for Chrome Web Store)
 
@@ -55,11 +55,11 @@ Create a zip file of the built extension for publishing to the Chrome Web Store.
 
 ```bash
 cd .output
-zip -r paymore-chrome-v1.0.7-packed.zip chrome-mv3
+zip -r paymore-chrome-v1.0.7-packed.zip paymore-chrome
 cd ..
 ```
 
-**What it contains:** The entire `chrome-mv3/` folder from `.output/`
+**What it contains:** The entire `paymore-chrome/` folder from `.output/`
 
 ### Step 4: Create the Unpacked Release Zip (for GitHub Releases)
 
@@ -75,12 +75,12 @@ Create a zip file for users to manually install the extension.
 
 ```bash
 cd .output
-zip -r chrome-mv3.zip chrome-mv3
-mv chrome-mv3.zip ../releases/paymore-chrome-v1.0.7.zip
+zip -r paymore-chrome.zip paymore-chrome
+mv paymore-chrome.zip ../releases/paymore-chrome-v1.0.7.zip
 cd ..
 ```
 
-**What it contains:** The entire `chrome-mv3/` folder from `.output/`
+**What it contains:** The entire `paymore-chrome/` folder from `.output/`
 
 **Note:** This is the same content as the packed zip, but with different naming for the releases folder.
 
@@ -117,7 +117,7 @@ Update the `releases/releases.md` file with the new version information.
 3. Open Chrome and navigate to `chrome://extensions/`
 4. Enable "Developer mode" (toggle in top right)
 5. Click "Load unpacked"
-6. Select the unzipped `chrome-mv3` folder
+6. Select the unzipped `paymore-chrome` folder
 
 Note: The packed version for Chrome Web Store submission is located at `.output/paymore-chrome-v{VERSION}-packed.zip`
 ```
@@ -169,11 +169,11 @@ pnpm build
 
 # Step 3: Create packed zip (stays in .output/)
 cd .output
-zip -r paymore-chrome-v1.0.7-packed.zip chrome-mv3
+zip -r paymore-chrome-v1.0.7-packed.zip paymore-chrome
 
 # Step 4: Create unpacked release zip (goes to releases/)
-zip -r chrome-mv3.zip chrome-mv3
-mv chrome-mv3.zip ../releases/paymore-chrome-v1.0.7.zip
+zip -r paymore-chrome.zip paymore-chrome
+mv paymore-chrome.zip ../releases/paymore-chrome-v1.0.7.zip
 cd ..
 
 # Step 5: Update releases/releases.md
@@ -188,7 +188,7 @@ Before considering the release complete, verify:
 - [ ] `pnpm build` completed successfully without errors
 - [ ] Packed zip exists: `.output/paymore-chrome-v{VERSION}-packed.zip`
 - [ ] Unpacked zip exists: `releases/paymore-chrome-v{VERSION}.zip`
-- [ ] Both zips contain the `chrome-mv3/` folder with manifest.json and all extension files
+- [ ] Both zips contain the `paymore-chrome/` folder with manifest.json and all extension files
 - [ ] `releases/releases.md` has new version section at the top
 - [ ] New version section includes: version number, date, features, improvements, fixes, and installation instructions
 - [ ] File naming exactly matches the pattern from previous releases
@@ -200,8 +200,8 @@ Before considering the release complete, verify:
 3. ❌ **Don't** put the packed zip in `releases/` folder (it belongs in `.output/`)
 4. ❌ **Don't** create version mismatch between `wxt.config.ts` and `package.json`
 5. ❌ **Don't** forget to update `releases/releases.md`
-6. ❌ **Don't** zip the `.output` folder itself - zip the `chrome-mv3` folder inside it
-7. ❌ **Don't** leave the temporary `chrome-mv3.zip` in `.output/` after moving it
+6. ❌ **Don't** zip the `.output` folder itself - zip the `paymore-chrome` folder inside it
+7. ❌ **Don't** leave the temporary `paymore-chrome.zip` in `.output/` after moving it
 
 ## Quick Command Reference
 
@@ -211,9 +211,9 @@ Before considering the release complete, verify:
 # Build and create both zips
 pnpm build && \
 cd .output && \
-zip -r paymore-chrome-v{VERSION}-packed.zip chrome-mv3 && \
-zip -r chrome-mv3.zip chrome-mv3 && \
-mv chrome-mv3.zip ../releases/paymore-chrome-v{VERSION}.zip && \
+zip -r paymore-chrome-v{VERSION}-packed.zip paymore-chrome && \
+zip -r paymore-chrome.zip paymore-chrome && \
+mv paymore-chrome.zip ../releases/paymore-chrome-v{VERSION}.zip && \
 cd ..
 
 # Update releases/releases.md (manual edit)
