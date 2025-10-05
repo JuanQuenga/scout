@@ -3,142 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <title>PayMore Tools</title>
-    <link rel="stylesheet" href="./assets/styles/tailwind.css" />
-    <style>
-      html,
-      body {
-        height: 100%;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        background: #0c0a09;
-        color: #e7e5e4;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }
-      .hdr {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 8px 16px;
-        border-bottom: 1px solid #292524;
-        background: linear-gradient(135deg, #1c1917 0%, #0f0f0f 100%);
-        flex-shrink: 0;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-      }
-      .logo {
-        height: 20px;
-        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-      }
-      .header-content {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex: 1;
-        justify-content: flex-end;
-      }
-      .header-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: #fafaf9;
-        margin: 0;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-      }
-      .settings-btn {
-        padding: 6px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .settings-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.2);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      }
-      .settings-btn svg {
-        width: 16px;
-        height: 16px;
-        color: #d6d3d1;
-      }
-      #chat {
-        height: calc(100% - 56px);
-        display: flex;
-        flex-direction: column;
-      }
-      #msgs {
-        flex: 1;
-        overflow: auto;
-        padding: 10px;
-      }
-      #row {
-        display: flex;
-        gap: 8px;
-        padding: 8px;
-        border-top: 1px solid #292524;
-      }
-      #inp {
-        flex: 1;
-        background: #0c0a09;
-        color: #e7e5e4;
-        border: 1px solid #44403c;
-        border-radius: 8px;
-        padding: 8px;
-      }
-      button {
-        background: #292524;
-        color: #e7e5e4;
-        border: 1px solid #44403c;
-        border-radius: 8px;
-        padding: 8px 10px;
-        cursor: pointer;
-      }
-      .msg {
-        margin-bottom: 10px;
-      }
-      .who {
-        font-size: 11px;
-        color: #78716c;
-        margin-bottom: 2px;
-      }
-      .bubble {
-        background: #1c1917;
-        border: 1px solid #292524;
-        border-radius: 8px;
-        padding: 8px;
-        white-space: pre-wrap;
-      }
-      #frame {
-        width: 100%;
-        height: calc(100% - 56px - 36px);
-        border: 0;
-        display: block;
-        background: #0c0a09;
-        flex: 1;
-        min-height: 0;
-      }
-      #tool-header {
-        padding: 8px 12px;
-        background: #1c1917;
-        border-bottom: 1px solid #292524;
-        font-size: 12px;
-        color: #78716c;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-      #current-tool {
-        display: block;
-      }
-    </style>
+    <link rel="stylesheet" href="./sidepanel.css" />
   </head>
   <body>
     <div class="hdr">
@@ -170,18 +35,12 @@
       </div>
     </div>
     <div id="tool-header">
-      <span id="current-tool">Loading...</span>
+      <span id="current-tool">Controller Testing</span>
     </div>
-    <iframe
-      id="frame"
-      src="about:blank"
-      allow="camera *; clipboard-write *; autoplay *;"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-    ></iframe>
     <div
       id="controller-testing-container"
-      style="display: none; height: calc(100% - 56px - 36px); width: 100%"
+      style="height: calc(100% - 56px - 36px); width: 100%"
     ></div>
-    <script type="module" src="./main.ts"></script>
+    <script type="module" src="./main.tsx"></script>
   </body>
 </html>

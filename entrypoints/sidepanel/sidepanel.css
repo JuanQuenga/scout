@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+/* Light theme variables for sidepanel content (after header) */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 98%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --primary: 142 76% 36%;
+  --primary-foreground: 355 100% 97%;
+  --secondary: 210 40% 98%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --accent: 210 40% 98%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 142 76% 36%;
+  --radius: 0.5rem;
+}
+
+/* Tailwind v4 theme tokens mapped to CSS variables */
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-ring: hsl(var(--ring));
+
+  --radius: var(--radius);
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #292524;
+  background: linear-gradient(135deg, #1c1917 0%, #0f0f0f 100%);
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.logo {
+  height: 20px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fafaf9;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.settings-btn {
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.settings-btn svg {
+  width: 16px;
+  height: 16px;
+  color: #d6d3d1;
+}
+
+#chat {
+  height: calc(100% - 56px);
+  display: flex;
+  flex-direction: column;
+}
+
+#msgs {
+  flex: 1;
+  overflow: auto;
+  padding: 10px;
+}
+
+#row {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border-top: 1px solid #292524;
+}
+
+#inp {
+  flex: 1;
+  background: #0c0a09;
+  color: #e7e5e4;
+  border: 1px solid #44403c;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+button {
+  background: #292524;
+  color: #e7e5e4;
+  border: 1px solid #44403c;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.msg {
+  margin-bottom: 10px;
+}
+
+.who {
+  font-size: 11px;
+  color: #78716c;
+  margin-bottom: 2px;
+}
+
+.bubble {
+  background: #1c1917;
+  border: 1px solid #292524;
+  border-radius: 8px;
+  padding: 8px;
+  white-space: pre-wrap;
+}
+
+#tool-header {
+  padding: 8px 12px;
+  background: #1c1917;
+  border-bottom: 1px solid #292524;
+  font-size: 12px;
+  color: #78716c;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#current-tool {
+  display: block;
+}
+
+#controller-testing-container {
+  height: calc(100% - 56px - 36px);
+  width: 100%;
+  display: block;
+  flex: 1;
+  min-height: 0;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}

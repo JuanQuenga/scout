@@ -1,25 +1,10 @@
-Paymore Chrome Extension — for Paymore staff
+Paymore Lite Chrome Extension — for Paymore staff
 
-The Paymore Chrome Extension is a lightweight tool designed specifically for Paymore staff to streamline inventory management and pricing operations. It provides quick access to essential tools including price checking, UPC searching, mobile scanning, controller testing, and market trend analysis through integrations with platforms like eBay, Price Charting, and Shopify. With context menu integration for instant product lookups and a comprehensive toolbar featuring help resources, top offers, and checkout pricing, the extension enhances productivity for e-commerce workflows. Users can sign in with their @paymore.com email to access personalized features and support.
+The Paymore Lite Chrome Extension is a streamlined browser extension designed specifically for Paymore staff to enhance productivity with quick navigation and search capabilities. This lite version focuses on core functionality, providing a powerful command palette interface for instant access to bookmarks, browsing history, open tabs, and multi-platform search. Built with efficiency in mind, it integrates with platforms like PayMore, Google, Amazon, Best Buy, eBay, Price Charting, YouTube, GitHub, and Twitter/X. With Quick Links integration from Google Sheets and customizable command sources, the extension streamlines daily workflows for Paymore staff.
 
-## What's New (Since v1.0.4)
+### v1.0.0 - Initial Lite Release
 
-### v1.0.8 - Better Search & Navigation
-
-We've it even easier to find what you need quickly:
-
-- **Switch search providers on the fly** - When you're in the command menu, you can now see and switch between different search engines (like switching from Google to eBay mid-search)
-- **Visual search indicators** - Active search providers now show a green badge so you know exactly what you're searching with
-- **Smarter Quick Links sorting** - Warranty links now appear first in the list, making them easier to find when you need them
-- **Updated keyboard shortcut** - The toolbar toggle is now `CMD+Shift+L` (Mac) or `CTRL+Shift+L` (Windows/Linux) - easier to remember!
-
-### v1.0.7 - Maintenance & Improvements
-
-This release focused on keeping everything running smoothly with version updates and stability improvements.
-
-### v1.0.6 - Command Menu Popup
-
-The biggest update yet! We added a powerful command menu that saves you tons of time:
+This is the first release of Paymore Lite, featuring:
 
 - **Command Menu** - Press `CMD+Shift+K` to open an Arc-style command palette that gives you instant access to everything
 - **Your bookmarks at your fingertips** - Quickly access your 20 most recently saved bookmarks
@@ -29,31 +14,19 @@ The biggest update yet! We added a powerful command menu that saves you tons of 
 - **Quick Links integration** - Access all those useful links from our Google Sheets, cached for 30 minutes so they're always fast
 - **Keyboard shortcuts galore** - Multiple shortcuts to boost your productivity throughout the day
 
-### v1.0.5 - Bug Fixes & Polish
+Key Features:
 
-Minor fixes and updates to keep everything running smoothly.
-
-Toolbar tools:
-
-- **Help Center** — tutorials & support
-- **Top Offers** — calculate top offers with margins
-- **Checkout Prices** — view checkout pricing
-- **Minimum Requirements** — check item requirements
-- **Controller Testing** — test hardware controllers
-- **Mobile Scanner** — QR scanning session
-- **UPC Search** — search products by UPC
-- **Quick Links** — useful resources and shortcuts
-- **eBay Categories** — browse eBay categories (Taxonomy API)
-- **Price Charting** — view market price trends
-- **Shopify Storefront** — search Shopify inventory
-
-Context menu:
-
-- Right-click a product title or image and choose **Paymore Lookup** to instantly check price, view details, or add the item to inventory.
+- **Command Menu** - Press `CMD+Shift+K` to access all features quickly
+- **Bookmarks & History** - Access your 20 most recent bookmarks and last 30 visited pages
+- **Multi-Engine Search** - Search across 10 platforms from one interface
+- **Tab Management** - Switch between open tabs efficiently
+- **Quick Links** - Access useful resources from Google Sheets (cached for 30 minutes)
+- **Settings Page** - Press `CMD+Shift+O` to configure which command sources are enabled
 
 Get started:
 
 1. Install from the Chrome Web Store and pin the icon.
-2. Sign in with your `@paymore.com` email.
+2. Press `CMD+Shift+K` to open the command palette.
+3. Use `CMD+Shift+O` to customize your settings.
 
 Need help? Email support@paymore.com.

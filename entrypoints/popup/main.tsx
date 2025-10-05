@@ -1,11 +1,11 @@
 import { createRoot } from "react-dom/client";
-import CMDKPopup from "./CMDKPopup";
+import CMDKPopup from "../../src/components/popups/CMDKPopup";
 import "../../src/components/cmdk-palette/styles.css";
 
 /**
  * @fileoverview PayMore Chrome Extension Popup Script
  * @description CMDK Command Palette Popup
- * @version 2.0.0
+ * @version 1.0.0
  * @author PayMore Team
  * @license MIT
  */

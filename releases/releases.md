@@ -1,203 +1,79 @@
-# Paymore Chrome Extension Releases
+# Paymore Chrome Lite Extension Releases
 
-Download the latest and previous versions of the Paymore Chrome Extension.
+Download the latest version of the Paymore Chrome Lite Extension.
 
 ## Latest Release
 
-### v1.0.8 (Current)
+### v1.0.0 (Current)
 
-**Release Date:** October 04, 2025
-**Download:** [paymore-chrome-v1.0.8.zip](./paymore-chrome-v1.0.8.zip)
+**Release Date:** October 05, 2025
+**Download:** [paymore-chrome-lite-v1.0.0.zip](./paymore-chrome-lite-v1.0.0.zip)
 
 **What's New:**
+
+This is the first release of Paymore Lite, a streamlined browser extension designed for Paymore staff focusing on quick navigation and search capabilities.
 
 ### Features
 
-- **Search Provider Switching**: When a search provider is active in CMDK, all available search providers are now displayed in the list, making it easy to switch between them
-- **Active Provider Indicator**: The currently active search provider shows a green "Active" badge
-- **Quick Links Reverse Sort**: Categories now display in reverse alphabetical order (Warranty first, then Z→A) while links within categories remain alphabetically sorted
+- **CMDK Command Palette**: Arc-style command palette accessible via `CMD+Shift+K` / `CTRL+Shift+K`
+- **Quick Links**: Cached custom links from Google Sheets with 30-minute caching for instant access
+- **Tab Switching**: Fast switching between open tabs with search and filter
+- **Search Providers**: 10 integrated search engines including PayMore, Google, Amazon, Best Buy, eBay, Price Charting, UPC Item DB, YouTube, GitHub, and Twitter/X
+- **Bookmarks & History**: Access your 20 most recent bookmarks and last 30 visited pages
+- **Settings Page**: Configure which command sources are enabled/disabled via `CMD+Shift+O` / `CTRL+Shift+O`
+- **Auto-Save Settings**: Changes to settings are automatically saved
+- **Smart Navigation**: Backspace to exit search providers, arrow keys for navigation
 
-### Improvements
-
-- **Backspace to Exit Search**: Press Backspace when the search query is empty to deactivate the current search provider
-- **Keyboard Shortcut Update**: Changed toolbar toggle shortcut from `CMD+Shift+H` to `CMD+Shift+L` (Mac) / `CTRL+Shift+H` to `CTRL+Shift+L` (Windows/Linux)
-- **Build Output Optimization**: Simplified build output directory structure to `.output/paymore-chrome/{files}` (removed nested `chrome-mv3` folder)
-- **Settings Button Fix**: Corrected settings toolbar button to properly open options popup using the action API
-- **Updated Tooltips**: Toolbar buttons now show keyboard shortcuts in tooltips (Dismiss: ⌘⇧L, Settings: ⌘⇧O)
-
-### Bug Fixes
-
-- Fixed CMDK settings tool handler to use correct message format (`action` instead of `type`)
-- Removed duplicate settings button from toolbar scroll area
-- Corrected build configuration to prevent double-nested output directories
-
-### Installation
-
-1. Download [paymore-chrome-v1.0.8.zip](./paymore-chrome-v1.0.8.zip)
-2. Unzip the file
-3. Open Chrome and navigate to `chrome://extensions/`
-4. Enable "Developer mode" (toggle in top right)
-5. Click "Load unpacked"
-6. Select the unzipped `paymore-chrome` folder
-
-Note: The packed version for Chrome Web Store submission is located at `.output/paymore-chrome-v1.0.8-packed.zip`
-
----
-
-## Previous Releases
-
-### v1.0.7
-
-**Release Date:** October 04, 2025
-**Download:** [paymore-chrome-v1.0.7.zip](./paymore-chrome-v1.0.7.zip)
-
-**What's New:**
-
-### Features
-
-- Version bump and maintenance release
-
-### Improvements
-
-- Updated version numbers across configuration files
-
-### Bug Fixes
-
-- General maintenance and stability improvements
-
-### Installation
-
-1. Download [paymore-chrome-v1.0.7.zip](./paymore-chrome-v1.0.7.zip)
-2. Unzip the file
-3. Open Chrome and navigate to `chrome://extensions/`
-4. Enable "Developer mode" (toggle in top right)
-5. Click "Load unpacked"
-6. Select the unzipped `paymore-chrome` folder
-
-Note: The packed version for Chrome Web Store submission is located at `.output/paymore-chrome-v1.0.7-packed.zip`
-
-### v1.0.6
-
-**Release Date:** October 04, 2025
-**Download:** [paymore-chrome-v1.0.6.zip](./paymore-chrome-v1.0.6.zip)
-
-**What's New:**
-
-**🎉 CMDK Command Palette (Major Feature)**
-
-- Arc-style command palette accessible via `CMD+Shift+K` / `CTRL+Shift+K`
-- Quick Links from Google Sheets with 30-minute caching
-- Tab switching with search and filter
-- Bookmarks integration (20 most recent)
-- Recent browsing history (last 30 pages)
-- 10 search providers: PayMore, Google, Amazon, Best Buy, eBay, Price Charting, UPC Item DB, YouTube, GitHub, Twitter/X
-- All toolbar tools accessible via CMDK
-- Smart arrow key navigation with "return to previous tab" feature
-- Green accent theme throughout
-- Loading skeletons for smooth UX
-- Improved empty states with helpful messages
-
-**⌨️ Keyboard Shortcuts**
+### Keyboard Shortcuts
 
 - `CMD+Shift+K` / `CTRL+Shift+K` - Open CMDK popup
-- `CMD+Shift+T` / `CTRL+Shift+T` - Toggle toolbar visibility with slide animation
-- `CMD+Shift+O` / `CTRL+Shift+O` - Open extension options
+- `CMD+Shift+O` / `CTRL+Shift+O` - Open settings page
 
-**🎨 UI/UX Improvements**
+### Installation
 
-- CMDK now opens as extension popup (no CSS conflicts)
-- Toolbar slide-in/slide-out animations restored
-- Green accent colors across all components
-- Better empty state messaging
-- Skeleton loading for Quick Links
+1. Download [paymore-chrome-lite-v1.0.0.zip](./paymore-chrome-lite-v1.0.0.zip)
+2. Unzip the file
+3. Open Chrome and navigate to `chrome://extensions/`
+4. Enable "Developer mode" (toggle in top right)
+5. Click "Load unpacked"
+6. Select the unzipped `paymore-chrome-lite` folder
 
-**🔧 Technical Improvements**
-
-- CSV links cached in Chrome storage (instant load after first fetch)
-- Background refresh for Quick Links
-- Bookmarks and history permissions added
-- Display order: Quick Links → Tabs → Tools → Bookmarks → History
-- Warranty category always appears first in Quick Links
-- eBay search uses sold listings URL from context menu
-
-**📚 Documentation**
-
-- Updated CMDK_README.md with complete feature documentation
-- Deleted implementation plan (merged into README)
-- Added usage examples and troubleshooting guide
-
-## Previous Releases
-
-### v1.0.5
-
-**Release Date:** October 03, 2025
-**Download:** [paymore-chrome-v1.0.5.zip](./paymore-chrome-v1.0.5.zip)
-
-**What's New:**
-
-- Patch release: minor fixes and dependency updates
-- Updated package version to v1.0.5
-
-### v1.0.4
-
-**Release Date:** October 03, 2025
-**Download:** [paymore-chrome-v1.0.4.zip](./paymore-chrome-v1.0.4.zip)
-
-**What's New:**
-
-- Bug fixes and stability improvements
-- Minor UI tweaks
-
-### v1.0.0
-
-**Release Date:** October 03, 2025
-**Download:** [paymore-chrome-v1.0.0.zip](./paymore-chrome-v1.0.0.zip)
-
-**What's New:**
-
-- Stable release
-- All core features implemented
-- Bug fixes and performance improvements
+Note: The packed version for Chrome Web Store submission is located at `.output/paymore-chrome-lite-v1.0.0-packed.zip`
 
 ## Installation Instructions
 
-1. Download `paymore-chrome-v1.0.7.zip`
+1. Download `paymore-chrome-lite-v1.0.0.zip`
 2. Extract the ZIP file to a folder on your computer
 3. Open Chrome and go to `chrome://extensions/`
 4. Enable "Developer mode" in the top right
 5. Click "Load unpacked"
-6. Navigate to the extracted folder and select the `chrome-mv3/` folder
+6. Navigate to the extracted folder and select it
 7. The extension will be installed and ready to use
 
 ### For Chrome Web Store Submission
 
-The packed version is located at `.output/paymore-chrome-v1.0.7-packed.zip` and is ready for Chrome Web Store upload via the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
+The packed version is ready for Chrome Web Store upload via the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
 
 ## Keyboard Shortcuts Setup
 
 After installation, you can customize keyboard shortcuts:
 
 1. Go to `chrome://extensions/shortcuts`
-2. Find "Paymore" extension
+2. Find "Paymore Lite" extension
 3. Customize shortcuts for:
    - Open CMDK popup (default: `CMD+Shift+K`)
-   - Toggle toolbar visibility (default: `CMD+Shift+T`)
-   - Open extension options (default: `CMD+Shift+O`)
+   - Open settings page (default: `CMD+Shift+O`)
 
 ## Notes
 
 - Always download from official releases to ensure security
-- For the latest features and bug fixes, use the current release (v1.0.7)
 - CMDK requires `bookmarks` and `history` permissions (granted on install)
 - Quick Links are cached for 30 minutes in Chrome storage
 - If you encounter issues, check the [CMDK_README.md](../CMDK_README.md) for troubleshooting
+- Settings changes are automatically saved
 
 ## Changelog Summary
 
-**v1.0.7** - Version bump and maintenance release
-**v1.0.6** - CMDK Command Palette, Keyboard Shortcuts, Bookmarks/History Integration
-**v1.0.5** - Patch release with minor fixes
-**v1.0.4** - Bug fixes and stability improvements
-**v1.0.0** - Stable release with all core features
+**v1.0.0** - Initial Lite Release with CMDK Command Palette, Settings Page, and Multi-Platform Search
 
 For questions or support, contact support@paymore.com

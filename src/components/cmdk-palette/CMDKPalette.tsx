@@ -52,20 +52,37 @@ export function CMDKPalette({
   );
   const [providerQuery, setProviderQuery] = useState("");
   const [userNavigated, setUserNavigated] = useState(false);
+  const [enabledSources, setEnabledSources] = useState({
+    tabs: true,
+    bookmarks: true,
+    history: true,
+    quickLinks: true,
+    tools: true,
+    searchProviders: true,
+  });
   const trimmedSearch = search.trim();
 
   useEffect(() => {
+    // Load settings from chrome storage
+    chrome.storage.sync.get(["cmdkSettings"], (result: any) => {
+      if (result.cmdkSettings?.enabledSources) {
+        setEnabledSources(result.cmdkSettings.enabledSources);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     if (isOpen) {
-      loadTabs();
-      loadCSVLinks();
-      loadBookmarks();
-      loadHistory();
+      if (enabledSources.tabs) loadTabs();
+      if (enabledSources.quickLinks) loadCSVLinks();
+      if (enabledSources.bookmarks) loadBookmarks();
+      if (enabledSources.history) loadHistory();
       setSearch("");
       setActiveProvider(null);
       setProviderQuery("");
       setUserNavigated(false);
     }
-  }, [isOpen]);
+  }, [isOpen, enabledSources]);
 
   const loadTabs = async () => {
     const allTabs = await TabManager.getAllTabs();
@@ -257,19 +274,21 @@ export function CMDKPalette({
     }
   };
 
-  const filteredTabs = activeProvider
+  const filteredTabs = activeProvider || !enabledSources.tabs
     ? []
     : TabManager.filterTabs(tabs, search);
-  const filteredCSVLinks = activeProvider
+  const filteredCSVLinks = activeProvider || !enabledSources.quickLinks
     ? []
     : filterCSVLinks(csvLinks, search);
-  const filteredBookmarks = activeProvider
+  const filteredBookmarks = activeProvider || !enabledSources.bookmarks
     ? []
     : filterBookmarks(bookmarks, search);
-  const filteredHistory = activeProvider ? [] : filterHistory(history, search);
+  const filteredHistory = activeProvider || !enabledSources.history
+    ? []
+    : filterHistory(history, search);
 
   // Filter toolbar tools by search
-  const filteredTools = activeProvider
+  const filteredTools = activeProvider || !enabledSources.tools
     ? []
     : TOOLBAR_TOOLS.filter((tool) => {
         if (!trimmedSearch) return true;
@@ -554,7 +573,7 @@ export function CMDKPalette({
             )}
 
             {/* Search providers */}
-            {trimmedSearch && (
+            {trimmedSearch && enabledSources.searchProviders && (
               <Command.Group heading="Search" className="cmdk-group">
                 {searchProviders
                   .filter((provider) =>

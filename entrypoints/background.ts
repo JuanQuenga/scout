@@ -1,5 +1,5 @@
 /**
- * PayMore Chrome Extension Background Service Worker
+ * PayMore Lite Chrome Extension Background Service Worker
  * Migrated to WXT background entrypoint.
  */
 // @ts-nocheck
@@ -10,31 +10,25 @@ import { defineBackground } from "wxt/utils/define-background";
 export default defineBackground({
   main() {
     /**
-     * @fileoverview PayMore Chrome Extension Background Service Worker
+     * @fileoverview PayMore Lite Chrome Extension Background Service Worker
      * @description Manages extension lifecycle, message handling, and core functionality
      * @version 1.0.0
      * @author PayMore Team
      * @license MIT
      *
-     * This service worker handles:
+     * This lite service worker handles:
      * - Extension installation and startup
      * - Message routing between content scripts and popup
-     * - Chat polling and session management
-     * - Side panel state management
-     * - Storage configuration
+     * - Side panel state management for controller testing
+     * - Basic storage configuration
      * - Tab communication and injection
+     * - Controller detection and testing
      */
 
     // Paymore extension background service worker (MV3) with verbose debug logging
 
     /** @type {boolean} Debug mode flag for console logging */
     let DEBUG = true;
-
-    /** @type {number|null} Timer for chat polling functionality */
-    let CHAT_POLL_TIMER = null;
-
-    /** @type {number} Timestamp of last chat activity */
-    let LAST_CHAT_TS = 0;
 
     /**
      * @type {Map<number, {open: boolean, tool: string}>}
@@ -123,6 +117,17 @@ export default defineBackground({
           const err = chrome.runtime.lastError;
           if (err) log("openPopup error", err.message);
         });
+      } else if (command === "open-controller-testing") {
+        log("Controller testing shortcut triggered");
+        // Open the controller testing sidepanel
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          const active = tabs && tabs[0];
+          if (active?.id) {
+            toggleSidePanelForTab(active.id, "controller-testing");
+          } else {
+            log("open-controller-testing: no active tab id");
+          }
+        });
       }
     });
 
@@ -203,32 +208,12 @@ export default defineBackground({
         autoShowModal: true,
         vibrationEnabled: true,
         debugLogs: true,
-        scannerBaseUrl: "https://paymore-extension.vercel.app",
-        // Add extension-wide store settings
-        pmSelectedStore: "", // "Taylor" or "Southgate"
-        pmStoreRoom: "", // "taylor-store" or "southgate-store"
-        // Add new site management settings
-        disabledSites: [],
-        currentSiteEnabled: true,
-        globalEnabled: true,
-        selectedModel: "multilingual-e5-small",
       });
     });
 
     /**
-     * Handles extension startup and configuration loading
-     * Updates scanner base URL and initializes debug settings
-     */
-    chrome.runtime.onStartup?.addListener(() => {
-      log("onStartup - updating scannerBaseUrl");
-      chrome.storage.local.set({
-        scannerBaseUrl: "https://paymore-extension.vercel.app",
-      });
-    });
-
-    /**
-     * Handles extension startup and initializes chat polling
-     * Loads debug configuration and starts chat functionality
+     * Handles extension startup and initializes controller detection
+     * Loads debug configuration and starts controller functionality
      */
     chrome.runtime.onStartup?.addListener(() => {
       log("onStartup");
@@ -236,8 +221,6 @@ export default defineBackground({
         DEBUG = !!cfg.debugLogs;
         log("Debug flag loaded", DEBUG);
       });
-      // Kick off chat poller
-      tryStartChatPoller();
       // Start controller detection
       startControllerDetection();
     });
@@ -502,7 +485,6 @@ export default defineBackground({
             sendResponse({ success: false, error: "missing_tool" });
             break;
           }
-          // For chat, open a small chromeless window near the click so it doesn't cover the toolbar
           openToolNear(tool, anchor, 0.4);
           sendResponse({ success: true });
           break;
@@ -533,10 +515,6 @@ export default defineBackground({
           break;
         case "disableControllerDetection":
           stopControllerDetection();
-          sendResponse({ success: true });
-          break;
-        case "openCheckoutPrices":
-          openCheckoutPrices();
           sendResponse({ success: true });
           break;
         case "openUrl": {
@@ -710,22 +688,12 @@ export default defineBackground({
           log("pong");
           sendResponse({ pong: true, time: Date.now() });
           break;
-        case "openQRScanner":
-          openQRScanner();
-          sendResponse({ success: true });
-          break;
         case "openFloatingToolbar":
           openFloatingToolbar();
           sendResponse({ success: true });
           break;
-        case "openPaytonSidepanel": {
-          // Backward compat: treat as toggle for chat tool
-          toggleSidePanelForTab(sender?.tab?.id, "chat");
-          sendResponse({ success: true });
-          break;
-        }
         case "toggleSidepanelTool": {
-          const tool = message?.tool || "chat";
+          const tool = message?.tool || "controller-testing";
           toggleSidePanelForTab(sender?.tab?.id, tool);
           sendResponse({ success: true });
           break;
@@ -734,79 +702,6 @@ export default defineBackground({
           goBackToPOS();
           sendResponse({ success: true });
           break;
-        case "qrCodeScanned":
-          handleQRCodeScanned(message.data, message.timestamp);
-          sendResponse({ success: true });
-          break;
-        case "closeQRScanner":
-          // QR Scanner is now handled by web service, no local window to close
-          sendResponse({ success: true });
-          break;
-        case "chatAttention": {
-          const important = !!message?.important;
-          const mText = (message?.text || "").toString();
-          const mUser = (message?.user || "").toString();
-          const mRoom = (message?.room || "team").toString();
-          broadcastChatAttention(important);
-          // For important messages, open a minimal alert window once with message payload
-          if (important && mText) {
-            try {
-              openAlertWindow({ text: mText, user: mUser, room: mRoom });
-            } catch (_) {}
-          }
-          sendResponse({ success: true });
-          break;
-        }
-        case "setStore": {
-          const store = message?.store;
-          const room = message?.room;
-          if (store) {
-            chrome.storage.local.set(
-              {
-                pmSelectedStore: store,
-                pmStoreRoom:
-                  room ||
-                  (store === "Taylor" ? "taylor-store" : "southgate-store"),
-              },
-              () => {
-                log("Store updated:", store, "Room:", room);
-                // Broadcast store change to all tabs
-                chrome.tabs.query({}, (tabs) => {
-                  tabs.forEach((t) => {
-                    try {
-                      chrome.tabs.sendMessage(t.id, {
-                        action: "pm-store-changed",
-                        store: store,
-                        room:
-                          room ||
-                          (store === "Taylor"
-                            ? "taylor-store"
-                            : "southgate-store"),
-                      });
-                    } catch (_) {}
-                  });
-                });
-              }
-            );
-            sendResponse({ success: true, store, room });
-          } else {
-            sendResponse({ success: false, error: "missing_store" });
-          }
-          break;
-        }
-        case "getStore": {
-          chrome.storage.local.get(
-            ["pmSelectedStore", "pmStoreRoom"],
-            (result) => {
-              sendResponse({
-                success: true,
-                store: result.pmSelectedStore || "",
-                room: result.pmStoreRoom || "",
-              });
-            }
-          );
-          return true; // Keep message channel open for async response
-        }
         case "checkSiteStatus": {
           const domain = message?.domain;
           if (!domain) {
@@ -898,16 +793,6 @@ export default defineBackground({
           });
           return true; // Keep message channel open for async response
         }
-        case "checkoutPricesDataUpdated": {
-          log("Checkout prices data updated", message?.data);
-          // Store the updated data and notify any listening components
-          chrome.storage.local.set({
-            checkoutPricesData: message?.data,
-            checkoutPricesLastUpdated: Date.now(),
-          });
-          sendResponse({ success: true });
-          break;
-        }
         default:
           log("Unknown action", message?.action);
           sendResponse({ ok: false, error: "unknown_action" });
@@ -915,33 +800,8 @@ export default defineBackground({
       return true; // keep the message channel open if needed
     });
 
-    // React to settings changes for chat notifications
-    try {
-      chrome.storage.onChanged.addListener((changes, area) => {
-        if (area !== "local") return;
-        if (changes.pmChatAttnAll || changes.scannerBaseUrl) {
-          tryStartChatPoller();
-        }
-      });
-    } catch (_) {}
-
-    // QR Scanner functionality - now handled by web service
-
-    function openCheckoutPrices() {
-      log("Opening Checkout Prices from web service");
-      // Use sidebar instead of action popup
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const active = tabs && tabs[0];
-        if (active?.id) {
-          toggleSidePanelForTab(active.id, "checkout-prices");
-        } else {
-          log("openCheckoutPrices: no active tab id");
-        }
-      });
-    }
-
     function openControllerTest() {
-      log("Opening Controller Test from web service");
+      log("Opening Controller Test");
       // Use sidebar instead of action popup
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const active = tabs && tabs[0];
@@ -954,7 +814,7 @@ export default defineBackground({
     }
 
     function openFloatingToolbar() {
-      log("Opening Floating Toolbar from web service");
+      log("Opening Floating Toolbar");
       openInActionPopup("floating-toolbar");
     }
 
@@ -1002,56 +862,6 @@ export default defineBackground({
       });
     }
 
-    function openQRScanner(tabId) {
-      log("Opening QR Scanner in side panel");
-      const openFor = (id) => {
-        try {
-          // Enable and open immediately to satisfy user-gesture requirement
-          try {
-            chrome.sidePanel.setOptions({
-              enabled: true,
-              path: "sidepanel.html",
-            });
-          } catch (_) {}
-          try {
-            chrome.sidePanel.open({ tabId: id }, () => {
-              const err = chrome.runtime.lastError;
-              if (err) {
-                log("sidePanel open lastError", err.message);
-                // Fallback: open chat tool in popup window
-                if (tool === "chat") {
-                  openToolInCenteredWindow("chat", 0.85);
-                }
-              }
-            });
-          } catch (e) {
-            log("sidePanel open error", e?.message || e);
-          }
-          // Update desired tool asynchronously (sidepanel listens to storage changes)
-          try {
-            chrome.storage.local.set({
-              sidePanelTool: "qr-session",
-              sidePanelUrl: null,
-            });
-          } catch (_) {}
-        } catch (e) {
-          log("openQRScanner error", e?.message || e);
-        }
-      };
-      const id = Number(tabId) || null;
-      if (id) return openFor(id);
-      // Fallback: resolve active tab then open
-      try {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          const active = tabs && tabs[0];
-          if (active?.id) openFor(active.id);
-          else log("openQRScanner: no active tab id");
-        });
-      } catch (e) {
-        log("openQRScanner fallback error", e?.message || e);
-      }
-    }
-
     function toggleSidePanelForTab(tabId, tool) {
       try {
         const openForTab = (id) => {
@@ -1082,11 +892,6 @@ export default defineBackground({
               const err = chrome.runtime.lastError;
               if (err) {
                 log("sidePanel open lastError", err.message);
-                // Fallback for chat: open in popup window
-                if (tool === "chat") {
-                  openToolInCenteredWindow("chat", 0.85);
-                  return;
-                }
               } else {
                 SIDE_PANEL_STATE.set(id, { open: true, tool });
                 log(`Sidepanel opened for tool: ${tool}`);
@@ -1123,22 +928,6 @@ export default defineBackground({
       }
     }
 
-    function handleQRCodeScanned(data, timestamp) {
-      log("QR Code scanned", { data, timestamp });
-
-      // Store the scanned data
-      chrome.storage.local.set({
-        lastScannedQR: { data, timestamp },
-      });
-
-      // Notify active tab about the scan
-      sendToActiveTab({
-        action: "qrCodeScanned",
-        data: data,
-        timestamp: timestamp,
-      });
-    }
-
     function arrayBufferToBase64(buffer) {
       let binary = "";
       const bytes = new Uint8Array(buffer);
@@ -1152,8 +941,6 @@ export default defineBackground({
 
     function toolToPath(tool) {
       switch (tool) {
-        case "checkout-prices":
-          return "/tools/checkout-prices";
         case "controller-testing":
           return "/tools/controller-testing";
         case "price-charting":
@@ -1164,16 +951,12 @@ export default defineBackground({
           return "/tools/scout";
         case "settings":
           return "/tools/settings";
-        case "qr-session":
-          return "/tools/qr-session";
         case "floating-toolbar":
           return "/tools/floating-toolbar";
         case "help":
           return "/tools/help";
         case "min-reqs":
           return "/tools/min-reqs";
-        case "chat":
-          return "/tools/chat";
         case "shopify-search":
           return "/tools/shopify/search";
         case "shopify-storefront":
@@ -1193,13 +976,10 @@ export default defineBackground({
     function openInActionPopup(tool) {
       chrome.storage.local.get(
         {
-          scannerBaseUrl: "https://paymore-extension.vercel.app",
-          pmChatName: "",
-          pcDebug: false,
           toolsPassword: "",
         },
         (cfg) => {
-          const baseUrl = (cfg?.scannerBaseUrl || "").replace(/\/$/, "");
+          const baseUrl = "https://paymore-extension.vercel.app";
           const path = toolToPath(tool);
           let url = `${baseUrl}${path}`;
 
@@ -1227,31 +1007,9 @@ export default defineBackground({
               url = `${url}${url.includes("?") ? "&" : "?"}pm_w=460&pm_h=560`;
             }
           }
-          // Open Price Charting as a large centered chromeless popup (alert-style)
-          if (tool === "price-charting") {
-            try {
-              const u = new URL(url);
-              if (cfg?.pcDebug) u.searchParams.set("pc_debug", "1");
-              u.searchParams.set("pm_window", "1");
-              u.searchParams.set("pm_wp", "0.95");
-              u.searchParams.set("pm_hp", "0.9");
-              u.searchParams.set("pm_margin", "8");
-              url = u.href;
-            } catch (_) {
-              url = `${url}${
-                url.includes("?") ? "&" : "?"
-              }pm_window=1&pm_wp=0.95&pm_hp=0.9&pm_margin=8${
-                cfg?.pcDebug ? "&pc_debug=1" : ""
-              }`;
-            }
-          }
-          // If opening chat, append pm_chat_name param from storage
+          // If pm_window=1 is present, open as chromeless popup window with optional sizing/position
           try {
             const u = new URL(url);
-            if (tool === "chat" && cfg?.pmChatName) {
-              u.searchParams.set("pm_chat_name", cfg.pmChatName);
-            }
-            // If pm_window=1 is present, open as chromeless popup window with optional sizing/position
             const windowMode = u.searchParams.get("pm_window") === "1";
             if (windowMode) {
               const wp = parseFloat(u.searchParams.get("pm_wp") || "0") || null;
@@ -1412,12 +1170,10 @@ export default defineBackground({
     function openToolInCenteredWindow(tool, percent) {
       chrome.storage.local.get(
         {
-          scannerBaseUrl: "https://paymore-extension.vercel.app",
-          pmChatName: "",
           toolsPassword: "",
         },
         (cfg) => {
-          const baseUrl = (cfg?.scannerBaseUrl || "").replace(/\/$/, "");
+          const baseUrl = "https://paymore-extension.vercel.app";
           const path = toolToPath(tool);
           let url = `${baseUrl}${path}${
             path.includes("?") ? "&" : "?"
@@ -1435,15 +1191,6 @@ export default defineBackground({
               }password=${encodeURIComponent(cfg.toolsPassword)}`;
             }
           }
-
-          // add chat name if applicable
-          try {
-            if (tool === "chat" && cfg?.pmChatName) {
-              const u = new URL(url);
-              u.searchParams.set("pm_chat_name", cfg.pmChatName);
-              url = u.href;
-            }
-          } catch (_) {}
           try {
             chrome.system.display.getInfo((displays) => {
               // Use primary display workArea (excludes taskbars)
@@ -1491,116 +1238,13 @@ export default defineBackground({
       );
     }
 
-    let CURRENT_ALERT_POPUP_ID = null;
-    let LAST_ALERT_FINGERPRINT = null;
-    let LAST_ALERT_AT = 0;
-    function openAlertWindow(payload) {
-      // Open a small chromeless popup pointed at the alert page with query params
-      chrome.storage.local.get(
-        {
-          scannerBaseUrl: "https://paymore-extension.vercel.app",
-          toolsPassword: "",
-        },
-        (cfg) => {
-          const baseUrl = (cfg?.scannerBaseUrl || "").replace(/\/$/, "");
-          try {
-            // Dedup by fingerprint and cooldown
-            const text = (payload?.text || "").toString();
-            const user = (payload?.user || "").toString();
-            const room = (payload?.room || "team").toString();
-            const fp = `${room}|${user}|${text}`.slice(0, 512);
-            const now = Date.now();
-            if (LAST_ALERT_FINGERPRINT === fp && now - LAST_ALERT_AT < 5000) {
-              log("suppressing duplicate alert within cooldown");
-              return;
-            }
-            LAST_ALERT_FINGERPRINT = fp;
-            LAST_ALERT_AT = now;
-            const u = new URL(`${baseUrl}/tools/chat/alert`);
-
-            // Add password if configured
-            if (cfg?.toolsPassword) {
-              u.searchParams.set("password", cfg.toolsPassword);
-            }
-
-            if (text) u.searchParams.set("text", text);
-            if (user) u.searchParams.set("user", user);
-            if (room) u.searchParams.set("room", room);
-            u.searchParams.set("pm_window", "1");
-            u.searchParams.set("pm_w", "420");
-            u.searchParams.set("pm_h", "220");
-            const url = u.href;
-            chrome.system.display.getInfo((displays) => {
-              const d = (displays && displays[0] && displays[0].workArea) || {
-                left: 0,
-                top: 0,
-                width: 1280,
-                height: 800,
-              };
-              const w = 420;
-              const h = 220;
-              const left = Math.max(0, d.left + Math.floor((d.width - w) / 2));
-              const top = Math.max(0, d.top + Math.floor((d.height - h) / 3));
-              const createWindow = () =>
-                chrome.windows.create(
-                  {
-                    url,
-                    type: "popup",
-                    width: w,
-                    height: h,
-                    left,
-                    top,
-                    focused: true,
-                  },
-                  (win) => {
-                    CURRENT_ALERT_POPUP_ID = win?.id || null;
-                    ensureAutoCloseListener();
-                  }
-                );
-              if (CURRENT_ALERT_POPUP_ID) {
-                try {
-                  chrome.windows.update(
-                    CURRENT_ALERT_POPUP_ID,
-                    {
-                      state: "normal",
-                      width: w,
-                      height: h,
-                      left,
-                      top,
-                      focused: true,
-                    },
-                    (updated) => {
-                      const err = chrome.runtime.lastError;
-                      if (err || !updated) {
-                        CURRENT_ALERT_POPUP_ID = null;
-                        createWindow();
-                      }
-                    }
-                  );
-                } catch (_) {
-                  CURRENT_ALERT_POPUP_ID = null;
-                  createWindow();
-                }
-              } else {
-                createWindow();
-              }
-            });
-          } catch (e) {
-            log("openAlertWindow error", e?.message || e);
-          }
-        }
-      );
-    }
-
     function openToolNear(tool, anchor, percent) {
       chrome.storage.local.get(
         {
-          scannerBaseUrl: "https://paymore-extension.vercel.app",
-          pmChatName: "",
           toolsPassword: "",
         },
         (cfg) => {
-          const baseUrl = (cfg?.scannerBaseUrl || "").replace(/\/$/, "");
+          const baseUrl = "https://paymore-extension.vercel.app";
           const path = toolToPath(tool);
           let url = `${baseUrl}${path}${
             path.includes("?") ? "&" : "?"
@@ -1618,14 +1262,6 @@ export default defineBackground({
               }password=${encodeURIComponent(cfg.toolsPassword)}`;
             }
           }
-
-          try {
-            if (tool === "chat" && cfg?.pmChatName) {
-              const u = new URL(url);
-              u.searchParams.set("pm_chat_name", cfg.pmChatName);
-              url = u.href;
-            }
-          } catch (_) {}
           const ax = Math.max(0, Number(anchor?.x || 0));
           const ay = Math.max(0, Number(anchor?.y || 0));
           try {
@@ -1721,76 +1357,6 @@ export default defineBackground({
       } catch (e) {
         log("resizeFocusedPopup error", e?.message || e);
       }
-    }
-
-    function broadcastChatAttention(important) {
-      try {
-        chrome.tabs.query({}, (tabs) => {
-          tabs.forEach((t) => {
-            try {
-              chrome.tabs.sendMessage(t.id, {
-                action: "pm-chat:attention",
-                important: !!important,
-              });
-            } catch (_) {}
-          });
-        });
-      } catch (_) {}
-    }
-
-    function tryStartChatPoller() {
-      try {
-        // Chat polling disabled in development to avoid API errors
-        chrome.storage.local.get(
-          {
-            pmChatAttnAll: false, // Disabled by default
-            scannerBaseUrl: "https://paymore-extension.vercel.app",
-          },
-          (cfg) => {
-            const attnAll = !!cfg?.pmChatAttnAll;
-            // Chat polling is disabled by default to avoid API errors
-            if (!attnAll) {
-              if (CHAT_POLL_TIMER) {
-                clearInterval(CHAT_POLL_TIMER);
-                CHAT_POLL_TIMER = null;
-              }
-              return;
-            }
-            const base = (cfg?.scannerBaseUrl || "").replace(/\/$/, "");
-            const url = `${base}/api/chat`;
-            if (CHAT_POLL_TIMER) clearInterval(CHAT_POLL_TIMER);
-            const tick = async () => {
-              try {
-                const r = await fetch(url);
-                if (!r.ok) {
-                  // If API endpoint doesn't exist, don't spam errors
-                  if (r.status === 404) return;
-                  throw new Error(`HTTP ${r.status}`);
-                }
-                const j = await r.json();
-                const list = Array.isArray(j?.messages) ? j.messages : [];
-                const latestTs = list.reduce(
-                  (m, x) => Math.max(m, Number(x.ts || 0)),
-                  0
-                );
-                if (latestTs > LAST_CHAT_TS) {
-                  const newOnes = list.filter(
-                    (m) => Number(m.ts || 0) > LAST_CHAT_TS
-                  );
-                  const hasImportant = newOnes.some((m) => !!m.important);
-                  broadcastChatAttention(hasImportant);
-                  LAST_CHAT_TS = latestTs;
-                }
-              } catch (e) {
-                log("chat poll error", e?.message || e);
-              }
-            };
-            // Seed last timestamp to avoid storming on first run
-            LAST_CHAT_TS = Date.now();
-            CHAT_POLL_TIMER = setInterval(tick, 5000); // Reduced frequency
-          }
-        );
-      } catch (_) {}
     }
 
     /**

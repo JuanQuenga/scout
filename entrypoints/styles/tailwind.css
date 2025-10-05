@@ -4,3 +4,32 @@
 
 /* For content scripts that inject into host pages, you may want to disable preflight
    by building a separate CSS file with `corePlugins: { preflight: false }` */
+
+/* Theme tokens and CSS variables used across the sidepanel */
+:root {
+  --background: 12 10% 9%;
+  --foreground: 226 84% 95%;
+  --card: 12 10% 9%;
+  --card-foreground: 226 84% 95%;
+  --muted: 12 10% 15%;
+  --muted-foreground: 215 20% 65%;
+  --primary: 142 76% 36%;
+  --primary-foreground: 355 100% 97%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 142 76% 36%;
+}
+
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-ring: hsl(var(--ring));
+}
