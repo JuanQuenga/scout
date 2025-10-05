@@ -18,6 +18,26 @@ Key features:
 
 The project uses Tailwind CSS v4 for styling, TypeScript for type safety, and PNPM for package management.
 
+## Screenshots
+
+Here are some screenshots showcasing the key features of the Paymore Chrome Lite extension:
+
+### Command Menu
+
+![Command Menu](public/assets/screenshots/command-menu.jpg)
+
+### Context Menu
+
+![Context Menu](public/assets/screenshots/context-menu.jpg)
+
+### Controller Testing
+
+![Controller Testing](public/assets/screenshots/controller-testing.jpg)
+
+### Search Providers
+
+![Search Providers](public/assets/screenshots/search-providers.jpg)
+
 ## Keyboard Shortcuts
 
 The extension includes two keyboard shortcuts:
