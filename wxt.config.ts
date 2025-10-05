@@ -11,7 +11,7 @@ export default defineConfig({
   contentScripts: [
     {
       matches: ["<all_urls>"],
-      entries: ["content", "toolbar-mount"],
+      entries: ["content"],
     },
     {
       matches: ["*://pos.paymore.tech/inventory*"],
@@ -19,9 +19,9 @@ export default defineConfig({
     },
   ],
   manifest: {
-    name: "Paymore",
-    version: "1.0.8",
-    description: "Chrome extension for Paymore Employees.",
+    name: "Paymore Lite",
+    version: "1.0.0",
+    description: "Chrome extension for Paymore Employees (Lite Version).",
     permissions: [
       "storage",
       "tabs",
@@ -64,13 +64,6 @@ export default defineConfig({
           mac: "Command+Shift+O",
         },
         description: "Open extension options",
-      },
-      "toggle-toolbar": {
-        suggested_key: {
-          default: "Ctrl+Shift+L",
-          mac: "Command+Shift+L",
-        },
-        description: "Dismiss/show toolbar",
       },
     },
     // Expose toolbar and assets to content scripts

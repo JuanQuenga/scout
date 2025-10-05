@@ -1,8 +1,8 @@
 {
-  "name": "paymore-chrome",
-  "description": "Chrome extension for Paymore Employees.",
+  "name": "paymore-chrome-lite",
+  "description": "Chrome extension for Paymore Employees (Lite Version).",
   "private": true,
-  "version": "1.0.8",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",

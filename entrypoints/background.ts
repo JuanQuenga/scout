@@ -42,6 +42,11 @@ export default defineBackground({
      */
     const SIDE_PANEL_STATE = new Map(); // tabId -> { open: boolean, tool: string }
 
+    // Track controller connection state
+    let CONTROLLER_CONNECTED = false;
+    let CONTROLLER_CHECK_INTERVAL = null;
+    let LAST_CONTROLLER_COUNT = 0;
+
     const STORAGE_STATS_KEY = "grokStorageStats";
     const DEFAULT_STORAGE_STATS = {
       indexedPages: 0,
@@ -106,18 +111,18 @@ export default defineBackground({
 
     // Listen for keyboard commands
     chrome.commands.onCommand.addListener((command) => {
-      if (command === "toggle-toolbar") {
-        log("Toggle toolbar command triggered");
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          if (tabs.length > 0) {
-            chrome.tabs.sendMessage(tabs[0].id, { type: "TOGGLE_TOOLBAR" });
-          }
-        });
-      } else if (command === "open-options") {
+      if (command === "open-options") {
         log("Open options command triggered");
         openOptionsAsActionPopup().catch((error) =>
           log("openOptions command handler error", error)
         );
+      } else if (command === "_execute_action") {
+        log("Command popup shortcut triggered");
+        // Open the action popup which will show the CMDK palette
+        chrome.action.openPopup(() => {
+          const err = chrome.runtime.lastError;
+          if (err) log("openPopup error", err.message);
+        });
       }
     });
 
@@ -233,6 +238,8 @@ export default defineBackground({
       });
       // Kick off chat poller
       tryStartChatPoller();
+      // Start controller detection
+      startControllerDetection();
     });
 
     /**
@@ -513,6 +520,19 @@ export default defineBackground({
           break;
         case "triggerControllerTest":
           openControllerTest();
+          sendResponse({ success: true });
+          break;
+        case "checkControllerStatus":
+          // Check current controller status
+          checkForControllers();
+          sendResponse({ success: true, connected: CONTROLLER_CONNECTED });
+          break;
+        case "enableControllerDetection":
+          startControllerDetection();
+          sendResponse({ success: true });
+          break;
+        case "disableControllerDetection":
+          stopControllerDetection();
           sendResponse({ success: true });
           break;
         case "openCheckoutPrices":
@@ -1771,6 +1791,216 @@ export default defineBackground({
           }
         );
       } catch (_) {}
+    }
+
+    /**
+     * Creates an offscreen document for gamepad detection
+     * @returns {Promise<boolean>} Success status
+     */
+    async function createOffscreenDocument() {
+      // Check if offscreen document already exists
+      const existingContexts = await chrome.runtime.getContexts({
+        contextTypes: ["OFFSCREEN_DOCUMENT"],
+        documentUrls: [chrome.runtime.getURL("offscreen.html")],
+      });
+
+      if (existingContexts.length > 0) {
+        return true; // Already exists
+      }
+
+      try {
+        await chrome.offscreen.createDocument({
+          url: chrome.runtime.getURL("offscreen.html"),
+          reasons: ["DOM_SCRAPING"],
+          justification: "Gamepad detection requires access to Gamepad API",
+        });
+        log("Offscreen document created for gamepad detection");
+        return true;
+      } catch (error) {
+        log("Failed to create offscreen document:", error);
+        return false;
+      }
+    }
+
+    /**
+     * Starts monitoring for gamepad connections using offscreen document
+     */
+    async function startControllerDetection() {
+      log("Starting improved controller detection");
+
+      // Clear any existing interval
+      if (CONTROLLER_CHECK_INTERVAL) {
+        clearInterval(CONTROLLER_CHECK_INTERVAL);
+      }
+
+      // Create offscreen document for reliable gamepad detection
+      const offscreenCreated = await createOffscreenDocument();
+      if (!offscreenCreated) {
+        log(
+          "Failed to create offscreen document, controller detection may not work reliably"
+        );
+        // Fall back to the old method
+        startFallbackControllerDetection();
+        return;
+      }
+
+      // Initial check
+      checkForControllersWithOffscreen();
+
+      // Set up periodic checking
+      CONTROLLER_CHECK_INTERVAL = setInterval(() => {
+        checkForControllersWithOffscreen();
+      }, 1000); // Check every second for better responsiveness
+    }
+
+    /**
+     * Fallback controller detection method for when offscreen fails
+     */
+    function startFallbackControllerDetection() {
+      log("Using fallback controller detection");
+
+      // Set up periodic checking with the old method
+      CONTROLLER_CHECK_INTERVAL = setInterval(() => {
+        checkForControllersFallback();
+      }, 2000);
+    }
+
+    /**
+     * Checks for connected gamepads using offscreen document
+     */
+    async function checkForControllersWithOffscreen() {
+      try {
+        // Get the active tab
+        const tabs = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        if (tabs.length === 0) return;
+
+        const activeTab = tabs[0];
+
+        // Send message to offscreen document to check for gamepads
+        const response = await chrome.runtime.sendMessage({
+          action: "checkGamepads",
+        });
+
+        if (response && response.success) {
+          const { connectedCount, controllerInfo } = response.data;
+
+          // Check if a new controller was connected
+          if (connectedCount > LAST_CONTROLLER_COUNT && connectedCount > 0) {
+            log(`New controller detected: ${controllerInfo?.id || "Unknown"}`);
+            LAST_CONTROLLER_COUNT = connectedCount;
+            CONTROLLER_CONNECTED = true;
+
+            // Open the controller testing sidepanel
+            toggleSidePanelForTab(activeTab.id, "controller-testing");
+          } else if (connectedCount === 0 && LAST_CONTROLLER_COUNT > 0) {
+            log("All controllers disconnected");
+            LAST_CONTROLLER_COUNT = 0;
+            CONTROLLER_CONNECTED = false;
+          }
+        }
+      } catch (error) {
+        log("Error in checkForControllersWithOffscreen:", error);
+        // Fall back to the old method
+        if (CONTROLLER_CHECK_INTERVAL) {
+          clearInterval(CONTROLLER_CHECK_INTERVAL);
+          startFallbackControllerDetection();
+        }
+      }
+    }
+
+    /**
+     * Fallback method to check for connected gamepads
+     */
+    function checkForControllersFallback() {
+      try {
+        // Get the active tab
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs.length === 0) return;
+
+          const activeTab = tabs[0];
+
+          // Inject a content script to check for gamepads
+          chrome.scripting.executeScript(
+            {
+              target: { tabId: activeTab.id },
+              func: () => {
+                // This function runs in the content script context
+                const gamepads = navigator.getGamepads?.() || [];
+                let connectedCount = 0;
+                let controllerInfo = null;
+
+                for (let i = 0; i < gamepads.length; i++) {
+                  if (gamepads[i]) {
+                    connectedCount++;
+                    if (!controllerInfo) {
+                      controllerInfo = {
+                        index: i,
+                        id: gamepads[i].id,
+                        mapping: gamepads[i].mapping,
+                      };
+                    }
+                  }
+                }
+
+                return {
+                  connectedCount,
+                  controllerInfo,
+                };
+              },
+            },
+            (result) => {
+              if (chrome.runtime.lastError) {
+                log(
+                  "Error checking for controllers:",
+                  chrome.runtime.lastError
+                );
+                return;
+              }
+
+              if (result && result.length > 0) {
+                const { connectedCount, controllerInfo } = result[0].result;
+
+                // Check if a new controller was connected
+                if (
+                  connectedCount > LAST_CONTROLLER_COUNT &&
+                  connectedCount > 0
+                ) {
+                  log(
+                    `New controller detected: ${
+                      controllerInfo?.id || "Unknown"
+                    }`
+                  );
+                  LAST_CONTROLLER_COUNT = connectedCount;
+                  CONTROLLER_CONNECTED = true;
+
+                  // Open the controller testing sidepanel
+                  toggleSidePanelForTab(activeTab.id, "controller-testing");
+                } else if (connectedCount === 0 && LAST_CONTROLLER_COUNT > 0) {
+                  log("All controllers disconnected");
+                  LAST_CONTROLLER_COUNT = 0;
+                  CONTROLLER_CONNECTED = false;
+                }
+              }
+            }
+          );
+        });
+      } catch (error) {
+        log("Error in checkForControllersFallback:", error);
+      }
+    }
+
+    /**
+     * Stops the controller detection interval
+     */
+    function stopControllerDetection() {
+      if (CONTROLLER_CHECK_INTERVAL) {
+        clearInterval(CONTROLLER_CHECK_INTERVAL);
+        CONTROLLER_CHECK_INTERVAL = null;
+        log("Stopped controller detection");
+      }
     }
   },
 });

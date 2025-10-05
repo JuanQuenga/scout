@@ -1,13 +1,12 @@
 /**
  * @fileoverview PayMore Chrome Extension Content Script
- * @description Injects floating toolbar and handles controller modal functionality
+ * @description Handles core functionality without toolbar
  * @version 1.0.0
  * @author PayMore Team
  * @license MIT
  *
  * This content script handles:
- * - Floating toolbar injection and management
- * - Controller modal display and interaction
+ * - Controller modal functionality
  * - URL exclusion logic for specific domains
  * - Message communication with background script
  * - Auto-show/hide modal based on controller connection
@@ -17,14 +16,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* global chrome */
 import { defineContentScript } from "wxt/utils/define-content-script";
-import {
-  DEFAULT_ENABLED_TOOLS,
-  getButtonId,
-  TOOLBAR_TOOLS,
-} from "../src/lib/tools";
-import React from "react";
-import { createRoot } from "react-dom/client";
-import Toolbar from "../src/components/toolbar/Toolbar";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -148,8 +139,6 @@ function initializeExtension() {
     }
   } catch (_) {}
 
-  // Allow running on localhost/127.0.0.1 for development
-
   /**
    * Injects the controller modal into the page
    * @returns {void}
@@ -159,15 +148,15 @@ function initializeExtension() {
     return;
   }
 
-  // Floating toolbar + modal injection with URL exclusion list
-  /** @type {RegExp[]} URL patterns to exclude toolbar/modal injection */
+  // URL exclusion list for modal injection
+  /** @type {RegExp[]} URL patterns to exclude modal injection */
   const EXCLUDE_URLS = [
-    // Patterns to exclude toolbar/modal (edit as needed)
+    // Patterns to exclude modal (edit as needed)
     /paymore\-extension\.vercel\.app/i,
   ];
 
   /**
-   * Checks if current URL should be excluded from toolbar/modal injection
+   * Checks if current URL should be excluded from modal injection
    * @param {string} url - URL to check
    * @returns {boolean} True if URL should be excluded
    */
@@ -179,301 +168,6 @@ function initializeExtension() {
     } catch (_) {
       return false;
     }
-  }
-
-  /**
-   * Wait for the React-mounted toolbar to exist in the page and set up handlers.
-   * The toolbar is provided by the `toolbar-mount` content script entry.
-   */
-  function injectToolbar() {
-    if (isExcludedUrl(location.href)) return;
-    if (document.getElementById("paymore-toolbar")) {
-      setupToolbar(document.getElementById("paymore-toolbar"));
-      return;
-    }
-
-    try {
-      const container = document.createElement("div");
-      (document.body || document.documentElement).appendChild(container);
-      const rootContainer = document.createElement("div");
-      container.appendChild(rootContainer);
-      // Mount React toolbar directly from the content script bundle
-      const root = createRoot(rootContainer);
-      root.render(React.createElement(Toolbar));
-
-      // Wait for toolbar element to appear then setup
-      const toolbar = document.getElementById("paymore-toolbar");
-      if (toolbar) {
-        setupToolbar(toolbar);
-        try {
-          // Apply saved theme immediately after mount
-          chrome.storage?.local?.get({ toolbarTheme: "stone" }, (cfg) => {
-            const theme = String(cfg?.toolbarTheme || "stone");
-            applyToolbarTheme(toolbar as HTMLElement, theme);
-          });
-        } catch (_) {}
-        return;
-      }
-
-      const obs = new MutationObserver((mutations, o) => {
-        const t = document.getElementById("paymore-toolbar");
-        if (t) {
-          try {
-            o.disconnect();
-          } catch (_) {}
-          setupToolbar(t);
-          try {
-            chrome.storage?.local?.get({ toolbarTheme: "stone" }, (cfg) => {
-              const theme = String(cfg?.toolbarTheme || "stone");
-              applyToolbarTheme(t as HTMLElement, theme);
-            });
-          } catch (_) {}
-        }
-      });
-      obs.observe(document.documentElement || document.body, {
-        childList: true,
-        subtree: true,
-      });
-
-      setTimeout(() => {
-        const t = document.getElementById("paymore-toolbar");
-        if (t) {
-          try {
-            obs.disconnect();
-          } catch (_) {}
-          setupToolbar(t);
-          try {
-            chrome.storage?.local?.get({ toolbarTheme: "stone" }, (cfg) => {
-              const theme = String(cfg?.toolbarTheme || "stone");
-              applyToolbarTheme(t as HTMLElement, theme);
-            });
-          } catch (_) {}
-        }
-      }, 2500);
-    } catch (e) {
-      console.error("[Paymore CS] Failed to mount React toolbar:", e);
-    }
-  }
-
-  function setupToolbar(toolbar: HTMLElement | null) {
-    if (!toolbar) return;
-    try {
-      toolbar.style.display = "block";
-    } catch (_) {}
-
-    // Add mouse detection for auto-show/hide
-    let mouseTimeout: any;
-    let isVisible = false;
-
-    const showToolbar = () => {
-      if (isVisible) return;
-      isVisible = true;
-      toolbar.classList.remove("hidden");
-      toolbar.classList.add("visible");
-    };
-
-    const hideToolbar = () => {
-      if (!isVisible) return;
-      isVisible = false;
-      toolbar.classList.remove("visible");
-      toolbar.classList.add("hidden");
-    };
-
-    const handleMouseMove = () => {
-      showToolbar();
-      clearTimeout(mouseTimeout);
-      mouseTimeout = setTimeout(hideToolbar, 1000);
-    };
-    document.addEventListener("mousemove", handleMouseMove, { passive: true });
-
-    const handleChatMessage = (message: any) => {
-      if (
-        message.action === "pm-chat:attention" ||
-        message.action === "pm-chat:show" ||
-        message.action === "pm-chat:message"
-      ) {
-        showToolbar();
-        clearTimeout(mouseTimeout);
-        mouseTimeout = setTimeout(hideToolbar, 5000);
-      }
-    };
-    window.addEventListener("message", (event) => {
-      if (event.data && typeof event.data === "object")
-        handleChatMessage(event.data);
-    });
-
-    // Helper function to set active tool in localStorage and notify
-    const setActiveTool = (tool: string) => {
-      try {
-        localStorage.setItem("paymore-active-tool", tool);
-        window.dispatchEvent(
-          new CustomEvent("paymore-tool-change", {
-            detail: { key: "paymore-active-tool", value: tool },
-          })
-        );
-        chrome.runtime.sendMessage({ action: "openInSidebar", tool: tool });
-      } catch (e) {
-        console.error("[Paymore CS] Failed to set active tool:", e);
-      }
-    };
-
-    // Attach handlers for known buttons by querying document (React renders same ids)
-    const attach = (id: string, cb: () => void) => {
-      try {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener("click", cb as any);
-      } catch (_) {}
-    };
-
-    attach("pm-tb-controller", () => setActiveTool("controller-testing"));
-    attach("pm-tb-help", () => setActiveTool("help"));
-    attach("pm-tb-settings", () => {
-      try {
-        chrome.runtime.sendMessage({ action: "OPEN_OPTIONS" }, (response) => {
-          const err = chrome.runtime.lastError;
-          if (err) {
-            console.error(
-              "[Paymore CS] Failed to trigger options popup:",
-              err
-            );
-          } else if (!response?.success) {
-            console.error(
-              "[Paymore CS] Background did not open options popup",
-              response
-            );
-          }
-        });
-      } catch (e) {
-        console.error("[Paymore CS] Failed to send options message:", e);
-      }
-    });
-    attach("pm-tb-top-offers", () => setActiveTool("top-offers"));
-    attach("pm-tb-pricing", () => setActiveTool("checkout-prices"));
-    attach("pm-tb-minreqs", () => setActiveTool("min-reqs"));
-    attach("pm-tb-pricecharting", () => setActiveTool("price-charting"));
-    attach("pm-tb-search", () => setActiveTool("shopify-storefront"));
-    attach("pm-tb-ebay", () => setActiveTool("ebay"));
-    attach("pm-tb-paymore", () => setActiveTool("paymore"));
-    attach("pm-tb-qr", () => {
-      try {
-        chrome.runtime.sendMessage({ action: "openQRScanner" });
-      } catch (_) {}
-    });
-    attach("pm-tb-upc", () => {
-      try {
-        chrome.runtime.sendMessage({
-          action: "openInSidebar",
-          tool: "upc-search",
-        });
-      } catch (_) {}
-    });
-    attach("pm-tb-links", () => {
-      try {
-        chrome.runtime.sendMessage({ action: "openInSidebar", tool: "links" });
-      } catch (_) {}
-    });
-
-    // Chat button special handling for badge restore
-    try {
-      const chatBtn = document.getElementById("pm-tb-chat");
-      const badge = document.getElementById("pm-chat-badge");
-      if (chatBtn) {
-        const setBadge = (n: number) => {
-          try {
-            if (!badge) return;
-            if (n > 0) {
-              badge.textContent = String(Math.min(99, n));
-              badge.style.display = "inline-block";
-            } else {
-              badge.textContent = "";
-              badge.style.display = "none";
-            }
-          } catch (_) {}
-        };
-        try {
-          chrome.storage?.local?.get({ pmChatUnread: 0 }, (cfg) =>
-            setBadge(Number(cfg?.pmChatUnread || 0))
-          );
-        } catch (_) {}
-        chatBtn.addEventListener("click", () => {
-          setActiveTool("chat");
-          try {
-            chrome.storage?.local?.set({ pmChatUnread: 0 });
-          } catch (_) {}
-          setBadge(0);
-        });
-      }
-    } catch (_) {}
-
-    // Close button
-    try {
-      const closeBtn = document.getElementById("pm-tb-close");
-      if (closeBtn) {
-        closeBtn.addEventListener("click", function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          try {
-            toolbar.classList.remove("visible");
-            toolbar.classList.add("hidden");
-            try {
-              localStorage.setItem("paymore-toolbar-closed", "true");
-            } catch (_) {}
-          } catch (error) {
-            console.error("Failed to close toolbar:", error);
-          }
-        });
-      }
-    } catch (_) {}
-
-    // initial show/hide behavior
-    try {
-      const wasClosed =
-        localStorage.getItem("paymore-toolbar-closed") === "true";
-
-      // Check if toolbar was explicitly hidden via toggle command
-      chrome.storage.local.get({ toolbarHidden: false }, (cfg) => {
-        if (cfg.toolbarHidden) {
-          // Toolbar is toggled off - keep it hidden with animation classes
-          toolbar.classList.add("hidden");
-          toolbar.classList.remove("visible");
-        } else if (wasClosed) {
-          hideToolbar();
-        } else {
-          hideToolbar();
-          setTimeout(() => {
-            showToolbar();
-            setTimeout(hideToolbar, 2000);
-          }, 800);
-        }
-      });
-    } catch (_) {}
-
-    // Apply user toolbar preferences once the DOM nodes exist
-    applyEnabledToolbarTools();
-  }
-
-  /**
-   * Applies theme class to the toolbar container
-   */
-  function applyToolbarTheme(toolbarEl: HTMLElement, theme: string) {
-    try {
-      const themes = [
-        "stone",
-        "zinc",
-        "slate",
-        "blue",
-        "emerald",
-        "rose",
-        "violet",
-        "orange",
-        "indigo",
-        "teal",
-        "cyan",
-        "amber",
-      ];
-      themes.forEach((t) => toolbarEl.classList.remove(`pm-theme-${t}`));
-      toolbarEl.classList.add(`pm-theme-${theme}`);
-    } catch (_) {}
   }
 
   function isThisTabActive() {
@@ -700,32 +394,12 @@ function initializeExtension() {
       // No local action needed
     }
     if (message.action === "pm-chat:attention") {
+      // Chat attention handling without toolbar
       try {
-        const container = document.querySelector("#paymore-toolbar .pm-tb");
-        const btn = document.querySelector("#pm-tb-chat");
-        if (btn) {
-          btn.classList.add("pm-attn");
-          setTimeout(() => btn.classList.remove("pm-attn"), 2600);
-        }
-        if (message?.important && container) {
-          container.classList.add("pm-attn");
-          setTimeout(() => container.classList.remove("pm-attn"), 2600);
-        } else if (!message?.hasOwnProperty("important") && container) {
-          // Always show attention for any message (pmChatAttnAll is now always true)
-          container.classList.add("pm-attn");
-          setTimeout(() => container.classList.remove("pm-attn"), 1600);
-        }
-      } catch (_) {}
-      // increment unread on runtime broadcast
-      try {
+        // Increment unread on runtime broadcast
         chrome.storage?.local?.get({ pmChatUnread: 0 }, (cfg) => {
           const next = Math.min(99, Number(cfg?.pmChatUnread || 0) + 1);
           chrome.storage?.local?.set({ pmChatUnread: next });
-          const badge = document.querySelector("#pm-chat-badge");
-          if (badge) {
-            badge.textContent = String(next);
-            badge.style.display = "inline-block";
-          }
         });
       } catch (_) {}
     } else if (message.action === "scout:scanPOS") {
@@ -826,7 +500,6 @@ function initializeExtension() {
     document.addEventListener(
       "DOMContentLoaded",
       () => {
-        injectToolbar();
         try {
           chrome.runtime.sendMessage({ action: "csReady", url: location.href });
         } catch (_) {}
@@ -835,7 +508,6 @@ function initializeExtension() {
       { once: true }
     );
   } else {
-    injectToolbar();
     try {
       chrome.runtime.sendMessage({ action: "csReady", url: location.href });
     } catch (_) {}
@@ -869,48 +541,16 @@ function initializeExtension() {
         });
       } catch (_) {}
     }
-    // Chat attention broadcast -> light up chat button
+    // Chat attention broadcast
     if (data?.type === "pm-chat:attention") {
       try {
-        const container = document.querySelector("#paymore-toolbar .pm-tb");
-        const btn = document.querySelector("#pm-tb-chat");
-        // If store filtering is enabled (via data-store attr on toolbar), only light up when matching
-        const toolbarEl = document.getElementById("paymore-toolbar");
-        const selectedStore = toolbarEl?.getAttribute("data-store") || "";
-        const incomingStore = (data?.store || "").toString();
-        if (selectedStore && incomingStore && selectedStore !== incomingStore) {
-          return; // ignore attention for other stores
-        }
-        // Light up chat button always
-        if (btn) {
-          btn.classList.add("pm-attn");
-          setTimeout(() => btn.classList.remove("pm-attn"), 2600);
-        }
-        // If the message is important, also light up entire toolbar (check flag on event)
-        if (data?.important && container) {
-          container.classList.add("pm-attn");
-          setTimeout(() => container.classList.remove("pm-attn"), 2600);
-        } else if (!data?.hasOwnProperty("important")) {
-          // Always show attention for any message (pmChatAttnAll is now always true)
-          if (container) {
-            container.classList.add("pm-attn");
-            setTimeout(() => container.classList.remove("pm-attn"), 1600);
-          }
-        }
-      } catch (_) {}
-      // Do not forward to background here to avoid feedback loops; background is notified directly by chat tool
-      // increment unread count
-      try {
+        // increment unread count
         chrome.storage?.local?.get({ pmChatUnread: 0 }, (cfg) => {
           const next = Math.min(99, Number(cfg?.pmChatUnread || 0) + 1);
           chrome.storage?.local?.set({ pmChatUnread: next });
-          const badge = document.querySelector("#pm-chat-badge");
-          if (badge) {
-            badge.textContent = String(next);
-            badge.style.display = "inline-block";
-          }
         });
       } catch (_) {}
+      // Do not forward to background here to avoid feedback loops; background is notified directly by chat tool
     }
     if (data?.source === "paymore" && data?.action === "showControllerModal") {
       log("postMessage bridge -> show");
@@ -1438,149 +1078,9 @@ function initializeExtension() {
     return data;
   }
 
-  let enabledToolbarToolsCache = [...DEFAULT_ENABLED_TOOLS];
-  const allToolbarToolIds = new Set(TOOLBAR_TOOLS.map((tool) => tool.id));
-
-  const sanitizeToolbarIds = (value: any) => {
-    if (!Array.isArray(value)) return null;
-    const unique = Array.from(
-      new Set(value.filter((id) => allToolbarToolIds.has(id)))
-    );
-    const uniqueSet = new Set(unique);
-    return TOOLBAR_TOOLS.filter((tool) => uniqueSet.has(tool.id)).map(
-      (tool) => tool.id
-    );
-  };
-
-  const applyEnabledToolbarTools = () => {
-    TOOLBAR_TOOLS.forEach((tool) => {
-      const buttonId = getButtonId(tool.id);
-      const button = document.getElementById(buttonId);
-      const target = button?.closest?.(".pm-tb-item") || button;
-      if (target instanceof HTMLElement) {
-        target.style.display = enabledToolbarToolsCache.includes(tool.id)
-          ? ""
-          : "none";
-      }
-    });
-
-    // Update toolbar button icons from TOOLBAR_TOOLS metadata (svg or img)
-    TOOLBAR_TOOLS.forEach((tool) => {
-      const buttonId = getButtonId(tool.id);
-      const button = document.getElementById(buttonId);
-      if (!button) return;
-      try {
-        // @ts-ignore
-        const rawSvg = (tool as any).svg;
-        if (rawSvg) {
-          // replace inner content with provided svg markup
-          button.innerHTML = rawSvg;
-          return;
-        }
-        // @ts-ignore
-        const imgPath = (tool as any).img;
-        if (imgPath) {
-          const imgEl = document.createElement("img");
-          imgEl.className = "pm-icon";
-          imgEl.alt = tool.label;
-          const cleaned = String(imgPath).replace(/^\//, "");
-          try {
-            imgEl.src = chrome.runtime.getURL(cleaned);
-          } catch (_) {
-            imgEl.src = imgPath;
-          }
-          // clear and append
-          button.innerHTML = "";
-          button.appendChild(imgEl);
-        }
-      } catch (e) {
-        // ignore icon update failures
-      }
-    });
-
-    const fallbackTarget =
-      document.getElementById("pm-tb-customize")?.closest?.(".pm-tb-item") ||
-      document.getElementById("pm-tb-customize");
-    if (fallbackTarget instanceof HTMLElement) {
-      fallbackTarget.style.display =
-        enabledToolbarToolsCache.length === 0 ? "" : "none";
-    }
-
-    const divider = document
-      .getElementById("paymore-toolbar")
-      ?.querySelector?.(".pm-tb-divider");
-    if (divider instanceof HTMLElement) {
-      divider.style.display =
-        enabledToolbarToolsCache.length === 0 ? "none" : "";
-    }
-  };
-
-  async function loadEnabledTools() {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(["enabledToolbarTools"], (result) => {
-        const sanitized = sanitizeToolbarIds(result.enabledToolbarTools);
-        if (sanitized !== null) {
-          enabledToolbarToolsCache = sanitized;
-        } else {
-          enabledToolbarToolsCache = [...DEFAULT_ENABLED_TOOLS];
-        }
-        applyEnabledToolbarTools();
-        resolve(null);
-      });
-    });
+  // Initialize modal function
+  function initializeModal() {
+    // Modal initialization logic (currently disabled)
+    // Legacy controller tester modal disabled. Use hosted tool instead.
   }
-
-  // Preload saved configuration so it is ready when the toolbar mounts
-  loadEnabledTools();
-
-  // Listen for storage changes
-  const storageListener = (changes: any, area: string) => {
-    if (area === "local") {
-      if (changes.enabledToolbarTools) {
-        const next = changes.enabledToolbarTools.newValue;
-        const sanitized = sanitizeToolbarIds(next);
-        if (sanitized !== null) {
-          enabledToolbarToolsCache = sanitized;
-        } else {
-          enabledToolbarToolsCache = [...DEFAULT_ENABLED_TOOLS];
-        }
-        applyEnabledToolbarTools();
-      }
-      if (changes.toolbarTheme) {
-        try {
-          const toolbarEl = document.getElementById("paymore-toolbar");
-          if (toolbarEl)
-            applyToolbarTheme(
-              toolbarEl,
-              String(changes.toolbarTheme.newValue || "stone")
-            );
-        } catch (_) {}
-      }
-    }
-  };
-  chrome.storage.onChanged.addListener(storageListener);
-
-  // Listen for toolbar toggle message from background script
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message.type === "TOGGLE_TOOLBAR") {
-      const toolbar = document.getElementById("paymore-toolbar");
-      if (toolbar) {
-        const isCurrentlyHidden = toolbar.classList.contains("hidden");
-
-        if (isCurrentlyHidden) {
-          // Show toolbar with slide-in animation
-          toolbar.classList.remove("hidden");
-          toolbar.classList.add("visible");
-          chrome.storage.local.set({ toolbarHidden: false });
-        } else {
-          // Hide toolbar with slide-out animation
-          toolbar.classList.remove("visible");
-          toolbar.classList.add("hidden");
-          chrome.storage.local.set({ toolbarHidden: true });
-        }
-      }
-      sendResponse({ success: true });
-      return true;
-    }
-  });
 }

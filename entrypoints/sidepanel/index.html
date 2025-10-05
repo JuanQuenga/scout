@@ -1,8 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8" />
     <title>PayMore Tools</title>
+    <link rel="stylesheet" href="./assets/styles/tailwind.css" />
     <style>
       html,
       body {
@@ -10,12 +11,7 @@
         width: 100%;
         margin: 0;
         padding: 0;
-        font-family:
-          system-ui,
-          -apple-system,
-          Segoe UI,
-          Roboto,
-          sans-serif;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
         background: #0c0a09;
         color: #e7e5e4;
         overflow: hidden;
@@ -182,6 +178,10 @@
       allow="camera *; clipboard-write *; autoplay *;"
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
     ></iframe>
+    <div
+      id="controller-testing-container"
+      style="display: none; height: calc(100% - 56px - 36px); width: 100%"
+    ></div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

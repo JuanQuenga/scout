@@ -12,9 +12,13 @@
  * - Initial tool setup in localStorage
  * - Settings button integration
  * - Tool header updates based on localStorage changes
+ * - Controller testing functionality
  */
 // Import Tailwind for sidepanel UI
 import "../styles/tailwind.css";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import ControllerTesting from "../../src/components/sidepanel/ControllerTesting";
 
 /**
  * Utility function to query DOM elements
@@ -76,7 +80,7 @@ function toolToDisplayName(tool) {
  * Sets up event listeners and loads initial configuration
  */
 document.addEventListener("DOMContentLoaded", () => {
-  // Load configuration and initialize the tools page
+  // Load configuration and initialize the sidepanel
   chrome.storage.local.get(
     {
       scannerBaseUrl: "https://paymore-extension.vercel.app",
@@ -85,6 +89,37 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     (cfg) => {
       try {
+        // Check if we should show controller testing
+        const toolFromStorage = cfg.sidePanelTool;
+
+        if (toolFromStorage === "controller-testing") {
+          // Show controller testing component
+          const container = document.getElementById(
+            "controller-testing-container"
+          );
+          const frame = document.querySelector("#frame");
+
+          if (container && frame) {
+            // Hide iframe and show controller testing container
+            frame.style.display = "none";
+            container.style.display = "block";
+
+            const root = createRoot(container);
+            root.render(React.createElement(ControllerTesting));
+          }
+
+          // Update header
+          const toolHeader = document.querySelector("#current-tool");
+          if (toolHeader) {
+            toolHeader.textContent = "Controller Testing";
+          }
+
+          // Clear the chrome storage since we've used it
+          chrome.storage.local.remove(["sidePanelTool", "sidePanelUrl"]);
+          return;
+        }
+
+        // Default behavior for other tools
         const baseUrl = (cfg.scannerBaseUrl || "").replace(/\/$/, "");
         let toolsUrl = `${baseUrl}/tools?pm_sp=1`;
 
@@ -122,7 +157,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Set active tool from chrome storage (if provided) or initialize default
         try {
-          const toolFromStorage = cfg.sidePanelTool;
           if (toolFromStorage) {
             localStorage.setItem("paymore-active-tool", toolFromStorage);
             // Clear the chrome storage since we've used it
