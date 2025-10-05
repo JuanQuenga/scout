@@ -15,7 +15,6 @@ import {
   filterHistory,
   HistoryItem,
 } from "@/src/utils/history";
-import { TOOLBAR_TOOLS, ToolbarTool } from "@/src/lib/tools";
 import {
   searchProviders,
   findProviderByTrigger,
@@ -23,11 +22,10 @@ import {
 } from "./SearchProviders";
 import { TabItem } from "./TabItem";
 import { CSVLinkItem } from "./CSVLinkItem";
-import { ToolbarItem } from "./ToolbarItem";
 import { BookmarkItem } from "./BookmarkItem";
 import { HistoryItemComponent } from "./HistoryItem";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { X, Search as SearchIcon } from "lucide-react";
+import { X, Search as SearchIcon, Gamepad2 } from "lucide-react";
 import "./styles.css";
 
 interface CMDKPaletteProps {
@@ -209,42 +207,16 @@ export function CMDKPalette({
       }
     } else if (value.startsWith("tool-")) {
       const toolId = value.replace("tool-", "");
-      const tool = TOOLBAR_TOOLS.find((t) => t.id === toolId);
-      if (tool) {
-        if (tool.id === "settings") {
-          // Special handling for settings - ask background to open options popup
-          try {
-            chrome.runtime.sendMessage({ action: "OPEN_OPTIONS" }, (response) => {
-              const err = chrome.runtime.lastError;
-              if (err) {
-                console.error(
-                  "Error requesting options popup from background:",
-                  err
-                );
-              } else if (!response?.success) {
-                console.error(
-                  "Background failed to open options popup",
-                  response
-                );
-              }
-            });
-          } catch (e) {
-            console.error("Error sending options popup request:", e);
-          }
-        } else {
-          // Send message to open tool in sidebar
-          chrome.runtime.sendMessage(
-            { action: "openInSidebar", tool: tool.id },
-            () => {
-              if (chrome.runtime.lastError) {
-                console.error(
-                  "Error opening sidebar:",
-                  chrome.runtime.lastError
-                );
-              }
+      if (toolId === "controller-testing") {
+        // Send message to open controller testing in sidebar
+        chrome.runtime.sendMessage(
+          { action: "openInSidebar", tool: "controller-testing" },
+          () => {
+            if (chrome.runtime.lastError) {
+              console.error("Error opening sidebar:", chrome.runtime.lastError);
             }
-          );
-        }
+          }
+        );
         onClose();
       }
     }
@@ -274,31 +246,34 @@ export function CMDKPalette({
     }
   };
 
-  const filteredTabs = activeProvider || !enabledSources.tabs
-    ? []
-    : TabManager.filterTabs(tabs, search);
-  const filteredCSVLinks = activeProvider || !enabledSources.quickLinks
-    ? []
-    : filterCSVLinks(csvLinks, search);
-  const filteredBookmarks = activeProvider || !enabledSources.bookmarks
-    ? []
-    : filterBookmarks(bookmarks, search);
-  const filteredHistory = activeProvider || !enabledSources.history
-    ? []
-    : filterHistory(history, search);
+  const filteredTabs =
+    activeProvider || !enabledSources.tabs
+      ? []
+      : TabManager.filterTabs(tabs, search);
+  const filteredCSVLinks =
+    activeProvider || !enabledSources.quickLinks
+      ? []
+      : filterCSVLinks(csvLinks, search);
+  const filteredBookmarks =
+    activeProvider || !enabledSources.bookmarks
+      ? []
+      : filterBookmarks(bookmarks, search);
+  const filteredHistory =
+    activeProvider || !enabledSources.history
+      ? []
+      : filterHistory(history, search);
 
-  // Filter toolbar tools by search
-  const filteredTools = activeProvider || !enabledSources.tools
-    ? []
-    : TOOLBAR_TOOLS.filter((tool) => {
-        if (!trimmedSearch) return true;
-        const lowerQuery = trimmedSearch.toLowerCase();
-        return (
-          tool.label.toLowerCase().includes(lowerQuery) ||
-          tool.description?.toLowerCase().includes(lowerQuery) ||
-          tool.id.toLowerCase().includes(lowerQuery)
-        );
-      });
+  // Filter tools by search (always include controller testing)
+  const filteredTools =
+    activeProvider || !enabledSources.tools
+      ? []
+      : [
+          {
+            id: "controller-testing",
+            label: "Controller Testing",
+            description: "Test hardware controllers",
+          },
+        ];
 
   const getUrlFromInput = (input: string): string | null => {
     const value = input.trim();
@@ -540,7 +515,7 @@ export function CMDKPalette({
               </Command.Group>
             )}
 
-            {/* Toolbar Tools */}
+            {/* Tools */}
             {filteredTools.length > 0 && (
               <Command.Group heading="Tools" className="cmdk-group">
                 {filteredTools.map((tool) => (
@@ -550,7 +525,19 @@ export function CMDKPalette({
                     onSelect={handleSelect}
                     className="cmdk-item"
                   >
-                    <ToolbarItem tool={tool} />
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <div className="p-2 rounded bg-blue-500">
+                        <Gamepad2 className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {tool.label}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {tool.description}
+                        </p>
+                      </div>
+                    </div>
                   </Command.Item>
                 ))}
               </Command.Group>

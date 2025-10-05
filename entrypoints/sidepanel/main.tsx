@@ -9,7 +9,8 @@ import ControllerTesting from "../../src/components/sidepanel/ControllerTesting"
  * @license MIT
  */
 
-document.addEventListener("DOMContentLoaded", () => {
+// Initialize immediately without waiting for DOMContentLoaded
+const initSidepanel = () => {
   const container = document.getElementById("controller-testing-container");
   if (container) {
     const root = createRoot(container);
@@ -25,4 +26,21 @@ document.addEventListener("DOMContentLoaded", () => {
   settingsBtn?.addEventListener("click", () => {
     chrome.runtime.openOptionsPage();
   });
-});
+
+  // Send a message to background script indicating sidepanel is ready
+  try {
+    chrome.runtime.sendMessage({
+      action: "sidepanelReady",
+      tool: "controller-testing",
+      timestamp: Date.now(),
+    });
+  } catch (e) {
+    console.error("Error sending sidepanel ready message:", e);
+  }
+};
+
+// Try to initialize immediately
+initSidepanel();
+
+// Also initialize on DOMContentLoaded as a fallback
+document.addEventListener("DOMContentLoaded", initSidepanel);

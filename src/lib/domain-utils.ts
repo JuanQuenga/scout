@@ -60,21 +60,6 @@ export function matchesPattern(domain: string, pattern: string): boolean {
 }
 
 /**
- * Checks if a domain is in a list of disabled patterns
- * @param domain - The domain to check
- * @param disabledSites - Array of disabled site patterns
- * @returns True if domain is disabled
- */
-export function isDomainDisabled(
-  domain: string,
-  disabledSites: string[]
-): boolean {
-  if (!domain || !disabledSites || disabledSites.length === 0) return false;
-
-  return disabledSites.some(pattern => matchesPattern(domain, pattern));
-}
-
-/**
  * Validates if a domain pattern is valid
  * @param pattern - The domain pattern to validate
  * @returns True if pattern is valid
@@ -97,9 +82,9 @@ export function isValidDomainPattern(pattern: string): boolean {
  * @returns Promise that resolves to the current domain or null
  */
 export async function getCurrentTabDomain(): Promise<string | null> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     try {
-      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs.length === 0) {
           resolve(null);
           return;
@@ -125,9 +110,9 @@ export async function getCurrentTabDomain(): Promise<string | null> {
  * @returns Promise that resolves to the current URL or null
  */
 export async function getCurrentTabUrl(): Promise<string | null> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     try {
-      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs.length === 0) {
           resolve(null);
           return;
@@ -141,4 +126,3 @@ export async function getCurrentTabUrl(): Promise<string | null> {
     }
   });
 }
-

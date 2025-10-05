@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* For content scripts that inject into host pages, you may want to disable preflight
+/* For pages that inject into host pages, you may want to disable preflight
    by building a separate CSS file with `corePlugins: { preflight: false }` */
 
 /* Theme tokens and CSS variables used across the sidepanel */

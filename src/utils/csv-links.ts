@@ -129,35 +129,32 @@ export async function fetchCSVLinks(): Promise<CSVLink[]> {
  */
 async function getCachedLinks(): Promise<CSVLink[] | null> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(
-      [CACHE_KEY, CACHE_TIMESTAMP_KEY],
-      (result) => {
-        if (chrome.runtime.lastError) {
-          resolve(null);
-          return;
-        }
-
-        const cachedLinks = result[CACHE_KEY];
-        const timestamp = result[CACHE_TIMESTAMP_KEY];
-
-        if (!cachedLinks || !timestamp) {
-          resolve(null);
-          return;
-        }
-
-        // Check if cache is still valid
-        const now = Date.now();
-        const age = now - timestamp;
-
-        if (age > CACHE_DURATION) {
-          console.log("[CSV] Cache expired");
-          resolve(null);
-          return;
-        }
-
-        resolve(cachedLinks);
+    chrome.storage.local.get([CACHE_KEY, CACHE_TIMESTAMP_KEY], (result) => {
+      if (chrome.runtime.lastError) {
+        resolve(null);
+        return;
       }
-    );
+
+      const cachedLinks = result[CACHE_KEY];
+      const timestamp = result[CACHE_TIMESTAMP_KEY];
+
+      if (!cachedLinks || !timestamp) {
+        resolve(null);
+        return;
+      }
+
+      // Check if cache is still valid
+      const now = Date.now();
+      const age = now - timestamp;
+
+      if (age > CACHE_DURATION) {
+        console.log("[CSV] Cache expired");
+        resolve(null);
+        return;
+      }
+
+      resolve(cachedLinks);
+    });
   });
 }
 
@@ -186,7 +183,7 @@ async function fetchFreshLinks(): Promise<CSVLink[]> {
       );
     }
 
-    // Fallback: Use background script to fetch (for content script context)
+    // Fallback: Use background script to fetch
     return new Promise((resolve) => {
       chrome.runtime.sendMessage(
         { action: "FETCH_CSV_LINKS", url: CSV_URL },
@@ -232,7 +229,10 @@ async function cacheLinks(links: CSVLink[]): Promise<void> {
       },
       () => {
         if (chrome.runtime.lastError) {
-          console.error("[CSV] Failed to cache links:", chrome.runtime.lastError);
+          console.error(
+            "[CSV] Failed to cache links:",
+            chrome.runtime.lastError
+          );
         } else {
           console.log("[CSV] Links cached successfully");
         }

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offscreen Document</title>
+  </head>
+  <body>
+    <script>
+      /**
+       * Offscreen document for gamepad detection
+       * This script runs in the offscreen document to detect gamepads reliably
+       */
+
+      // Listen for messages from the background script
+      chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+        if (message.action === "checkGamepads") {
+          try {
+            const gamepads = navigator.getGamepads?.() || [];
+            let connectedCount = 0;
+            let controllerInfo = null;
+
+            for (let i = 0; i < gamepads.length; i++) {
+              if (gamepads[i]) {
+                connectedCount++;
+                if (!controllerInfo) {
+                  controllerInfo = {
+                    index: i,
+                    id: gamepads[i].id,
+                    mapping: gamepads[i].mapping,
+                  };
+                }
+              }
+            }
+
+            sendResponse({
+              success: true,
+              data: {
+                connectedCount,
+                controllerInfo,
+              },
+            });
+          } catch (error) {
+            sendResponse({
+              success: false,
+              error: error.message,
+            });
+          }
+        }
+        return true; // Keep the message channel open for async response
+      });
+
+      // Listen for gamepad events
+      window.addEventListener("gamepadconnected", (e) => {
+        chrome.runtime.sendMessage({
+          action: "gamepadConnected",
+          gamepad: {
+            index: e.gamepad.index,
+            id: e.gamepad.id,
+            mapping: e.gamepad.mapping,
+          },
+        });
+      });
+
+      window.addEventListener("gamepaddisconnected", (e) => {
+        chrome.runtime.sendMessage({
+          action: "gamepadDisconnected",
+          gamepad: {
+            index: e.gamepad.index,
+            id: e.gamepad.id,
+          },
+        });
+      });
+    </script>
+  </body>
+</html>

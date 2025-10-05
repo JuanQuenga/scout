@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Progress } from "../ui/progress";
 import { Badge } from "../ui/badge";
@@ -17,9 +16,6 @@ export default function ControllerTesting() {
       .fill(0)
       .map(() => ({ pressed: false, value: 0 })),
   });
-
-  // State for active tab
-  const [activeTab, setActiveTab] = useState("sticks");
 
   // State for connected controllers
   const [connectedController, setConnectedController] = useState<{
@@ -91,6 +87,37 @@ export default function ControllerTesting() {
       buttons: Array(20)
         .fill(null)
         .map(() => ({ pressed: false, value: 0 })),
+    };
+
+    // Prevent sidepanel from closing during testing
+    let keepAliveInterval: NodeJS.Timeout | null = null;
+    const startKeepAlive = () => {
+      // Send a heartbeat to the background script to keep the sidepanel open
+      // Send immediately and then more frequently to ensure reliability
+      const sendKeepAlive = () => {
+        try {
+          chrome.runtime.sendMessage({
+            action: "sidepanelKeepAlive",
+            tool: "controller-testing",
+            timestamp: Date.now(),
+          });
+        } catch (e) {
+          // Ignore errors, just try again next interval
+        }
+      };
+
+      // Send first heartbeat immediately
+      sendKeepAlive();
+
+      // Then send more frequent heartbeats
+      keepAliveInterval = setInterval(sendKeepAlive, 2000); // Every 2 seconds for better reliability
+    };
+
+    const stopKeepAlive = () => {
+      if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+        keepAliveInterval = null;
+      }
     };
 
     const COLOR_GREEN = "rgba(34,197,94,0.85)";
@@ -331,8 +358,12 @@ export default function ControllerTesting() {
       }
     }, 500) as unknown as number;
 
+    // Start keep-alive when component mounts
+    startKeepAlive();
+
     return () => {
       stopLoop();
+      stopKeepAlive();
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;
@@ -341,29 +372,6 @@ export default function ControllerTesting() {
       window.removeEventListener("gamepaddisconnected", onDisconnect);
     };
   }, []);
-
-  // Handle tab switching with controller buttons
-  useEffect(() => {
-    // L1/LB (button index 4) switches to previous tab
-    if (controllerState.buttons[4].pressed) {
-      setActiveTab((prev) => {
-        if (prev === "sticks") return "buttons";
-        if (prev === "triggers") return "sticks";
-        if (prev === "buttons") return "triggers";
-        return prev;
-      });
-    }
-
-    // R1/RB (button index 5) switches to next tab
-    if (controllerState.buttons[5].pressed) {
-      setActiveTab((prev) => {
-        if (prev === "sticks") return "triggers";
-        if (prev === "triggers") return "buttons";
-        if (prev === "buttons") return "sticks";
-        return prev;
-      });
-    }
-  }, [controllerState.buttons[4].pressed, controllerState.buttons[5].pressed]);
 
   return (
     <div className="h-full w-full bg-background overflow-y-auto">
@@ -647,161 +655,255 @@ export default function ControllerTesting() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Controller Input</CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-3 h-8 gap-1">
-                <TabsTrigger
-                  value="sticks"
-                  className="text-xs data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md"
-                >
-                  Sticks
-                </TabsTrigger>
-                <TabsTrigger
-                  value="triggers"
-                  className="text-xs data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md"
-                >
-                  Triggers
-                </TabsTrigger>
-                <TabsTrigger
-                  value="buttons"
-                  className="text-xs data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md"
-                >
-                  Buttons
-                </TabsTrigger>
-              </TabsList>
+          <CardContent className="pt-0 space-y-4">
+            {/* Sticks Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-medium text-muted-foreground">
+                Sticks
+              </h4>
 
-              {/* Joystick Axes Tab */}
-              <TabsContent value="sticks" className="space-y-3 mt-3">
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground">LX</span>
+              {/* Left Stick Progress Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground">Left Stick</span>
+                  <div className="flex gap-2">
                     <Badge
                       variant="outline"
                       className="font-mono text-xs h-5 px-1"
                     >
-                      {controllerState.lx.toFixed(2)}
+                      X:{controllerState.lx.toFixed(2)}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className="font-mono text-xs h-5 px-1"
+                    >
+                      Y:{controllerState.ly.toFixed(2)}
                     </Badge>
                   </div>
+                </div>
+                <div className="relative">
                   <Progress
-                    value={Math.abs(controllerState.lx) * 50}
-                    className="h-1"
+                    value={Math.min(
+                      100,
+                      Math.sqrt(
+                        controllerState.lx * controllerState.lx +
+                          controllerState.ly * controllerState.ly
+                      ) * 100
+                    )}
+                    className="h-2"
+                    style={{
+                      backgroundColor: "rgba(156,163,175,0.2)",
+                    }}
+                  />
+                  <div
+                    className="absolute top-0 left-0 h-2 rounded-full"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.sqrt(
+                          controllerState.lx * controllerState.lx +
+                            controllerState.ly * controllerState.ly
+                        ) * 100
+                      )}%`,
+                      backgroundColor:
+                        Math.sqrt(
+                          controllerState.lx * controllerState.lx +
+                            controllerState.ly * controllerState.ly
+                        ) < 0.05
+                          ? "rgba(34,197,94,0.85)"
+                          : Math.sqrt(
+                              controllerState.lx * controllerState.lx +
+                                controllerState.ly * controllerState.ly
+                            ) < 0.1
+                          ? "rgba(34,197,94,0.85)"
+                          : Math.sqrt(
+                              controllerState.lx * controllerState.lx +
+                                controllerState.ly * controllerState.ly
+                            ) < 0.25
+                          ? "rgba(255,140,0,1.0)"
+                          : "rgba(239,68,68,0.9)",
+                    }}
                   />
                 </div>
+              </div>
 
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground">LY</span>
+              {/* Right Stick Progress Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground">Right Stick</span>
+                  <div className="flex gap-2">
                     <Badge
                       variant="outline"
                       className="font-mono text-xs h-5 px-1"
                     >
-                      {controllerState.ly.toFixed(2)}
+                      X:{controllerState.rx.toFixed(2)}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className="font-mono text-xs h-5 px-1"
+                    >
+                      Y:{controllerState.ry.toFixed(2)}
                     </Badge>
                   </div>
+                </div>
+                <div className="relative">
                   <Progress
-                    value={Math.abs(controllerState.ly) * 50}
-                    className="h-1"
+                    value={Math.min(
+                      100,
+                      Math.sqrt(
+                        controllerState.rx * controllerState.rx +
+                          controllerState.ry * controllerState.ry
+                      ) * 100
+                    )}
+                    className="h-2"
+                    style={{
+                      backgroundColor: "rgba(156,163,175,0.2)",
+                    }}
+                  />
+                  <div
+                    className="absolute top-0 left-0 h-2 rounded-full"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.sqrt(
+                          controllerState.rx * controllerState.rx +
+                            controllerState.ry * controllerState.ry
+                        ) * 100
+                      )}%`,
+                      backgroundColor:
+                        Math.sqrt(
+                          controllerState.rx * controllerState.rx +
+                            controllerState.ry * controllerState.ry
+                        ) < 0.05
+                          ? "rgba(34,197,94,0.85)"
+                          : Math.sqrt(
+                              controllerState.rx * controllerState.rx +
+                                controllerState.ry * controllerState.ry
+                            ) < 0.1
+                          ? "rgba(34,197,94,0.85)"
+                          : Math.sqrt(
+                              controllerState.rx * controllerState.rx +
+                                controllerState.ry * controllerState.ry
+                            ) < 0.25
+                          ? "rgba(255,140,0,1.0)"
+                          : "rgba(239,68,68,0.9)",
+                    }}
                   />
                 </div>
+              </div>
+            </div>
 
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground">RX</span>
-                    <Badge
-                      variant="outline"
-                      className="font-mono text-xs h-5 px-1"
-                    >
-                      {controllerState.rx.toFixed(2)}
-                    </Badge>
-                  </div>
+            {/* Triggers Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-medium text-muted-foreground">
+                Triggers
+              </h4>
+
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground">L2/LT</span>
+                  <Badge
+                    variant="outline"
+                    className="font-mono text-xs h-5 px-1"
+                  >
+                    {controllerState.lt.toFixed(2)}
+                  </Badge>
+                </div>
+                <div className="relative">
                   <Progress
-                    value={Math.abs(controllerState.rx) * 50}
-                    className="h-1"
+                    value={controllerState.lt * 100}
+                    className="h-2"
+                    style={{
+                      backgroundColor: "rgba(156,163,175,0.2)",
+                    }}
+                  />
+                  <div
+                    className="absolute top-0 left-0 h-2 rounded-full"
+                    style={{
+                      width: `${controllerState.lt * 100}%`,
+                      backgroundColor:
+                        controllerState.lt < 0.05
+                          ? "rgba(34,197,94,0.85)"
+                          : controllerState.lt < 0.1
+                          ? "rgba(34,197,94,0.85)"
+                          : controllerState.lt < 0.25
+                          ? "rgba(255,140,0,1.0)"
+                          : "rgba(239,68,68,0.9)",
+                    }}
                   />
                 </div>
+              </div>
 
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground">RY</span>
-                    <Badge
-                      variant="outline"
-                      className="font-mono text-xs h-5 px-1"
-                    >
-                      {controllerState.ry.toFixed(2)}
-                    </Badge>
-                  </div>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground">R2/RT</span>
+                  <Badge
+                    variant="outline"
+                    className="font-mono text-xs h-5 px-1"
+                  >
+                    {controllerState.rt.toFixed(2)}
+                  </Badge>
+                </div>
+                <div className="relative">
                   <Progress
-                    value={Math.abs(controllerState.ry) * 50}
-                    className="h-1"
+                    value={controllerState.rt * 100}
+                    className="h-2"
+                    style={{
+                      backgroundColor: "rgba(156,163,175,0.2)",
+                    }}
+                  />
+                  <div
+                    className="absolute top-0 left-0 h-2 rounded-full"
+                    style={{
+                      width: `${controllerState.rt * 100}%`,
+                      backgroundColor:
+                        controllerState.rt < 0.05
+                          ? "rgba(34,197,94,0.85)"
+                          : controllerState.rt < 0.1
+                          ? "rgba(34,197,94,0.85)"
+                          : controllerState.rt < 0.25
+                          ? "rgba(255,140,0,1.0)"
+                          : "rgba(239,68,68,0.9)",
+                    }}
                   />
                 </div>
-              </TabsContent>
+              </div>
+            </div>
 
-              {/* Triggers Tab */}
-              <TabsContent value="triggers" className="space-y-4 mt-3">
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground">L2/LT</span>
-                    <Badge
-                      variant="outline"
-                      className="font-mono text-xs h-5 px-1"
-                    >
-                      {controllerState.lt.toFixed(2)}
-                    </Badge>
-                  </div>
-                  <Progress value={controllerState.lt * 100} className="h-1" />
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground">R2/RT</span>
-                    <Badge
-                      variant="outline"
-                      className="font-mono text-xs h-5 px-1"
-                    >
-                      {controllerState.rt.toFixed(2)}
-                    </Badge>
-                  </div>
-                  <Progress value={controllerState.rt * 100} className="h-1" />
-                </div>
-              </TabsContent>
-
-              {/* Buttons Tab */}
-              <TabsContent value="buttons" className="space-y-2 mt-3">
-                <div className="grid grid-cols-2 gap-1">
-                  {controllerState.buttons.map((button, index) => (
-                    <div
-                      key={index}
-                      className={`flex justify-between items-center p-1 rounded border ${
-                        button.pressed
-                          ? "border-red-300 bg-red-50 dark:bg-red-950/20"
-                          : "border-stone-200 bg-muted"
-                      }`}
-                    >
-                      <span className="text-xs font-medium truncate">
-                        {buttonNames[index]}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <Badge
-                          variant="outline"
-                          className="font-mono text-xs h-4 px-1"
-                        >
-                          {button.value.toFixed(1)}
-                        </Badge>
-                        <Badge
-                          variant={button.pressed ? "destructive" : "secondary"}
-                          className="w-2 h-2 p-0 rounded-full"
-                        />
-                      </div>
+            {/* Buttons Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-medium text-muted-foreground">
+                Buttons
+              </h4>
+              <div className="grid grid-cols-2 gap-1">
+                {controllerState.buttons.map((button, index) => (
+                  <div
+                    key={index}
+                    className={`flex justify-between items-center p-1 rounded border ${
+                      button.pressed
+                        ? "border-red-300 bg-red-50 dark:bg-red-950/20"
+                        : "border-stone-200 bg-muted"
+                    }`}
+                  >
+                    <span className="text-xs font-medium truncate">
+                      {buttonNames[index]}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Badge
+                        variant="outline"
+                        className="font-mono text-xs h-4 px-1"
+                      >
+                        {button.value.toFixed(1)}
+                      </Badge>
+                      <Badge
+                        variant={button.pressed ? "destructive" : "secondary"}
+                        className="w-2 h-2 p-0 rounded-full"
+                      />
                     </div>
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
+                  </div>
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

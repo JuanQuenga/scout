@@ -1,3 +1,4 @@
+/* global chrome */
 import { useState, useEffect } from "react";
 import { Check } from "lucide-react";
 
@@ -112,12 +113,14 @@ export default function SettingsPopup() {
             className="w-8 h-8 rounded-lg"
           />
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold">Settings</h1>
+            <h1 className="text-lg font-bold">
+              Paymore Lite
               {version && (
-                <span className="text-xs text-muted-foreground">v{version}</span>
+                <span className="text-xs text-muted-foreground ml-2">
+                  v{version}
+                </span>
               )}
-            </div>
+            </h1>
             <p className="text-xs text-muted-foreground">
               Configure command menu sources and features
             </p>
@@ -131,7 +134,7 @@ export default function SettingsPopup() {
             <div className="p-6 border-b border-border">
               <h2 className="text-lg font-semibold mb-1">Command Sources</h2>
               <p className="text-sm text-muted-foreground">
-                Enable or disable different sources in the command palette
+                Enable or disable different sources in the command menu popup
               </p>
             </div>
 

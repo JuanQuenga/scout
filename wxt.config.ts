@@ -11,11 +11,7 @@ export default defineConfig({
   contentScripts: [
     {
       matches: ["<all_urls>"],
-      entries: ["content"],
-    },
-    {
-      matches: ["*://pos.paymore.tech/inventory*"],
-      entries: ["content-pos-inventory"],
+      entries: ["controller-activity"],
     },
   ],
   manifest: {
@@ -50,6 +46,13 @@ export default defineConfig({
       default_path: "sidepanel.html",
     },
     options_page: "options.html",
+    content_scripts: [
+      {
+        matches: ["<all_urls>"],
+        run_at: "document_idle",
+        js: ["controller-activity.js"],
+      },
+    ],
     commands: {
       _execute_action: {
         suggested_key: {
@@ -73,13 +76,10 @@ export default defineConfig({
         description: "Open Controller Testing Sidepanel",
       },
     },
-    // Expose toolbar and assets to content scripts
+    // Expose assets to the extension
     web_accessible_resources: [
       {
-        resources: [
-          "components/floating-appbar/toolbar.html",
-          "assets/images/*",
-        ],
+        resources: ["assets/images/*"],
         matches: ["<all_urls>"],
       },
     ],
