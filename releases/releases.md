@@ -4,7 +4,28 @@ Download the latest version of the Paymore Chrome Lite Extension.
 
 ## Latest Release
 
-### v1.0.0 (Current)
+### v1.0.1 (Current)
+
+**Release Date:** October 06, 2025
+**Download:** [paymore-chrome-v1.0.1.zip](./paymore-chrome-v1.0.1.zip)
+
+**What's New:**
+
+### Features
+
+- Fixed UPC Item Database search URL format
+
+### Improvements
+
+- Updated search provider to use correct UPC database URL path
+
+### Bug Fixes
+
+- Corrected UPCItemDB search URL from `/search?q={query}` to `/upc/{query}`
+
+---
+
+### v1.0.0
 
 **Release Date:** October 05, 2025
 **Download:** [paymore-chrome-lite-v1.0.0.zip](./paymore-chrome-lite-v1.0.0.zip)

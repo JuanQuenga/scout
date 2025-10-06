@@ -16,7 +16,7 @@ export default defineConfig({
   ],
   manifest: {
     name: "Paymore Chrome Lite",
-    version: "1.0.0",
+    version: "1.0.1",
     description: "Chrome extension for Paymore Employees (Lite Version).",
     permissions: [
       "storage",
