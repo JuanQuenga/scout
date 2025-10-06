@@ -74,8 +74,8 @@ print_header "Step 2: Building Extension"
 echo "Running pnpm build..."
 pnpm build
 
-if [ ! -d ".output/paymore-chrome" ]; then
-    print_error "Build failed! .output/paymore-chrome directory not found"
+if [ ! -d ".output/paymore-chrome-lite" ]; then
+    print_error "Build failed! .output/paymore-chrome-lite directory not found"
     exit 1
 fi
 
@@ -88,7 +88,7 @@ cd .output
 # Create packed zip
 PACKED_ZIP="paymore-chrome-v${NEW_VERSION}-packed.zip"
 echo "Creating $PACKED_ZIP..."
-zip -r "$PACKED_ZIP" paymore-chrome > /dev/null 2>&1
+zip -r "$PACKED_ZIP" paymore-chrome-lite > /dev/null 2>&1
 
 if [ ! -f "$PACKED_ZIP" ]; then
     print_error "Failed to create packed zip"
@@ -103,7 +103,7 @@ print_header "Step 4: Creating Unpacked Release Zip (GitHub Releases)"
 # Create temporary zip
 TEMP_ZIP="paymore-chrome.zip"
 echo "Creating temporary zip..."
-zip -r "$TEMP_ZIP" paymore-chrome > /dev/null 2>&1
+zip -r "$TEMP_ZIP" paymore-chrome-lite > /dev/null 2>&1
 
 # Move to releases folder with proper naming
 RELEASE_ZIP="paymore-chrome-v${NEW_VERSION}.zip"
@@ -188,8 +188,8 @@ else
 fi
 
 # Check if manifest.json exists in build
-if [ -f ".output/paymore-chrome/manifest.json" ]; then
-    MANIFEST_VERSION=$(grep -o '"version": "[^"]*"' .output/paymore-chrome/manifest.json | cut -d'"' -f4)
+if [ -f ".output/paymore-chrome-lite/manifest.json" ]; then
+    MANIFEST_VERSION=$(grep -o '"version": "[^"]*"' .output/paymore-chrome-lite/manifest.json | cut -d'"' -f4)
     if [ "$MANIFEST_VERSION" == "$NEW_VERSION" ]; then
         print_success "Manifest version matches: v$MANIFEST_VERSION"
     else
