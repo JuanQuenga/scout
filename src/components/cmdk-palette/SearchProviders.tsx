@@ -8,6 +8,7 @@ import {
   Barcode,
   DollarSign,
   Store,
+  TrendingUp,
 } from "lucide-react";
 
 export interface SearchProvider {
@@ -17,6 +18,8 @@ export interface SearchProvider {
   searchUrl: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
+  // When true, provider will be excluded from the "switch providers" list
+  hideInSwitcher?: boolean;
 }
 
 export const searchProviders: SearchProvider[] = [
@@ -67,7 +70,7 @@ export const searchProviders: SearchProvider[] = [
     trigger: ["pricecharting", "pc", "price"],
     searchUrl:
       "https://www.pricecharting.com/search-products?q={query}&type=prices",
-    icon: DollarSign,
+    icon: TrendingUp,
     color: "bg-blue-600",
   },
   {

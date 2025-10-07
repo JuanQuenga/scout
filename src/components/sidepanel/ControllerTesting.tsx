@@ -89,36 +89,6 @@ export default function ControllerTesting() {
         .map(() => ({ pressed: false, value: 0 })),
     };
 
-    // Prevent sidepanel from closing during testing
-    let keepAliveInterval: NodeJS.Timeout | null = null;
-    const startKeepAlive = () => {
-      // Send a heartbeat to the background script to keep the sidepanel open
-      // Send immediately and then more frequently to ensure reliability
-      const sendKeepAlive = () => {
-        try {
-          chrome.runtime.sendMessage({
-            action: "sidepanelKeepAlive",
-            tool: "controller-testing",
-            timestamp: Date.now(),
-          });
-        } catch (e) {
-          // Ignore errors, just try again next interval
-        }
-      };
-
-      // Send first heartbeat immediately
-      sendKeepAlive();
-
-      // Then send more frequent heartbeats
-      keepAliveInterval = setInterval(sendKeepAlive, 2000); // Every 2 seconds for better reliability
-    };
-
-    const stopKeepAlive = () => {
-      if (keepAliveInterval) {
-        clearInterval(keepAliveInterval);
-        keepAliveInterval = null;
-      }
-    };
 
     const COLOR_GREEN = "rgba(34,197,94,0.85)";
     const COLOR_GREEN_LIGHT = "rgba(34,197,94,0.65)";
@@ -358,12 +328,8 @@ export default function ControllerTesting() {
       }
     }, 500) as unknown as number;
 
-    // Start keep-alive when component mounts
-    startKeepAlive();
-
     return () => {
       stopLoop();
-      stopKeepAlive();
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;

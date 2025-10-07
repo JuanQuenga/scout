@@ -1,6 +1,6 @@
 /* global chrome */
 import { useState, useEffect } from "react";
-import { Check } from "lucide-react";
+import { Check, Menu } from "lucide-react";
 
 interface CMDKSettings {
   enabledSources: {
@@ -10,7 +10,9 @@ interface CMDKSettings {
     quickLinks: boolean;
     tools: boolean;
     searchProviders: boolean;
+    ebayCategories: boolean;
   };
+  sourceOrder: string[];
 }
 
 const DEFAULT_SETTINGS: CMDKSettings = {
@@ -21,13 +23,24 @@ const DEFAULT_SETTINGS: CMDKSettings = {
     quickLinks: true,
     tools: true,
     searchProviders: true,
+    ebayCategories: true,
   },
+  sourceOrder: [
+    "tabs",
+    "quickLinks",
+    "ebayCategories",
+    "bookmarks",
+    "tools",
+    "searchProviders",
+    "history",
+  ],
 };
 
 export default function SettingsPopup() {
   const [settings, setSettings] = useState<CMDKSettings>(DEFAULT_SETTINGS);
   const [isSaved, setIsSaved] = useState(false);
   const [version, setVersion] = useState<string>("");
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     // Load settings from chrome storage
@@ -69,38 +82,77 @@ export default function SettingsPopup() {
     });
   };
 
-  const sources = [
-    {
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    const newOrder = [...settings.sourceOrder];
+    const draggedItem = newOrder[draggedIndex];
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(index, 0, draggedItem);
+
+    const newSettings = {
+      ...settings,
+      sourceOrder: newOrder,
+    };
+    setSettings(newSettings);
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    // Auto-save
+    chrome.storage.sync.set({ cmdkSettings: settings }, () => {
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+    });
+  };
+
+  const sourcesConfig = {
+    tabs: {
       key: "tabs" as const,
       label: "Tabs",
       description: "Search and switch between open browser tabs",
     },
-    {
+    bookmarks: {
       key: "bookmarks" as const,
       label: "Bookmarks",
       description: "Access your saved bookmarks",
     },
-    {
+    history: {
       key: "history" as const,
       label: "Recent History",
       description: "View recently visited pages",
     },
-    {
+    quickLinks: {
       key: "quickLinks" as const,
       label: "Quick Links",
       description: "CSV-based custom links organized by category",
     },
-    {
+    tools: {
       key: "tools" as const,
       label: "Tools",
       description: "PayMore extension tools and features",
     },
-    {
+    searchProviders: {
       key: "searchProviders" as const,
       label: "Search Providers",
       description: "Google, YouTube, Amazon, and other search engines",
     },
-  ];
+    ebayCategories: {
+      key: "ebayCategories" as const,
+      label: "eBay Categories",
+      description: "Live eBay category suggestions as you type",
+    },
+  };
+
+  const sources = settings.sourceOrder
+    .map((key) => sourcesConfig[key as keyof typeof sourcesConfig])
+    .filter(Boolean);
 
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
@@ -132,18 +184,30 @@ export default function SettingsPopup() {
           {/* Settings Card */}
           <div className="bg-card rounded-lg border border-border">
             <div className="p-6 border-b border-border">
-              <h2 className="text-lg font-semibold mb-1">Command Sources</h2>
+              <h2 className="text-lg font-semibold mb-1">Command Menu</h2>
               <p className="text-sm text-muted-foreground">
                 Enable or disable different sources in the command menu popup
               </p>
             </div>
 
             <div className="divide-y divide-border">
-              {sources.map((source) => (
+              {sources.map((source, index) => (
                 <div
                   key={source.key}
-                  className="p-4 flex items-start gap-4 hover:bg-muted/50 transition-colors"
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`p-4 flex items-start gap-4 hover:bg-muted/50 transition-colors cursor-move ${
+                    draggedIndex === index ? "opacity-50" : ""
+                  }`}
                 >
+                  <button
+                    className="p-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <Menu className="w-4 h-4" />
+                  </button>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-medium">{source.label}</h3>
@@ -203,9 +267,9 @@ export default function SettingsPopup() {
           {/* Info */}
           <div className="mt-8 p-4 bg-muted/50 rounded-lg border border-border">
             <p className="text-sm text-muted-foreground">
-              <strong>Tip:</strong> Disabled sources will not appear in the
-              command palette search results. This can help declutter your
-              search experience and improve performance.
+              <strong>Tip:</strong> Drag the <Menu className="w-3 h-3 inline" />{" "}
+              icon to reorder sources. The order you set here determines the
+              order they appear in the command menu.
             </p>
           </div>
         </div>

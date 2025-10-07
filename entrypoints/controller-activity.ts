@@ -25,6 +25,7 @@ export default defineContentScript({
 
     let autoOpen = true;
     let lastNotify = 0;
+    let hasOpenedOnce = false; // Track if we've already auto-opened
 
     chrome.storage?.local?.get({ autoShowModal: true }, (cfg) => {
       autoOpen = cfg?.autoShowModal ?? true;
@@ -41,33 +42,21 @@ export default defineContentScript({
       if (!autoOpen) return;
 
       const now = Date.now();
-      if (now - lastNotify < 1000) return; // Reduced debounce time for faster response
+      if (now - lastNotify < 1000) return; // Debounce to prevent spam
       lastNotify = now;
 
-      // For input events, directly open the sidebar to maintain user gesture context
-      if (reason === "input") {
+      // Only auto-open once on first input, don't repeatedly open
+      if (reason === "input" && !hasOpenedOnce) {
         try {
           chrome.runtime.sendMessage({
             action: "openInSidebar",
             tool: "controller-testing",
             source: "controller-activity",
           });
-          log("Controller input detected, opening sidebar directly");
+          log("Controller input detected, opening sidebar for first time");
+          hasOpenedOnce = true; // Mark that we've opened once
         } catch (e) {
           log("failed to open sidebar for controller input", e);
-        }
-      } else {
-        // For connection events, just notify the background
-        try {
-          chrome.runtime.sendMessage({
-            action: "controllerActivityDetected",
-            reason,
-            timestamp: now,
-            source: "controller-activity",
-          });
-          log("Controller activity detected, notifying background:", reason);
-        } catch (e) {
-          log("failed to notify controller activity", e);
         }
       }
     };

@@ -4,7 +4,34 @@ Download the latest version of the Paymore Chrome Lite Extension.
 
 ## Latest Release
 
-### v1.0.1 (Current)
+### v1.0.2 (Current)
+
+**Release Date:** October 07, 2025
+**Download:** [paymore-chrome-lite-1.0.2-chrome.zip](./paymore-chrome-lite-1.0.2-chrome.zip)
+
+**What's New:**
+
+This release refines the CMDK search palette and adds an integrated eBay taxonomy lookup for quickly finding the matching eBay category for items.
+
+### Features
+
+- eBay Categories (Taxonomy API): You can now query the eBay Taxonomy API directly and surfaces matching categories in the Command Menu.
+- Copy-to-clipboard: Press Enter or click a category suggestion to copy the category path without closing the palette; a short "Copied" hint appears. (for eBay categories in the Command Menu)
+- Source Ordering: Command Menu sources can be reordered and persisted in settings.
+
+### Improvements
+
+- Commad Menu: refined skeletons, focused scrolling behavior, and improved keyboard handling for provider triggers.
+
+### Bug Fixes
+
+- Fixed scrolling bug in Command Menu when typing your query.
+- Fixed various provider activation edge-cases and improved debounce/error handling for taxonomy lookups.
+- Fixed the opening/close behavior for the controller testing sidepanel.
+
+---
+
+### v1.0.1
 
 **Release Date:** October 06, 2025
 **Download:** [paymore-chrome-v1.0.1.zip](./paymore-chrome-v1.0.1.zip)
