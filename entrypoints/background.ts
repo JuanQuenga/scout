@@ -404,8 +404,27 @@ export default defineBackground({
             sendResponse({ success: false, error: "missing_tool" });
             break;
           }
-          toggleSidePanelForTab(sender?.tab?.id, tool);
-          sendResponse({ success: true });
+
+          // Prefer the sender's tab if available (content script). When invoked from
+          // the action popup, sender.tab will be undefined, so fall back to our
+          // tracked active tab or query the current active tab explicitly.
+          const candidateId =
+            sender?.tab?.id ?? currentActiveTabId ?? lastActiveTabId;
+          if (candidateId) {
+            toggleSidePanelForTab(candidateId, tool);
+            sendResponse({ success: true, tabId: candidateId });
+          } else {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+              const active = tabs && tabs[0];
+              if (active?.id) {
+                toggleSidePanelForTab(active.id, tool);
+                sendResponse({ success: true, tabId: active.id });
+              } else {
+                sendResponse({ success: false, error: "no_active_tab" });
+              }
+            });
+            return true; // async response
+          }
           break;
         }
         case "openToolbarCustomization": {
@@ -949,9 +968,7 @@ export default defineBackground({
                 log("sidePanel open lastError", err.message);
               } else {
                 SIDE_PANEL_STATE.set(id, { open: true, tool: desiredTool });
-                log(
-                  `Sidepanel opened for tool: ${desiredTool} on tab: ${id}`
-                );
+                log(`Sidepanel opened for tool: ${desiredTool} on tab: ${id}`);
               }
             });
           } catch (openErr) {
@@ -969,7 +986,9 @@ export default defineBackground({
           return;
         }
 
-        log("toggleSidePanelForTab: could not resolve tab id immediately; querying");
+        log(
+          "toggleSidePanelForTab: could not resolve tab id immediately; querying"
+        );
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           const active = tabs && tabs[0];
           const fallbackId = asValidTabId(active?.id);

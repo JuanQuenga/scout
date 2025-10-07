@@ -1,6 +1,6 @@
 Paymore Lite Chrome Extension — for Paymore staff
 
-The Paymore Lite Chrome Extension is a streamlined browser extension designed specifically for Paymore staff to enhance productivity with quick navigation and search capabilities. This lite version focuses on core functionality, providing a powerful command palette interface for instant access to bookmarks, browsing history, open tabs, and multi-platform search. Built with efficiency in mind, it integrates with platforms like PayMore, Google, Amazon, Best Buy, eBay, Price Charting, YouTube, GitHub, and Twitter/X. With Quick Links integration from Google Sheets and customizable command sources, the extension streamlines daily workflows for Paymore staff.
+The Paymore Lite Chrome Extension is a streamlined browser extension designed specifically for Paymore staff to enhance productivity with quick navigation and search capabilities. This lite version focuses on core functionality, providing a powerful command palette interface for instant access to bookmarks, browsing history, open tabs, and multi-platform search. Built with efficiency in mind, it integrates with multiple popular platforms. With Quick Links integration from Google Sheets and customizable command sources, the extension streamlines daily workflows for Paymore staff.
 
 ### v1.0.0 - Initial Lite Release
 
@@ -9,7 +9,7 @@ This is the first release of Paymore Lite, featuring:
 - **Command Menu** - Press `CMD+Shift+K` to open an Arc-style command palette that gives you instant access to everything
 - **Your bookmarks at your fingertips** - Quickly access your 20 most recently saved bookmarks
 - **Recent browsing history** - Jump back to any of your last 30 visited pages instantly
-- **10 built-in search engines** - Search PayMore, Google, Amazon, Best Buy, eBay, Price Charting, and more - all from one place
+- **10 built-in search engines** - Search multiple popular platforms all from one place
 - **Lightning-fast tab switching** - See all your open tabs and switch between them with just a few keystrokes
 - **Quick Links integration** - Access all those useful links from our Google Sheets, cached for 30 minutes so they're always fast
 - **Keyboard shortcuts galore** - Multiple shortcuts to boost your productivity throughout the day

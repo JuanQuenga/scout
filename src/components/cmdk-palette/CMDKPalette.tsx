@@ -41,6 +41,7 @@ export function CMDKPalette({
 }: CMDKPaletteProps) {
   const [search, setSearch] = useState("");
   const [tabs, setTabs] = useState<TabInfo[]>([]);
+  const [previousTabId, setPreviousTabId] = useState<number | null>(null);
   const [csvLinks, setCSVLinks] = useState<CSVLink[]>([]);
   const [csvLinksLoading, setCSVLinksLoading] = useState(false);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
@@ -50,6 +51,7 @@ export function CMDKPalette({
   );
   const [providerQuery, setProviderQuery] = useState("");
   const [userNavigated, setUserNavigated] = useState(false);
+  const [selectedValue, setSelectedValue] = useState<string>("");
   const [enabledSources, setEnabledSources] = useState({
     tabs: true,
     bookmarks: true,
@@ -59,6 +61,13 @@ export function CMDKPalette({
     searchProviders: true,
   });
   const trimmedSearch = search.trim();
+  const previousTab =
+    previousTabId !== null
+      ? tabs.find((tab) => tab.id === previousTabId) ?? null
+      : null;
+  const previousTabLabel = previousTab?.title?.trim() || previousTab?.url || "";
+  const showPreviousTabHint =
+    !activeProvider && !trimmedSearch && Boolean(previousTabLabel);
 
   useEffect(() => {
     // Load settings from chrome storage
@@ -79,13 +88,18 @@ export function CMDKPalette({
       setActiveProvider(null);
       setProviderQuery("");
       setUserNavigated(false);
+      setSelectedValue("");
     }
   }, [isOpen, enabledSources]);
 
   const loadTabs = async () => {
-    const allTabs = await TabManager.getAllTabs();
+    const [allTabs, prevTabId] = await Promise.all([
+      TabManager.getAllTabs(),
+      TabManager.getPreviousTab(),
+    ]);
     const sorted = TabManager.sortTabs(allTabs);
     setTabs(sorted);
+    setPreviousTabId(prevTabId);
   };
 
   const loadCSVLinks = async () => {
@@ -208,16 +222,24 @@ export function CMDKPalette({
     } else if (value.startsWith("tool-")) {
       const toolId = value.replace("tool-", "");
       if (toolId === "controller-testing") {
-        // Send message to open controller testing in sidebar
-        chrome.runtime.sendMessage(
-          { action: "openInSidebar", tool: "controller-testing" },
-          () => {
-            if (chrome.runtime.lastError) {
-              console.error("Error opening sidebar:", chrome.runtime.lastError);
+        // Send message to open controller testing in sidebar and await ack before closing
+        try {
+          const response = await new Promise<any>((resolve) => {
+            try {
+              chrome.runtime.sendMessage(
+                { action: "openInSidebar", tool: "controller-testing" },
+                (resp: any) => resolve(resp)
+              );
+            } catch (err) {
+              resolve({ success: false, error: String(err) });
             }
+          });
+          if (!response?.success && chrome.runtime.lastError) {
+            console.error("Error opening sidebar:", chrome.runtime.lastError);
           }
-        );
-        onClose();
+        } finally {
+          onClose();
+        }
       }
     }
   };
@@ -249,7 +271,9 @@ export function CMDKPalette({
   const filteredTabs =
     activeProvider || !enabledSources.tabs
       ? []
-      : TabManager.filterTabs(tabs, search);
+      : TabManager.filterTabs(tabs, search).filter(
+          (tab) => !showPreviousTabHint || tab.id !== previousTabId
+        );
   const filteredCSVLinks =
     activeProvider || !enabledSources.quickLinks
       ? []
@@ -343,11 +367,20 @@ export function CMDKPalette({
 
   if (!isOpen) return null;
 
+  // Set initial selected value when previous tab is shown
+  useEffect(() => {
+    if (isOpen && showPreviousTabHint && previousTab && !selectedValue) {
+      setSelectedValue(`tab-${previousTab.id}`);
+    }
+  }, [isOpen, showPreviousTabHint, previousTab, selectedValue]);
+
   const content = (
     <Command
       shouldFilter={false}
       onKeyDown={handleKeyDown}
       className="cmdk-root"
+      value={selectedValue}
+      onValueChange={setSelectedValue}
     >
       <div className="cmdk-input-wrapper">
         {activeProvider && (
@@ -367,43 +400,53 @@ export function CMDKPalette({
             </button>
           </div>
         )}
-        <Command.Input
-          value={activeProvider ? providerQuery : search}
-          onValueChange={activeProvider ? setProviderQuery : handleValueChange}
-          placeholder={
-            activeProvider
-              ? `Search ${activeProvider.name}...`
-              : "Search tabs or type a command..."
-          }
-          className="cmdk-input"
-          autoFocus
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              // Only handle Enter for search providers or empty searches WITHOUT user navigation
-              if (activeProvider && providerQuery.trim()) {
-                e.preventDefault();
-                handleSearchSubmit();
-              } else if (!trimmedSearch && !activeProvider && !userNavigated) {
-                // Empty input with no arrow key navigation - go to previous tab
-                e.preventDefault();
-                handleSearchSubmit();
-              } else if (!activeProvider && trimmedSearch) {
-                const urlCandidate = getUrlFromInput(trimmedSearch);
-                if (urlCandidate) {
-                  e.preventDefault();
-                  void openUrlAndClose(urlCandidate);
-                  return;
-                }
-
-                if (!hasVisibleItems) {
-                  e.preventDefault();
-                  void openGoogleSearch(trimmedSearch);
-                }
-              }
-              // Otherwise, let CMDK's default Enter behavior select the highlighted item
+        <div className="cmdk-input-shell">
+          <Command.Input
+            value={activeProvider ? providerQuery : search}
+            onValueChange={
+              activeProvider ? setProviderQuery : handleValueChange
             }
-          }}
-        />
+            placeholder={
+              activeProvider
+                ? `Search ${activeProvider.name}...`
+                : showPreviousTabHint
+                ? "Search or press Enter to switch tabs..."
+                : "Search tabs or type a command..."
+            }
+            className="cmdk-input"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                // Only handle Enter for search providers or empty searches WITHOUT user navigation
+                if (activeProvider && providerQuery.trim()) {
+                  e.preventDefault();
+                  handleSearchSubmit();
+                } else if (
+                  !trimmedSearch &&
+                  !activeProvider &&
+                  !userNavigated
+                ) {
+                  // Empty input with no arrow key navigation - go to previous tab
+                  e.preventDefault();
+                  handleSearchSubmit();
+                } else if (!activeProvider && trimmedSearch) {
+                  const urlCandidate = getUrlFromInput(trimmedSearch);
+                  if (urlCandidate) {
+                    e.preventDefault();
+                    void openUrlAndClose(urlCandidate);
+                    return;
+                  }
+
+                  if (!hasVisibleItems) {
+                    e.preventDefault();
+                    void openGoogleSearch(trimmedSearch);
+                  }
+                }
+                // Otherwise, let CMDK's default Enter behavior select the highlighted item
+              }
+            }}
+          />
+        </div>
       </div>
 
       <Command.List className="cmdk-list">
@@ -414,9 +457,14 @@ export function CMDKPalette({
               No results found
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              {trimmedSearch
-                ? "Press Enter to search Google or open the typed URL."
-                : "Try a different search term"}
+              {trimmedSearch ? (
+                <>
+                  Press <kbd className="cmdk-kbd">Enter</kbd> to search Google
+                  or open the typed URL.
+                </>
+              ) : (
+                "Try a different search term"
+              )}
             </p>
           </div>
         </Command.Empty>
@@ -447,9 +495,14 @@ export function CMDKPalette({
                         )}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {provider.id === activeProvider.id
-                          ? "Press Enter to search"
-                          : "Click to switch"}
+                        {provider.id === activeProvider.id ? (
+                          <>
+                            Press <kbd className="cmdk-kbd">Enter</kbd> to
+                            search
+                          </>
+                        ) : (
+                          "Click to switch"
+                        )}
                       </p>
                     </div>
                   </div>
@@ -461,6 +514,20 @@ export function CMDKPalette({
 
         {!activeProvider && (
           <>
+            {/* Previous Tab - shown as first option when no search */}
+            {showPreviousTabHint && previousTab && (
+              <Command.Group heading="Previous Tab" className="cmdk-group">
+                <Command.Item
+                  key={`tab-${previousTab.id}`}
+                  value={`tab-${previousTab.id}`}
+                  onSelect={handleSelect}
+                  className="cmdk-item"
+                >
+                  <TabItem tab={previousTab} kbdHintAction="Switch to tab" />
+                </Command.Item>
+              </Command.Group>
+            )}
+
             {/* Quick Links Loading Skeleton */}
             {csvLinksLoading && (
               <Command.Group heading="Quick Links" className="cmdk-group">
@@ -493,7 +560,10 @@ export function CMDKPalette({
                       onSelect={handleSelect}
                       className="cmdk-item"
                     >
-                      <CSVLinkItem link={link} />
+                      <CSVLinkItem
+                        link={link}
+                        kbdHintAction="Open in new tab"
+                      />
                     </Command.Item>
                   ))}
                 </Command.Group>
@@ -509,7 +579,10 @@ export function CMDKPalette({
                     onSelect={handleSelect}
                     className="cmdk-item"
                   >
-                    <BookmarkItem bookmark={bookmark} />
+                    <BookmarkItem
+                      bookmark={bookmark}
+                      kbdHintAction="Open in new tab"
+                    />
                   </Command.Item>
                 ))}
               </Command.Group>
@@ -525,7 +598,7 @@ export function CMDKPalette({
                     onSelect={handleSelect}
                     className="cmdk-item"
                   >
-                    <div className="flex items-center gap-3 px-4 py-3">
+                    <div className="flex items-center gap-3 px-4 py-3 w-full">
                       <div className="p-2 rounded bg-blue-500">
                         <Gamepad2 className="w-4 h-4 text-white" />
                       </div>
@@ -536,6 +609,9 @@ export function CMDKPalette({
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {tool.description}
                         </p>
+                      </div>
+                      <div className="cmdk-item-kbd-hint">
+                        <kbd className="cmdk-kbd">↵</kbd>
                       </div>
                     </div>
                   </Command.Item>
@@ -553,7 +629,7 @@ export function CMDKPalette({
                     onSelect={handleSelect}
                     className="cmdk-item"
                   >
-                    <TabItem tab={tab} />
+                    <TabItem tab={tab} kbdHintAction="Switch to tab" />
                   </Command.Item>
                 ))}
               </Command.Group>
@@ -584,7 +660,8 @@ export function CMDKPalette({
                             Search {provider.name}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Press Tab to activate
+                            Press <kbd className="cmdk-kbd">Tab</kbd> to
+                            activate
                           </p>
                         </div>
                       </div>
@@ -603,7 +680,10 @@ export function CMDKPalette({
                     onSelect={handleSelect}
                     className="cmdk-item"
                   >
-                    <HistoryItemComponent item={item} />
+                    <HistoryItemComponent
+                      item={item}
+                      kbdHintAction="Open in new tab"
+                    />
                   </Command.Item>
                 ))}
               </Command.Group>
