@@ -7,7 +7,7 @@ export default defineConfig({
   // Use the official Tailwind v4 Vite plugin for class scanning + HMR.
   vite: () => ({ plugins: [tailwindcss()] } as WxtViteConfig),
   outDir: ".output", // Base output directory
-  outDirTemplate: "paymore-chrome-lite", // Custom output directory name (removes browser/manifest folder nesting)
+  outDirTemplate: "paymore-lite", // Custom output directory name (removes browser/manifest folder nesting)
   contentScripts: [
     {
       matches: ["<all_urls>"],
@@ -15,7 +15,7 @@ export default defineConfig({
     },
   ],
   manifest: {
-    name: "Paymore Chrome Lite",
+    name: "Paymore Lite",
     version: "1.0.2",
     description: "Chrome extension for Paymore Employees (Lite Version).",
     permissions: [
@@ -59,7 +59,7 @@ export default defineConfig({
           default: "Ctrl+Shift+K",
           mac: "Command+Shift+K",
         },
-        description: "Open Command Popup",
+        description: "Open Command Menu Popup",
       },
       "open-options": {
         suggested_key: {

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Paymore Chrome Lite is a lightweight browser extension built with WXT (Web Extension Toolkit) and React. It provides essential tools for quick navigation and search specifically tailored for Paymore's operations. The lite version focuses on core functionality with a powerful CMDK command palette and settings interface.
+Paymore Lite is a lightweight chrome extension built with WXT (Web Extension Toolkit) and React. It provides essential tools for quick navigation and search specifically tailored for Paymore's operations. The lite version focuses on core functionality with a powerful CMDK command palette and settings interface.
 
 **Current Version:** v1.0.0 (First Lite Release)
 
@@ -20,7 +20,7 @@ The project uses Tailwind CSS v4 for styling, TypeScript for type safety, and PN
 
 ## Screenshots
 
-Here are some screenshots showcasing the key features of the Paymore Chrome Lite extension:
+Here are some screenshots showcasing the key features of the Paymore Lite chrome extension:
 
 ### Command Menu
 

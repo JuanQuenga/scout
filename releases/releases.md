@@ -1,13 +1,13 @@
-# Paymore Chrome Lite Extension Releases
+# Paymore Lite Chrome Extension Releases
 
-Download the latest version of the Paymore Chrome Lite Extension.
+Download the latest version of the Paymore Lite Chrome Extension.
 
 ## Latest Release
 
 ### v1.0.2 (Current)
 
 **Release Date:** October 07, 2025
-**Download:** [paymore-chrome-lite-1.0.2-chrome.zip](./paymore-chrome-lite-1.0.2-chrome.zip)
+**Download:** [paymore-lite-1.0.2-chrome.zip](./paymore-lite-1.0.2-chrome.zip)
 
 **What's New:**
 

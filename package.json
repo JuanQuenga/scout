@@ -1,5 +1,5 @@
 {
-  "name": "paymore-chrome-lite",
+  "name": "paymore-lite",
   "description": "Chrome extension for Paymore Employees (Lite Version).",
   "private": true,
   "version": "1.0.1",
