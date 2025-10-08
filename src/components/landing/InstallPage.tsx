@@ -157,8 +157,8 @@ export default function FeaturesPage() {
               Paymore Lite Features
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
-              Discover the powerful features that make Paymore Lite a powerful
-              tool for employees at PayMore.
+              Essential tools and features designed to enhance productivity and
+              streamline workflows for PayMore team members.
             </p>
           </div>
 
