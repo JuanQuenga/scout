@@ -46,6 +46,12 @@ export default defineConfig({
       default_path: "sidepanel.html",
     },
     options_page: "options.html",
+    web_accessible_resources: [
+      {
+        resources: ["install.html"],
+        matches: ["<all_urls>"],
+      },
+    ],
     content_scripts: [
       {
         matches: ["<all_urls>"],
@@ -63,8 +69,8 @@ export default defineConfig({
       },
       "open-options": {
         suggested_key: {
-          default: "Ctrl+O",
-          mac: "Command+O",
+          default: "Ctrl+Shift+O",
+          mac: "Command+Shift+O",
         },
         description: "Open extension options",
       },

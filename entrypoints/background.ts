@@ -234,6 +234,15 @@ export default defineBackground({
         vibrationEnabled: true,
         debugLogs: true,
       });
+
+      // Open install page on first installation
+      if (details.reason === "install") {
+        log("First installation detected, opening install page");
+        chrome.tabs.create({
+          url: chrome.runtime.getURL("install.html"),
+          active: true,
+        });
+      }
     });
 
     /**

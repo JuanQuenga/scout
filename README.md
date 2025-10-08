@@ -4,16 +4,18 @@
 
 Paymore Lite is a lightweight chrome extension built with WXT (Web Extension Toolkit) and React. It provides essential tools for quick navigation and search specifically tailored for Paymore's operations. The lite version focuses on core functionality with a powerful CMDK command palette and settings interface.
 
-**Current Version:** v1.0.0 (First Lite Release)
+**Current Version:** v1.0.2 (Latest Release)
 
 Key features:
 
 - **CMDK Command Palette**: Arc-style command palette (CMD+Shift+K) for quick navigation, tab switching, and multi-provider search
+- **Controller Testing**: Dedicated sidepanel (CMD+J) for testing game controllers with real-time input visualization
 - **Quick Links**: Cached custom links from Google Sheets with 30-minute caching
 - **Tab Switching**: Fast switching between open tabs with search and filter
 - **Search Providers**: 10 integrated search engines including PayMore, Google, Amazon, Best Buy, eBay, Price Charting, UPC Item DB, YouTube, GitHub, and Twitter/X
+- **eBay Taxonomy API**: Direct integration with eBay's category taxonomy for quick category lookups
 - **Bookmarks & History**: Access your 20 most recent bookmarks and last 30 visited pages
-- **Settings Page**: Configure which command sources are enabled/disabled
+- **Settings Page**: Configure which command sources are enabled/disabled with drag-and-drop reordering
 - **Background Services**: Handle persistent tasks like API calls, storage, and notifications
 
 The project uses Tailwind CSS v4 for styling, TypeScript for type safety, and PNPM for package management.
@@ -40,12 +42,13 @@ Here are some screenshots showcasing the key features of the Paymore Lite chrome
 
 ## Keyboard Shortcuts
 
-The extension includes two keyboard shortcuts:
+The extension includes three keyboard shortcuts:
 
-| Shortcut                       | Action          | Description                                                |
-| ------------------------------ | --------------- | ---------------------------------------------------------- |
-| `CMD+Shift+K` / `CTRL+Shift+K` | Open CMDK Popup | Launch the command palette for quick navigation and search |
-| `CMD+Shift+O` / `CTRL+Shift+O` | Open Settings   | Access extension settings and configuration                |
+| Shortcut                       | Action             | Description                                                     |
+| ------------------------------ | ------------------ | --------------------------------------------------------------- |
+| `CMD+Shift+K` / `CTRL+Shift+K` | Open CMDK Popup    | Launch the command palette for quick navigation and search      |
+| `CMD+Shift+O` / `CTRL+Shift+O` | Open Settings      | Access extension settings and configuration                     |
+| `CMD+J` / `CTRL+J`             | Controller Testing | Open the controller testing sidepanel for gamepad input testing |
 
 You can customize these shortcuts at `chrome://extensions/shortcuts`.
 
@@ -64,14 +67,37 @@ The CMDK (Command Palette) is the fastest way to navigate, search, and access ex
   - Google (`google`, `g`)
   - Amazon (`amazon`, `ama`, `amz`)
   - Best Buy (`bestbuy`, `bb`, `best`)
-  - eBay (`ebay`, `eb`)
+  - eBay (`ebay`, `eb`) - Includes eBay Taxonomy API integration
   - Price Charting (`pricecharting`, `pc`, `price`)
   - UPC Item DB (`upc`, `upcitemdb`, `barcode`)
   - YouTube (`youtube`, `yt`)
   - GitHub (`github`, `gh`)
   - Twitter/X (`twitter`, `x`)
+- **eBay Categories** - Query eBay's Taxonomy API directly for category lookups with copy-to-clipboard functionality
+- **Source Ordering** - Drag and drop to reorder command sources in settings
 
 For detailed CMDK documentation, see [CMDK_README.md](./CMDK_README.md).
+
+## Controller Testing
+
+The Controller Testing sidepanel provides real-time visualization and testing for game controllers. Press `CMD+J` to open it.
+
+**Features:**
+
+- **Real-time Input Visualization** - See controller inputs as they happen with color-coded feedback
+- **Stick Movement Tracking** - Visual representation of left and right analog stick positions
+- **Trigger Pressure** - Real-time display of L2/LT and R2/RT trigger pressure
+- **Button State Monitoring** - All 20 controller buttons with press state and value display
+- **Auto-Connect Detection** - Automatically detects and connects to available controllers
+- **Performance Optimized** - 30fps update rate for smooth real-time feedback
+- **Visual Controller Layout** - SVG-based controller diagram with live input highlighting
+
+**Supported Controllers:**
+
+- Xbox controllers (Xbox One, Xbox Series X/S)
+- PlayStation controllers (DualShock 4, DualSense)
+- Generic gamepads
+- Any controller compatible with the Web Gamepad API
 
 ## Prerequisites
 
@@ -130,29 +156,35 @@ paymore-lite/
 ├── entrypoints/          # Extension entry points
 │   ├── background.ts     # Background script & command handlers
 │   ├── popup/            # CMDK Command Palette (default popup)
-│   └── options/          # Settings page
-├── public/               # Static assets (images, etc.)
+│   ├── sidepanel/        # Controller Testing sidepanel
+│   ├── options/          # Settings page
+│   └── install/          # Installation page
+├── public/               # Static assets (images, icons, etc.)
 ├── src/                  # Source code
 │   ├── components/       # React components
 │   │   ├── cmdk-palette/ # CMDK components & search providers
+│   │   ├── sidepanel/    # Controller Testing components
+│   │   ├── landing/      # Installation page components
 │   │   ├── popups/       # Settings popup
 │   │   └── ui/           # Reusable UI components
+│   ├── lib/              # Utility libraries
+│   ├── types/            # TypeScript type definitions
 │   └── utils/            # Helper utilities (tab-manager, csv-links, bookmarks, history)
 ├── docs/                 # Documentation
 ├── releases/             # Release builds & changelog
-├── CMDK_README.md        # CMDK feature documentation
-├── tailwind.config.cjs   # Tailwind v4 configuration
-├── wxt.config.ts         # WXT configuration (v1.0.0)
-├── package.json          # Dependencies and scripts (v1.0.0)
+├── scripts/              # Build and utility scripts
+├── tailwind.config.ts    # Tailwind v4 configuration
+├── wxt.config.ts         # WXT configuration (v1.0.2)
+├── package.json          # Dependencies and scripts (v1.0.2)
 └── tsconfig.json         # TypeScript configuration
 ```
 
 ## Key Configurations
 
-- **WXT Config** ([wxt.config.ts](./wxt.config.ts)): Defines runtime, permissions, keyboard shortcuts, and entry points. Current version: **1.0.0**
-- **Tailwind** ([tailwind.config.cjs](./tailwind.config.cjs)): Tailwind v4 with Vite plugin for class scanning and HMR
+- **WXT Config** ([wxt.config.ts](./wxt.config.ts)): Defines runtime, permissions, keyboard shortcuts, and entry points. Current version: **1.0.2**
+- **Tailwind** ([tailwind.config.ts](./tailwind.config.ts)): Tailwind v4 with Vite plugin for class scanning and HMR
 - **TypeScript**: Strict mode enabled for better code quality
-- **Permissions**: storage, tabs, activeTab, bookmarks, history
+- **Permissions**: storage, tabs, activeTab, bookmarks, history, contextMenus, sidePanel, scripting, system.display
 
 ## Building for Production
 
@@ -184,18 +216,18 @@ paymore-lite/
 
 ## Releases
 
-Stable releases are available in the [releases/](./releases/) folder. Download the latest version (v1.0.8) from the releases section.
+Stable releases are available in the [releases/](./releases/) folder. Download the latest version (v1.0.2) from the releases section.
 
 See [releases/releases.md](./releases/releases.md) for detailed changelog and installation instructions.
 
 ### Quick Installation
 
-1. Download [paymore-chrome-lite-1.0.0-chrome.zip](./releases/paymore-chrome-lite-1.0.0-chrome.zip)
+1. Download [paymore-lite-1.0.2-chrome.zip](./releases/paymore-lite-1.0.2-chrome.zip)
 2. Unzip the file
 3. Open Chrome and navigate to `chrome://extensions/`
 4. Enable "Developer mode" (toggle in top right)
 5. Click "Load unpacked"
-6. Select the unzipped `paymore-chrome-lite` folder
+6. Select the unzipped `paymore-lite` folder
 
 ## Troubleshooting
 
@@ -212,6 +244,14 @@ See [releases/releases.md](./releases/releases.md) for detailed changelog and in
 - **Quick Links not loading**: Check DevTools Console for CSV fetch errors; clear cache via `chrome.storage.local.clear()`
 - **Bookmarks/History not showing**: Reload extension to re-request permissions
 - **Arrow keys don't work**: Click inside the search input to focus it
+- **eBay categories not loading**: Check internet connection and eBay API availability
+
+### Controller Testing Issues
+
+- **Controller not detected**: Ensure controller is connected via USB or Bluetooth and supported by your browser
+- **No input visualization**: Check that the controller is properly connected and try refreshing the sidepanel
+- **Sidepanel won't open**: Use `CMD+J` / `CTRL+J` or right-click the extension icon and select "Controller Testing"
+- **Performance issues**: Close other tabs/applications that might be using the controller
 
 For detailed CMDK troubleshooting, see [docs/CMDK_README.md](./docs/CMDK_README.md#troubleshooting).
 

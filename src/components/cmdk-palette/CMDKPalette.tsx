@@ -199,7 +199,6 @@ export function CMDKPalette({
         onClose();
       }
     }
-
   };
 
   const handleSelect = async (value: string) => {
@@ -333,7 +332,9 @@ export function CMDKPalette({
       setEbayLoading(true);
       try {
         const res = await fetch(
-          `https://paymore-extension.vercel.app/api/ebay-categories?q=${encodeURIComponent(q)}`
+          `https://paymore-extension.vercel.app/api/ebay-categories?q=${encodeURIComponent(
+            q
+          )}`
         );
         const data = await res.json().catch(() => ({}));
         if (!cancelled) {
@@ -561,44 +562,44 @@ export function CMDKPalette({
           <>
             {/* Show all search providers when one is active - for switching */}
             <Command.Group heading="Search Providers" className="cmdk-group">
-                {searchProviders
-                  .filter((p: SearchProvider) => !p.hideInSwitcher)
-                  .map((provider: SearchProvider) => (
-                    <Command.Item
-                      key={provider.id}
-                      value={`provider-switch-${provider.id}`}
-                      onSelect={handleSelect}
-                      keywords={[provider.name, ...provider.trigger]}
-                      className="cmdk-item"
-                    >
-                      <div className="flex items-center gap-3 px-4 py-3">
-                        <div className={`p-2 rounded ${provider.color}`}>
-                          <provider.icon className="w-4 h-4 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {provider.name}
-                            {provider.id === activeProvider?.id && (
-                              <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                                Active
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {provider.id === activeProvider?.id ? (
-                              <>
-                                Press <kbd className="cmdk-kbd">Enter</kbd> to
-                                search
-                              </>
-                            ) : (
-                              "Click to switch"
-                            )}
-                          </p>
-                        </div>
+              {searchProviders
+                .filter((p: SearchProvider) => !p.hideInSwitcher)
+                .map((provider: SearchProvider) => (
+                  <Command.Item
+                    key={provider.id}
+                    value={`provider-switch-${provider.id}`}
+                    onSelect={handleSelect}
+                    keywords={[provider.name, ...provider.trigger]}
+                    className="cmdk-item"
+                  >
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <div className={`p-2 rounded ${provider.color}`}>
+                        <provider.icon className="w-4 h-4 text-white" />
                       </div>
-                    </Command.Item>
-                  ))}
-              </Command.Group>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {provider.name}
+                          {provider.id === activeProvider?.id && (
+                            <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                              Active
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {provider.id === activeProvider?.id ? (
+                            <>
+                              Press <kbd className="cmdk-kbd">Enter</kbd> to
+                              search
+                            </>
+                          ) : (
+                            "Click to switch"
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </Command.Item>
+                ))}
+            </Command.Group>
           </>
         )}
 
@@ -626,7 +627,10 @@ export function CMDKPalette({
                     <React.Fragment key="quickLinks">
                       {/* Quick Links Loading Skeleton */}
                       {csvLinksLoading && (
-                        <Command.Group heading="Quick Links" className="cmdk-group">
+                        <Command.Group
+                          heading="Quick Links"
+                          className="cmdk-group"
+                        >
                           {[1, 2, 3].map((i) => (
                             <div key={i} className="cmdk-item px-4 py-3">
                               <div className="flex items-center gap-3">
@@ -672,7 +676,10 @@ export function CMDKPalette({
                     <React.Fragment key="ebayCategories">
                       {/* eBay Category Loading */}
                       {ebayLoading && (
-                        <Command.Group heading="eBay Category" className="cmdk-group">
+                        <Command.Group
+                          heading="eBay Category"
+                          className="cmdk-group"
+                        >
                           <div className="cmdk-item px-4 py-3">
                             <div className="flex items-center gap-3">
                               <Skeleton className="w-8 h-8 rounded" />
@@ -687,7 +694,10 @@ export function CMDKPalette({
 
                       {/* eBay Category */}
                       {!ebayLoading && ebaySuggestions.length > 0 && (
-                        <Command.Group heading="eBay Category" className="cmdk-group">
+                        <Command.Group
+                          heading="eBay Category"
+                          className="cmdk-group"
+                        >
                           {ebaySuggestions.map((s) => (
                             <Command.Item
                               key={s.categoryId}
@@ -695,7 +705,9 @@ export function CMDKPalette({
                               onSelect={handleSelect}
                               className="cmdk-item"
                             >
-                              <div className={`flex items-center gap-3 px-4 py-3 w-full`}>
+                              <div
+                                className={`flex items-center gap-3 px-4 py-3 w-full`}
+                              >
                                 <div className="p-2 rounded bg-purple-600">
                                   <Layers className="w-4 h-4 text-white" />
                                 </div>
@@ -727,7 +739,10 @@ export function CMDKPalette({
                     <React.Fragment key="bookmarks">
                       {/* Bookmarks */}
                       {filteredBookmarks.length > 0 && (
-                        <Command.Group heading="Bookmarks" className="cmdk-group">
+                        <Command.Group
+                          heading="Bookmarks"
+                          className="cmdk-group"
+                        >
                           {filteredBookmarks.map((bookmark) => (
                             <Command.Item
                               key={bookmark.id}
@@ -795,7 +810,10 @@ export function CMDKPalette({
                               onSelect={handleSelect}
                               className="cmdk-item"
                             >
-                              <TabItem tab={tab} kbdHintAction="Switch to tab" />
+                              <TabItem
+                                tab={tab}
+                                kbdHintAction="Switch to tab"
+                              />
                             </Command.Item>
                           ))}
                         </Command.Group>
@@ -807,40 +825,41 @@ export function CMDKPalette({
                   return (
                     <React.Fragment key="searchProviders">
                       {/* Search providers */}
-                      {trimmedSearch &&
-                        enabledSources.searchProviders && (
-                          <Command.Group heading="Search" className="cmdk-group">
-                            {searchProviders
-                              .filter((provider: SearchProvider) =>
-                                provider.trigger.some((t) =>
-                                  t.startsWith(search.toLowerCase())
-                                )
+                      {trimmedSearch && enabledSources.searchProviders && (
+                        <Command.Group heading="Search" className="cmdk-group">
+                          {searchProviders
+                            .filter((provider: SearchProvider) =>
+                              provider.trigger.some((t) =>
+                                t.startsWith(search.toLowerCase())
                               )
-                              .map((provider: SearchProvider) => (
-                                <Command.Item
-                                  key={provider.id}
-                                  value={`provider-${provider.id}`}
-                                  onSelect={handleSelect}
-                                  className="cmdk-item"
-                                >
-                                  <div className="flex items-center gap-3 px-4 py-3">
-                                    <div className={`p-2 rounded ${provider.color}`}>
-                                      <provider.icon className="w-4 h-4 text-white" />
-                                    </div>
-                                    <div>
-                                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                        Search {provider.name}
-                                      </p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        Press <kbd className="cmdk-kbd">Tab</kbd> to
-                                        activate
-                                      </p>
-                                    </div>
+                            )
+                            .map((provider: SearchProvider) => (
+                              <Command.Item
+                                key={provider.id}
+                                value={`provider-${provider.id}`}
+                                onSelect={handleSelect}
+                                className="cmdk-item"
+                              >
+                                <div className="flex items-center gap-3 px-4 py-3">
+                                  <div
+                                    className={`p-2 rounded ${provider.color}`}
+                                  >
+                                    <provider.icon className="w-4 h-4 text-white" />
                                   </div>
-                                </Command.Item>
-                              ))}
-                          </Command.Group>
-                        )}
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                      Search {provider.name}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      Press <kbd className="cmdk-kbd">Tab</kbd>{" "}
+                                      to activate
+                                    </p>
+                                  </div>
+                                </div>
+                              </Command.Item>
+                            ))}
+                        </Command.Group>
+                      )}
                     </React.Fragment>
                   );
 
@@ -849,7 +868,10 @@ export function CMDKPalette({
                     <React.Fragment key="history">
                       {/* Recent History */}
                       {filteredHistory.length > 0 && (
-                        <Command.Group heading="Recent History" className="cmdk-group">
+                        <Command.Group
+                          heading="Recent History"
+                          className="cmdk-group"
+                        >
                           {filteredHistory.map((item) => (
                             <Command.Item
                               key={item.id}
