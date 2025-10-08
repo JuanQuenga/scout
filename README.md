@@ -12,7 +12,7 @@ Key features:
 - **Controller Testing**: Dedicated sidepanel (CMD+J) for testing game controllers with real-time input visualization
 - **Quick Links**: Cached custom links from Google Sheets with 30-minute caching
 - **Tab Switching**: Fast switching between open tabs with search and filter
-- **Search Providers**: 10 integrated search engines including PayMore, Google, Amazon, Best Buy, eBay, Price Charting, UPC Item DB, YouTube, GitHub, and Twitter/X
+- **Search Providers**: 10 integrated search providers including PayMore, Google, Amazon, Best Buy, eBay (sold listings), Price Charting, UPC Item DB (UPC - Codes), YouTube, GitHub, and Twitter/X
 - **eBay Taxonomy API**: Direct integration with eBay's category taxonomy for quick category lookups
 - **Bookmarks & History**: Access your 20 most recent bookmarks and last 30 visited pages
 - **Settings Page**: Configure which command sources are enabled/disabled with drag-and-drop reordering

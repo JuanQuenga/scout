@@ -16,7 +16,7 @@ import {
 // Component to render text with keyboard shortcuts
 const renderTextWithKbd = (text: string) => {
   const parts = text.split(
-    /(CMD\+Shift\+K|CTRL\+Shift\+K|Tab|Enter|CMD|CTRL|Shift|eb|arrow keys)/
+    /(CMD\+Shift\+K|CTRL\+Shift\+K|CMD\+K|CTRL\+K|Tab|Enter|CMD|CTRL|Shift|K|eb|arrow keys)/
   );
 
   return parts.map((part, index) => {
@@ -24,12 +24,17 @@ const renderTextWithKbd = (text: string) => {
       [
         "CMD+Shift+K",
         "CTRL+Shift+K",
-        "Tab",
-        "Enter",
+        "CMD+K",
+        "CTRL+K",
         "CMD",
         "CTRL",
         "Shift",
-        "eb",
+        "K",
+        "Tab",
+        "Enter",
+        "ebay",
+        "upc",
+        "price charting",
         "arrow keys",
       ].includes(part)
     ) {
@@ -78,12 +83,49 @@ export default function FeaturesPage() {
         "Command menu popup to easily navigating through tabs, use tools, open quick links, and more.",
       image: "/assets/images/command-popup.png",
       icon: Command,
-      howToUse: [
-        "Press CMD+Shift+K / CTRL+Shift+K to open the command menu. (or click the PayMore extension icon)",
-        "Type eb to search on eBay, hit Tab to activate the search provider, and hit Enter to open the eBay search results. (same method for other search providers)",
-        "Alternatively, select a tab, bookmark, or tool to open instantly by clicking or navigating with the arrow keys and hitting Enter on the desired item.",
-        "Switch between active tabs by just hitting Enter on the desired tab.",
-        "This command menu uses the eBay Taxonomy API to automatically show you a matching eBay category for query. Hit the Enter key or click on a category suggestion to copy it to your clipboard.",
+      subsections: [
+        {
+          title: "Opening the Command Menu",
+          description:
+            "Press CMD + Shift + K / CTRL + Shift + K  to open the command menu. (or pin the extension and click the PayMore icon)",
+        },
+        {
+          title: "Search Providers",
+          description:
+            "Quickly search across multiple platforms by typing a shortcut, hitting Tab to activate, and Enter to open results.",
+          subSubsections: [
+            {
+              title: "eBay Sold Listings",
+              description:
+                "Give a product name or MPN to search on eBay for sold listings.",
+            },
+            {
+              title: "UPC Item Database",
+              description:
+                "Give a product name or UPC code to search on UPC Item Database for product information and UPC codes.",
+            },
+            {
+              title: "Price Charting",
+              description:
+                "Give a UPC code or product name to search PriceCharting for market pricing data and attribute data.",
+            },
+          ],
+        },
+        {
+          title: "Quick Navigation",
+          description:
+            "Select a tab, bookmark, or tool to open instantly by clicking or navigating with the arrow keys and hitting Enter on the desired item.",
+        },
+        {
+          title: "Tab Switching",
+          description:
+            "Switch between active tabs by just hitting Enter on the desired tab.",
+        },
+        {
+          title: "eBay Category Suggestions",
+          description:
+            "This command menu uses the eBay Taxonomy API to automatically show you a matching eBay category for query. Hit the Enter key or click on a category suggestion to copy it to your clipboard.",
+        },
       ],
     },
     {
@@ -183,9 +225,46 @@ export default function FeaturesPage() {
                       {feature.description}
                     </p>
 
-                    {/* How to Use or Features */}
+                    {/* How to Use, Subsections, or Features */}
                     <div className="space-y-4">
-                      {feature.howToUse ? (
+                      {feature.subsections ? (
+                        <div className="space-y-4">
+                          {feature.subsections.map((subsection, subIndex) => (
+                            <div
+                              key={subIndex}
+                              className="border-l-2 border-green-500 pl-4"
+                            >
+                              <h5 className="font-semibold text-slate-900 dark:text-white mb-2 text-sm">
+                                {subsection.title}
+                              </h5>
+                              <p className="text-slate-600 dark:text-slate-400 text-sm flex flex-wrap items-center gap-1">
+                                {renderTextWithKbd(subsection.description)}
+                              </p>
+                              {subsection.subSubsections && (
+                                <div className="mt-3 ml-4 space-y-3">
+                                  {subsection.subSubsections.map(
+                                    (subSub, subSubIndex) => (
+                                      <div
+                                        key={subSubIndex}
+                                        className="border-l-2 border-blue-400 pl-3"
+                                      >
+                                        <h6 className="font-medium text-slate-800 dark:text-slate-200 mb-1 text-xs">
+                                          {subSub.title}
+                                        </h6>
+                                        <p className="text-slate-600 dark:text-slate-400 text-xs flex flex-wrap items-center gap-1">
+                                          {renderTextWithKbd(
+                                            subSub.description
+                                          )}
+                                        </p>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : feature.howToUse ? (
                         <div>
                           <h4 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
                             <ArrowRight className="w-4 h-4" />
