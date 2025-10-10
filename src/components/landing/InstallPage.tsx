@@ -67,13 +67,13 @@ export default function FeaturesPage() {
       id: 1,
       title: "Context Menu Actions",
       description:
-        "Highlight text and instantly search for Sold Listings on eBay, UPC codes (UPCItemDB & Google), or PriceCharting pricing data.",
+        "Highlight text and instantly search for Sold Listings on eBay, MPN codes (Google), UPC codes (UPCItemDB & Google), or PriceCharting pricing data.",
       image: "/assets/images/context-menu.png",
       icon: MousePointer,
       howToUse: [
         "Highlight/select the text for a product anywhere on the page.",
         "Right click the selection to open the context menu.",
-        "Choose the search you need: Sold eBay Listings, UPC Item DB, Google UPC, or PriceCharting.",
+        "Choose the search you need: Sold eBay Listings, UPC Item DB, Google UPC/MPN, or PriceCharting.",
       ],
     },
     {
