@@ -182,6 +182,11 @@ export default defineBackground({
           contexts: ["selection"],
         });
         chrome.contextMenus.create({
+          id: "pm-search-google-mpn",
+          title: "Search for MPN on Google",
+          contexts: ["selection"],
+        });
+        chrome.contextMenus.create({
           id: "pm-search-upc",
           title: "Search on UPCItemDB",
           contexts: ["selection"],
@@ -233,6 +238,16 @@ export default defineBackground({
             chrome.tabs.create({ url: `${GOOGLE_UPC_BASE}${query}` });
           } catch (err) {
             log("Failed to open Google UPC search for selection", selection);
+          }
+          return;
+        }
+
+        if (info.menuItemId === "pm-search-google-mpn") {
+          try {
+            const query = encodeURIComponent(`MPN for ${selection}`);
+            chrome.tabs.create({ url: `${GOOGLE_UPC_BASE}${query}` });
+          } catch (err) {
+            log("Failed to open Google MPN search for selection", selection);
           }
           return;
         }

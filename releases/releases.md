@@ -17,6 +17,7 @@ Download the latest version of the Paymore Lite Chrome Extension.
   - Search on UPCItemDB
   - Search for UPC on Google
   - Search on PriceCharting
+  - Search for MPN on Google
 - **Improved Install Page**: Updated install page with better "How To Use" sections and clearer feature descriptions
 
 ### Improvements
