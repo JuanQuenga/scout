@@ -4,7 +4,36 @@ Download the latest version of the Paymore Lite Chrome Extension.
 
 ## Latest Release
 
-### v1.0.2 (Current)
+### v1.0.3 (Current)
+
+**Release Date:** October 10, 2025
+**Download:** [paymore-lite-1.0.3-chrome.zip](./paymore-lite-1.0.3-chrome.zip)
+
+**What's New:**
+
+### Features
+
+- **Enhanced Context Menu Options**: Added three new right-click search options for selected text:
+  - Search on UPCItemDB
+  - Search for UPC on Google
+  - Search on PriceCharting
+- **Improved Install Page**: Updated install page with better "How To Use" sections and clearer feature descriptions
+
+### Improvements
+
+- **Smarter CSV Caching**: Quick Links now return cached data immediately even if expired, then refresh in background for seamless UX
+- **Improved Loading States**: Loading skeleton only shows on true initial load (no cache), not on cache refresh
+- **Cleaner Context Menu Titles**: Simplified right-click menu item labels for better readability
+
+### Bug Fixes
+
+- Fixed cache expiration logic to prevent unnecessary loading states when cached data is available
+
+---
+
+## Previous Releases
+
+### v1.0.2
 
 **Release Date:** October 07, 2025
 **Download:** [paymore-lite-1.0.2-chrome.zip](./paymore-lite-1.0.2-chrome.zip)
@@ -34,7 +63,7 @@ This release refines the CMDK search palette and adds an integrated eBay taxonom
 ### v1.0.1
 
 **Release Date:** October 06, 2025
-**Download:** [paymore-chrome-v1.0.1.zip](./paymore-chrome-v1.0.1.zip)
+**Download:** [paymore-lite-1.0.1-chrome.zip](./paymore-lite-1.0.1-chrome.zip)
 
 **What's New:**
 
@@ -55,7 +84,7 @@ This release refines the CMDK search palette and adds an integrated eBay taxonom
 ### v1.0.0
 
 **Release Date:** October 05, 2025
-**Download:** [paymore-chrome-lite-v1.0.0.zip](./paymore-chrome-lite-v1.0.0.zip)
+**Download:** [paymore-lite-1.0.0-chrome.zip](./paymore-lite-1.0.0-chrome.zip)
 
 **What's New:**
 
@@ -79,23 +108,21 @@ This is the first release of Paymore Lite, a streamlined browser extension desig
 
 ### Installation
 
-1. Download [paymore-chrome-lite-v1.0.0.zip](./paymore-chrome-lite-v1.0.0.zip)
+1. Download [paymore-lite-1.0.0-chrome.zip](./paymore-lite-1.0.0-chrome.zip)
 2. Unzip the file
 3. Open Chrome and navigate to `chrome://extensions/`
 4. Enable "Developer mode" (toggle in top right)
 5. Click "Load unpacked"
-6. Select the unzipped `paymore-chrome-lite` folder
-
-Note: The packed version for Chrome Web Store submission is located at `.output/paymore-chrome-lite-v1.0.0-packed.zip`
+6. Select the unzipped `paymore-lite` folder
 
 ## Installation Instructions
 
-1. Download `paymore-chrome-lite-v1.0.0.zip`
+1. Download `paymore-lite-1.0.3-chrome.zip`
 2. Extract the ZIP file to a folder on your computer
 3. Open Chrome and go to `chrome://extensions/`
 4. Enable "Developer mode" in the top right
 5. Click "Load unpacked"
-6. Navigate to the extracted folder and select it
+6. Navigate to the extracted folder and select the `paymore-lite` folder
 7. The extension will be installed and ready to use
 
 ### For Chrome Web Store Submission
@@ -115,6 +142,7 @@ After installation, you can customize keyboard shortcuts:
 ## Notes
 
 - Always download from official releases to ensure security
+- For the latest features and bug fixes, use the current release (v1.0.3)
 - CMDK requires `bookmarks` and `history` permissions (granted on install)
 - Quick Links are cached for 30 minutes in Chrome storage
 - If you encounter issues, check the [CMDK_README.md](../CMDK_README.md) for troubleshooting
@@ -122,6 +150,9 @@ After installation, you can customize keyboard shortcuts:
 
 ## Changelog Summary
 
+**v1.0.3** - Enhanced context menu options, smarter CSV caching, improved install page
+**v1.0.2** - eBay taxonomy lookup, command menu refinements, source ordering
+**v1.0.1** - Fixed UPC Item Database search URL format
 **v1.0.0** - Initial Lite Release with CMDK Command Palette, Settings Page, and Multi-Platform Search
 
 For questions or support, contact support@paymore.com

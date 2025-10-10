@@ -65,15 +65,15 @@ export default function FeaturesPage() {
   const mainFeatures = [
     {
       id: 1,
-      title: "Sold eBay Listings",
+      title: "Context Menu Actions",
       description:
-        "Instantly view sold eBay listings for anything with just one click.",
+        "Highlight text and instantly search for Sold Listings on eBay, UPC codes (UPCItemDB & Google), or PriceCharting pricing data.",
       image: "/assets/images/context-menu.png",
       icon: MousePointer,
       howToUse: [
         "Highlight/select the text for a product anywhere on the page.",
         "Right click the selection to open the context menu.",
-        "Select 'View Sold eBay Listings' from the menu.",
+        "Choose the search you need: Sold eBay Listings, UPC Item DB, Google UPC, or PriceCharting.",
       ],
     },
     {
@@ -83,12 +83,13 @@ export default function FeaturesPage() {
         "Command menu popup to easily navigating through tabs, use tools, open quick links, and more.",
       image: "/assets/images/command-popup.png",
       icon: Command,
+      howToUse: [
+        "Pin the PayMore extension icon to your toolbar.",
+        "Click the PayMore extension icon (or Press CMD + Shift + K / CTRL + Shift + K) to open the command menu)",
+        "Type to filter results by tools, tabs, quick links, or search providers.",
+        "Use Tab or arrow keys to focus an item and hit Enter to launch it.",
+      ],
       subsections: [
-        {
-          title: "Opening the Command Menu",
-          description:
-            "Press CMD + Shift + K / CTRL + Shift + K  to open the command menu. (or pin the extension and click the PayMore icon)",
-        },
         {
           title: "Search Providers",
           description:
@@ -130,7 +131,7 @@ export default function FeaturesPage() {
     },
     {
       id: 3,
-      title: "Controller Testing",
+      title: "Built-In Controller Testing",
       description:
         "Built-in controller testing tool with color visuals to indicate problems.",
       image: "/assets/images/controller-testing.png",
@@ -229,6 +230,29 @@ export default function FeaturesPage() {
                     <div className="space-y-4">
                       {feature.subsections ? (
                         <div className="space-y-4">
+                          {feature.howToUse && (
+                            <div>
+                              <h4 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                                <ArrowRight className="w-4 h-4" />
+                                How To Use
+                              </h4>
+                              <ul className="space-y-2">
+                                {feature.howToUse.map((step, stepIndex) => (
+                                  <li
+                                    key={stepIndex}
+                                    className="flex items-start gap-3"
+                                  >
+                                    <span className="flex-shrink-0 w-5 h-5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-xs flex items-center justify-center mt-0.5">
+                                      {stepIndex + 1}
+                                    </span>
+                                    <span className="text-slate-600 dark:text-slate-400 text-sm flex flex-wrap items-center gap-1">
+                                      {renderTextWithKbd(step)}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                           {feature.subsections.map((subsection, subIndex) => (
                             <div
                               key={subIndex}
