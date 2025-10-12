@@ -9,6 +9,11 @@ import {
   DollarSign,
   Store,
   TrendingUp,
+  Home,
+  Wrench,
+  PaintBucket,
+  Cpu,
+  Globe,
 } from "lucide-react";
 
 export interface SearchProvider {
@@ -20,6 +25,15 @@ export interface SearchProvider {
   color: string;
   // When true, provider will be excluded from the "switch providers" list
   hideInSwitcher?: boolean;
+  isCustom?: boolean;
+}
+
+export interface CustomSearchProvider {
+  id: string;
+  name: string;
+  triggers: string[];
+  searchUrl: string;
+  color: string;
 }
 
 export const searchProviders: SearchProvider[] = [
@@ -32,9 +46,9 @@ export const searchProviders: SearchProvider[] = [
     color: "bg-green-500",
   },
   {
-    id: "mochi",
-    name: "Mochi Search",
-    trigger: ["mochi", "search"],
+    id: "scout",
+    name: "Scout Search",
+    trigger: ["scout", "search"],
     searchUrl: "https://google.com/search/?q={query}",
     icon: Store,
     color: "bg-green-700",
@@ -105,11 +119,48 @@ export const searchProviders: SearchProvider[] = [
     icon: MessageCircle,
     color: "bg-sky-500",
   },
+  {
+    id: "homedepot",
+    name: "Home Depot",
+    trigger: ["homedepot", "hd", "home"],
+    searchUrl: "https://www.homedepot.com/s/{query}",
+    icon: Home,
+    color: "bg-orange-600",
+  },
+  {
+    id: "lowes",
+    name: "Lowe's",
+    trigger: ["lowes", "low"],
+    searchUrl: "https://www.lowes.com/search?searchTerm={query}",
+    icon: Wrench,
+    color: "bg-blue-500",
+  },
+  {
+    id: "menards",
+    name: "Menards",
+    trigger: ["menards", "men"],
+    searchUrl: "https://www.menards.com/main/search.html?search={query}",
+    icon: PaintBucket,
+    color: "bg-green-700",
+  },
+  {
+    id: "microcenter",
+    name: "Micro Center",
+    trigger: ["microcenter", "micro", "mc"],
+    searchUrl:
+      "https://www.microcenter.com/search/search_results.aspx?N=&cat=&Ntt={query}",
+    icon: Cpu,
+    color: "bg-red-600",
+  },
 ];
 
-export function findProviderByTrigger(input: string): SearchProvider | null {
+export function findProviderByTrigger(
+  input: string,
+  customProviders?: CustomSearchProvider[]
+): SearchProvider | null {
   const lowerInput = input.toLowerCase().trim();
 
+  // Check default providers
   for (const provider of searchProviders) {
     for (const trigger of provider.trigger) {
       if (trigger.startsWith(lowerInput) || lowerInput.startsWith(trigger)) {
@@ -118,5 +169,50 @@ export function findProviderByTrigger(input: string): SearchProvider | null {
     }
   }
 
+  // Check custom providers
+  if (customProviders) {
+    for (const customProvider of customProviders) {
+      for (const trigger of customProvider.triggers) {
+        if (trigger.startsWith(lowerInput) || lowerInput.startsWith(trigger)) {
+          // Convert custom provider to SearchProvider format
+          return {
+            id: customProvider.id,
+            name: customProvider.name,
+            trigger: customProvider.triggers,
+            searchUrl: customProvider.searchUrl,
+            icon: Globe, // Default icon for custom providers
+            color: customProvider.color,
+            isCustom: true,
+          };
+        }
+      }
+    }
+  }
+
   return null;
+}
+
+export function getAllSearchProviders(
+  customProviders?: CustomSearchProvider[],
+  enabledProviders?: { [providerId: string]: boolean }
+): SearchProvider[] {
+  // Filter default providers based on enabled status
+  const filteredDefaultProviders = searchProviders.filter(
+    (provider) => enabledProviders?.[provider.id] !== false
+  );
+
+  // Convert custom providers to SearchProvider format
+  const convertedCustomProviders = (customProviders || [])
+    .filter((provider) => enabledProviders?.[provider.id] !== false)
+    .map((customProvider) => ({
+      id: customProvider.id,
+      name: customProvider.name,
+      trigger: customProvider.triggers,
+      searchUrl: customProvider.searchUrl,
+      icon: Globe, // Default icon for custom providers
+      color: customProvider.color,
+      isCustom: true,
+    }));
+
+  return [...filteredDefaultProviders, ...convertedCustomProviders];
 }

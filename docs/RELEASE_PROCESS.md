@@ -1,6 +1,6 @@
 # Release Process Guide for AI Models
 
-This document provides step-by-step instructions on how to create release builds for the mochi extension. Follow these steps exactly to ensure consistency with previous releases.
+This document provides step-by-step instructions on how to create release builds for the scout extension. Follow these steps exactly to ensure consistency with previous releases.
 
 ## Overview
 
@@ -39,15 +39,15 @@ Run the production build command:
 pnpm build
 ```
 
-This creates the production build in `.output/mochi/` directory.
+This creates the production build in `.output/scout/` directory.
 
 ### Step 3: Create the Packed Zip (for Chrome Web Store)
 
 Create a zip file of the built extension for publishing to the Chrome Web Store.
 
-**Naming Convention:** `mochi-v{VERSION}-packed.zip`
+**Naming Convention:** `scout-v{VERSION}-packed.zip`
 
-**Example:** `mochi-v1.0.7-packed.zip`
+**Example:** `scout-v1.0.7-packed.zip`
 
 **Location:** Keep this file in `.output/` directory
 
@@ -55,19 +55,19 @@ Create a zip file of the built extension for publishing to the Chrome Web Store.
 
 ```bash
 cd .output
-zip -r mochi-v1.0.7-packed.zip mochi
+zip -r scout-v1.0.7-packed.zip scout
 cd ..
 ```
 
-**What it contains:** The entire `mochi/` folder from `.output/`
+**What it contains:** The entire `scout/` folder from `.output/`
 
 ### Step 4: Create the Unpacked Release Zip (for GitHub Releases)
 
 Create a zip file for users to manually install the extension.
 
-**Naming Convention:** `mochi-v{VERSION}.zip`
+**Naming Convention:** `scout-v{VERSION}.zip`
 
-**Example:** `mochi-v1.0.7.zip`
+**Example:** `scout-v1.0.7.zip`
 
 **Location:** Move this file to `releases/` directory
 
@@ -75,12 +75,12 @@ Create a zip file for users to manually install the extension.
 
 ```bash
 cd .output
-zip -r mochi.zip mochi
-mv mochi.zip ../releases/mochi-v1.0.7.zip
+zip -r scout.zip scout
+mv scout.zip ../releases/scout-v1.0.7.zip
 cd ..
 ```
 
-**What it contains:** The entire `mochi/` folder from `.output/`
+**What it contains:** The entire `scout/` folder from `.output/`
 
 **Note:** This is the same content as the packed zip, but with different naming for the releases folder.
 
@@ -112,14 +112,14 @@ Update the `releases/releases.md` file with the new version information.
 
 ### Installation
 
-1. Download [mochi-v{VERSION}.zip](./mochi-v{VERSION}.zip)
+1. Download [scout-v{VERSION}.zip](./scout-v{VERSION}.zip)
 2. Unzip the file
 3. Open Chrome and navigate to `chrome://extensions/`
 4. Enable "Developer mode" (toggle in top right)
 5. Click "Load unpacked"
-6. Select the unzipped `mochi` folder
+6. Select the unzipped `scout` folder
 
-Note: The packed version for Chrome Web Store submission is located at `.output/mochi-v{VERSION}-packed.zip`
+Note: The packed version for Chrome Web Store submission is located at `.output/scout-v{VERSION}-packed.zip`
 ```
 
 **Important:**
@@ -135,13 +135,13 @@ Based on previous releases, here are the exact naming patterns:
 
 ### Packed Zip (in `.output/`)
 
-- `mochi-v1.0.0-packed.zip`
-- **New:** `mochi-v{VERSION}-packed.zip`
+- `scout-v1.0.0-packed.zip`
+- **New:** `scout-v{VERSION}-packed.zip`
 
 ### Unpacked Release Zip (in `releases/`)
 
-- `mochi-v1.0.0.zip`
-- **New:** `mochi-v{VERSION}.zip`
+- `scout-v1.0.0.zip`
+- **New:** `scout-v{VERSION}.zip`
 
 ## Complete Example Workflow
 
@@ -157,11 +157,11 @@ pnpm build
 
 # Step 3: Create packed zip (stays in .output/)
 cd .output
-zip -r mochi-v1.0.7-packed.zip mochi
+zip -r scout-v1.0.7-packed.zip scout
 
 # Step 4: Create unpacked release zip (goes to releases/)
-zip -r mochi.zip mochi
-mv mochi.zip ../releases/mochi-v1.0.7.zip
+zip -r scout.zip scout
+mv scout.zip ../releases/scout-v1.0.7.zip
 cd ..
 
 # Step 5: Update releases/releases.md
@@ -174,22 +174,22 @@ Before considering the release complete, verify:
 
 - [ ] `wxt.config.ts` version matches `package.json` version
 - [ ] `pnpm build` completed successfully without errors
-- [ ] Packed zip exists: `.output/mochi-v{VERSION}-packed.zip`
-- [ ] Unpacked zip exists: `releases/mochi-v{VERSION}.zip`
-- [ ] Both zips contain the `mochi/` folder with manifest.json and all extension files
+- [ ] Packed zip exists: `.output/scout-v{VERSION}-packed.zip`
+- [ ] Unpacked zip exists: `releases/scout-v{VERSION}.zip`
+- [ ] Both zips contain the `scout/` folder with manifest.json and all extension files
 - [ ] `releases/releases.md` has new version section at the top
 - [ ] New version section includes: version number, date, features, improvements, fixes, and installation instructions
 - [ ] File naming exactly matches the pattern from previous releases
 
 ## Common Mistakes to Avoid
 
-1. ❌ **Don't** name files differently (e.g., `mochi-1.0.7.zip` instead of `mochi-v1.0.7.zip`)
+1. ❌ **Don't** name files differently (e.g., `scout-1.0.7.zip` instead of `scout-v1.0.7.zip`)
 2. ❌ **Don't** forget the "v" prefix in zip file names
 3. ❌ **Don't** put the packed zip in `releases/` folder (it belongs in `.output/`)
 4. ❌ **Don't** create version mismatch between `wxt.config.ts` and `package.json`
 5. ❌ **Don't** forget to update `releases/releases.md`
-6. ❌ **Don't** zip the `.output` folder itself - zip the `paymore-chrome` folder inside it
-7. ❌ **Don't** leave the temporary `mochi.zip` in `.output/` after moving it
+6. ❌ **Don't** zip the `.output` folder itself - zip the `scout` folder inside it
+7. ❌ **Don't** leave the temporary `scout.zip` in `.output/` after moving it
 
 ## Quick Command Reference
 
@@ -199,9 +199,9 @@ Before considering the release complete, verify:
 # Build and create both zips
 pnpm build && \
 cd .output && \
-zip -r mochi-v{VERSION}-packed.zip mochi && \
-zip -r mochi.zip mochi && \
-mv mochi.zip ../releases/mochi-v{VERSION}.zip && \
+zip -r scout-v{VERSION}-packed.zip scout && \
+zip -r scout.zip scout && \
+mv scout.zip ../releases/scout-v{VERSION}.zip && \
 cd ..
 
 # Update releases/releases.md (manual edit)

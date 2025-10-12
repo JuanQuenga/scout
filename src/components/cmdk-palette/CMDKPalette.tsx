@@ -25,7 +25,13 @@ import { CSVLinkItem } from "./CSVLinkItem";
 import { BookmarkItem } from "./BookmarkItem";
 import { HistoryItemComponent } from "./HistoryItem";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { X, Search as SearchIcon, Gamepad2, Layers } from "lucide-react";
+import {
+  X,
+  Search as SearchIcon,
+  Gamepad2,
+  Layers,
+  Settings,
+} from "lucide-react";
 import "./styles.css";
 
 interface CMDKPaletteProps {
@@ -66,10 +72,10 @@ export function CMDKPalette({
     ebayCategories: true,
   });
   const [sourceOrder, setSourceOrder] = useState<string[]>([
+    "tabs",
     "quickLinks",
     "ebayCategories",
     "tools",
-    "tabs",
     "bookmarks",
     "searchProviders",
     "history",
@@ -332,7 +338,7 @@ export function CMDKPalette({
       setEbayLoading(true);
       try {
         const res = await fetch(
-          `https://mochi-extension.vercel.app/api/ebay-categories?q=${encodeURIComponent(
+          `https://scout-extension.vercel.app/api/ebay-categories?q=${encodeURIComponent(
             q
           )}`
         );
@@ -426,7 +432,12 @@ export function CMDKPalette({
     await openUrlAndClose(url);
   };
 
-  // Group CSV links by category and sort alphabetically
+  const openSettings = () => {
+    chrome.runtime.openOptionsPage();
+    onClose();
+  };
+
+  // Group CSV links by category
   const csvLinksByCategory = filteredCSVLinks.reduce((acc, link) => {
     const category = link.category || "General";
     if (!acc[category]) acc[category] = [];
@@ -434,12 +445,10 @@ export function CMDKPalette({
     return acc;
   }, {} as Record<string, CSVLink[]>);
 
-  // Sort categories in reverse alphabetical order, but put "Warranty" first
-  const sortedCategories = Object.keys(csvLinksByCategory).sort((a, b) => {
-    if (a.toLowerCase() === "warranty") return -1;
-    if (b.toLowerCase() === "warranty") return 1;
-    return b.localeCompare(a); // Reversed: b comes before a
-  });
+  // Sort categories alphabetically
+  const sortedCategories = Object.keys(csvLinksByCategory).sort((a, b) =>
+    a.localeCompare(b)
+  );
 
   // Sort links within each category alphabetically by title
   sortedCategories.forEach((category) => {
@@ -536,6 +545,15 @@ export function CMDKPalette({
             }}
           />
         </div>
+        {!trimmedSearch && !activeProvider && (
+          <button
+            onClick={openSettings}
+            className="cmdk-settings-button"
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       <Command.List className="cmdk-list" ref={listRef}>
@@ -619,16 +637,51 @@ export function CMDKPalette({
               </Command.Group>
             )}
 
-            {/* Render sources in the order specified by sourceOrder */}
-            {sourceOrder.map((sourceKey) => {
+            {/* Render sources - use sourceOrder for initial state, relevance order when searching */}
+            {(trimmedSearch
+              ? [
+                  "tabs",
+                  "quickLinks",
+                  "ebayCategories",
+                  "tools",
+                  "bookmarks",
+                  "searchProviders",
+                  "history",
+                ]
+              : sourceOrder
+            ).map((sourceKey) => {
               switch (sourceKey) {
+                case "tabs":
+                  return (
+                    <React.Fragment key="tabs">
+                      {/* Tabs */}
+                      {filteredTabs.length > 0 && (
+                        <Command.Group heading="Tabs" className="cmdk-group">
+                          {filteredTabs.map((tab) => (
+                            <Command.Item
+                              key={tab.id}
+                              value={`tab-${tab.id}`}
+                              onSelect={handleSelect}
+                              className="cmdk-item"
+                            >
+                              <TabItem
+                                tab={tab}
+                                kbdHintAction="Switch to tab"
+                              />
+                            </Command.Item>
+                          ))}
+                        </Command.Group>
+                      )}
+                    </React.Fragment>
+                  );
+
                 case "quickLinks":
                   return (
                     <React.Fragment key="quickLinks">
-                      {/* Quick Links Loading Skeleton */}
+                      {/* Scout Links Loading Skeleton */}
                       {csvLinksLoading && (
                         <Command.Group
-                          heading="Quick Links"
+                          heading="Scout Links"
                           className="cmdk-group"
                         >
                           {[1, 2, 3].map((i) => (
@@ -645,7 +698,7 @@ export function CMDKPalette({
                         </Command.Group>
                       )}
 
-                      {/* Quick Links - sorted alphabetically by category */}
+                      {/* Scout Links - sorted alphabetically by category */}
                       {!csvLinksLoading &&
                         sortedCategories.map((category) => (
                           <Command.Group
@@ -734,33 +787,6 @@ export function CMDKPalette({
                     </React.Fragment>
                   );
 
-                case "bookmarks":
-                  return (
-                    <React.Fragment key="bookmarks">
-                      {/* Bookmarks */}
-                      {filteredBookmarks.length > 0 && (
-                        <Command.Group
-                          heading="Bookmarks"
-                          className="cmdk-group"
-                        >
-                          {filteredBookmarks.map((bookmark) => (
-                            <Command.Item
-                              key={bookmark.id}
-                              value={`bookmark-${bookmark.id}`}
-                              onSelect={handleSelect}
-                              className="cmdk-item"
-                            >
-                              <BookmarkItem
-                                bookmark={bookmark}
-                                kbdHintAction="Open in new tab"
-                              />
-                            </Command.Item>
-                          ))}
-                        </Command.Group>
-                      )}
-                    </React.Fragment>
-                  );
-
                 case "tools":
                   return (
                     <React.Fragment key="tools">
@@ -797,22 +823,25 @@ export function CMDKPalette({
                     </React.Fragment>
                   );
 
-                case "tabs":
+                case "bookmarks":
                   return (
-                    <React.Fragment key="tabs">
-                      {/* Tab results */}
-                      {filteredTabs.length > 0 && (
-                        <Command.Group heading="Tabs" className="cmdk-group">
-                          {filteredTabs.map((tab) => (
+                    <React.Fragment key="bookmarks">
+                      {/* Bookmarks */}
+                      {filteredBookmarks.length > 0 && (
+                        <Command.Group
+                          heading="Bookmarks"
+                          className="cmdk-group"
+                        >
+                          {filteredBookmarks.map((bookmark) => (
                             <Command.Item
-                              key={tab.id}
-                              value={`tab-${tab.id}`}
+                              key={bookmark.id}
+                              value={`bookmark-${bookmark.id}`}
                               onSelect={handleSelect}
                               className="cmdk-item"
                             >
-                              <TabItem
-                                tab={tab}
-                                kbdHintAction="Switch to tab"
+                              <BookmarkItem
+                                bookmark={bookmark}
+                                kbdHintAction="Open in new tab"
                               />
                             </Command.Item>
                           ))}
@@ -825,13 +854,15 @@ export function CMDKPalette({
                   return (
                     <React.Fragment key="searchProviders">
                       {/* Search providers */}
-                      {trimmedSearch && enabledSources.searchProviders && (
+                      {enabledSources.searchProviders && (
                         <Command.Group heading="Search" className="cmdk-group">
                           {searchProviders
-                            .filter((provider: SearchProvider) =>
-                              provider.trigger.some((t) =>
-                                t.startsWith(search.toLowerCase())
-                              )
+                            .filter(
+                              (provider: SearchProvider) =>
+                                !trimmedSearch ||
+                                provider.trigger.some((t) =>
+                                  t.startsWith(search.toLowerCase())
+                                )
                             )
                             .map((provider: SearchProvider) => (
                               <Command.Item

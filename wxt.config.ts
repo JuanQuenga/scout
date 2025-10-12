@@ -7,15 +7,32 @@ export default defineConfig({
   // Use the official Tailwind v4 Vite plugin for class scanning + HMR.
   vite: () => ({ plugins: [tailwindcss()] } as WxtViteConfig),
   outDir: ".output", // Base output directory
-  outDirTemplate: "mochi", // Custom output directory name (removes browser/manifest folder nesting)
-  contentScripts: [
-    {
-      matches: ["<all_urls>"],
-      entries: ["controller-activity"],
-    },
-  ],
+  outDirTemplate: "scout", // Custom output directory name (removes browser/manifest folder nesting)
   manifest: {
-    name: "Mochi",
+    content_scripts: [
+      {
+        matches: ["<all_urls>"],
+        js: ["controller-activity.js"],
+        run_at: "document_idle",
+      },
+      {
+        matches: ["<all_urls>"],
+        js: ["upc-highlighter.js"],
+        run_at: "document_idle",
+        all_frames: true,
+      },
+      {
+        matches: ["https://admin.shopify.com/*", "https://*.myshopify.com/admin/*"],
+        js: ["shopify-guardrails.js"],
+        run_at: "document_idle",
+      },
+      {
+        matches: ["https://www.ebay.com/sch/*"],
+        js: ["ebay-sold-summary.js"],
+        run_at: "document_idle",
+      },
+    ],
+    name: "Scout",
     version: "1.0.0",
     description:
       "A versatile Chrome extension with command palette, controller testing, and multi-provider search capabilities.",
@@ -34,13 +51,18 @@ export default defineConfig({
     ],
     host_permissions: ["<all_urls>"],
     icons: {
-      16: "assets/icons/icon16.svg",
-      32: "assets/icons/icon32.svg",
-      48: "assets/icons/icon48.svg",
-      128: "assets/icons/icon128.svg",
+      16: "assets/icons/dog-16.png",
+      32: "assets/icons/dog-32.png",
+      48: "assets/icons/dog-48.png",
+      128: "assets/icons/dog-128.png",
     },
     action: {
-      default_icon: "assets/images/mochi-brand.svg",
+      default_icon: {
+        16: "assets/icons/dog-16.png",
+        32: "assets/icons/dog-32.png",
+        48: "assets/icons/dog-48.png",
+        128: "assets/icons/dog-128.png",
+      },
       default_popup: "popup.html",
     },
     side_panel: {
@@ -55,13 +77,6 @@ export default defineConfig({
       {
         resources: ["assets/images/*"],
         matches: ["<all_urls>"],
-      },
-    ],
-    content_scripts: [
-      {
-        matches: ["<all_urls>"],
-        run_at: "document_idle",
-        js: ["controller-activity.js"],
       },
     ],
     commands: {

@@ -1,23 +1,23 @@
-# Mochi Chrome Extension Releases
+# Scout Chrome Extension Releases
 
-Download the latest version of the Mochi Chrome Extension.
+Download the latest version of the Scout Chrome Extension.
 
 ## Latest Release
 
 ### v1.0.0 (Current)
 
 **Release Date:** October 12, 2025
-**Download:** [mochi-1.0.0-chrome.zip](./mochi-1.0.0-chrome.zip)
+**Download:** [scout-1.0.0-chrome.zip](./scout-1.0.0-chrome.zip)
 
 **What's New:**
 
-This is the first release of Mochi, a versatile browser extension with command palette, controller testing, and multi-provider search capabilities.
+This is the first release of Scout, a versatile browser extension with command palette, controller testing, and multi-provider search capabilities.
 
 ### Features
 
 - **CMDK Command Palette**: Arc-style command palette accessible via `CMD+Shift+K` / `CTRL+Shift+K`
 - **Controller Testing**: Real-time game controller input visualization via `CMD+J` / `CTRL+J`
-- **Quick Links**: Cached custom links from Google Sheets with 30-minute caching for instant access
+- **Scout Links**: Cached custom links from Google Sheets with 30-minute caching for instant access
 - **Tab Switching**: Fast switching between open tabs with search and filter
 - **Search Providers**: 10 integrated search engines including Google, Amazon, Best Buy, eBay, Price Charting, UPC Item DB, YouTube, GitHub, and Twitter/X
 - **Bookmarks & History**: Access your 20 most recent bookmarks and last 30 visited pages
@@ -39,21 +39,21 @@ This is the first release of Mochi, a versatile browser extension with command p
 
 ### Installation
 
-1. Download [mochi-1.0.0-chrome.zip](./mochi-1.0.0-chrome.zip)
+1. Download [scout-1.0.0-chrome.zip](./scout-1.0.0-chrome.zip)
 2. Unzip the file
 3. Open Chrome and navigate to `chrome://extensions/`
 4. Enable "Developer mode" (toggle in top right)
 5. Click "Load unpacked"
-6. Select the unzipped `mochi` folder
+6. Select the unzipped `scout` folder
 
 ## Installation Instructions
 
-1. Download `mochi-1.0.0-chrome.zip`
+1. Download `scout-1.0.0-chrome.zip`
 2. Extract the ZIP file to a folder on your computer
 3. Open Chrome and go to `chrome://extensions/`
 4. Enable "Developer mode" in the top right
 5. Click "Load unpacked"
-6. Navigate to the extracted folder and select the `mochi` folder
+6. Navigate to the extracted folder and select the `scout` folder
 7. The extension will be installed and ready to use
 
 ### For Chrome Web Store Submission
@@ -65,7 +65,7 @@ The packed version is ready for Chrome Web Store upload via the [Chrome Web Stor
 After installation, you can customize keyboard shortcuts:
 
 1. Go to `chrome://extensions/shortcuts`
-2. Find "Mochi" extension
+2. Find "Scout" extension
 3. Customize shortcuts for:
    - Open CMDK popup (default: `CMD+Shift+K`)
    - Open settings page (default: `CMD+Shift+O`)
@@ -75,7 +75,7 @@ After installation, you can customize keyboard shortcuts:
 - Always download from official releases to ensure security
 - For the latest features and bug fixes, use the current release (v1.0.0)
 - CMDK requires `bookmarks` and `history` permissions (granted on install)
-- Quick Links are cached for 30 minutes in Chrome storage
+- Scout Links are cached for 30 minutes in Chrome storage
 - If you encounter issues, check the [CMDK_README.md](../CMDK_README.md) for troubleshooting
 - Settings changes are automatically saved
 

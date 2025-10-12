@@ -1,8 +1,8 @@
-# Mochi Chrome Extension
+# Scout Chrome Extension
 
 ## Overview
 
-Mochi is a versatile Chrome extension built with WXT (Web Extension Toolkit) and React. It provides essential tools for quick navigation, search, and controller testing with a powerful CMDK command palette and settings interface.
+Scout is a versatile Chrome extension built with WXT (Web Extension Toolkit) and React. It provides essential tools for quick navigation, search, and controller testing with a powerful CMDK command palette and settings interface.
 
 **Current Version:** v1.0.0 (Latest Release)
 
@@ -10,7 +10,7 @@ Key features:
 
 - **CMDK Command Palette**: Arc-style command palette (CMD+Shift+K) for quick navigation, tab switching, and multi-provider search
 - **Controller Testing**: Dedicated sidepanel (CMD+J) for testing game controllers with real-time input visualization
-- **Quick Links**: Cached custom links from Google Sheets with 30-minute caching
+- **Scout Links**: Cached custom links from Google Sheets with 30-minute caching
 - **Tab Switching**: Fast switching between open tabs with search and filter
 - **Search Providers**: 10 integrated search providers including PayMore, Google, Amazon, Best Buy, eBay (sold listings), Price Charting, UPC Item DB (UPC - Codes), YouTube, GitHub, and Twitter/X
 - **eBay Taxonomy API**: Direct integration with eBay's category taxonomy for quick category lookups
@@ -22,7 +22,7 @@ The project uses Tailwind CSS v4 for styling, TypeScript for type safety, and PN
 
 ## Screenshots
 
-Here are some screenshots showcasing the key features of the Mochi chrome extension:
+Here are some screenshots showcasing the key features of the Scout chrome extension:
 
 ### Command Menu
 
@@ -58,12 +58,12 @@ The CMDK (Command Palette) is the fastest way to navigate, search, and access ex
 
 **Features:**
 
-- **Quick Links** - Custom links from Google Sheets, cached for instant loading
+- **Scout Links** - Custom links from Google Sheets, cached for instant loading
 - **Tab Switching** - Jump to any open tab by typing its title or URL
 - **Bookmarks** - Search your 20 most recent bookmarks
 - **Recent History** - Browse your last 30 visited pages
 - **Search Providers** - Type a trigger word (e.g., "ama" + Tab) to search on:
-  - Mochi Search (`mochi`, `search`)
+  - Scout Search (`scout`, `search`)
   - Google (`google`, `g`)
   - Amazon (`amazon`, `ama`, `amz`)
   - Best Buy (`bestbuy`, `bb`, `best`)
@@ -110,8 +110,8 @@ The Controller Testing sidepanel provides real-time visualization and testing fo
 1. Clone the repository:
 
    ```
-   git clone https://github.com/JuanQuenga/mochi.git
-   cd mochi
+   git clone https://github.com/JuanQuenga/scout.git
+   cd scout
    ```
 
 2. Install dependencies:
@@ -152,7 +152,7 @@ The Controller Testing sidepanel provides real-time visualization and testing fo
 ## Project Structure
 
 ```
-mochi/
+scout/
 ├── entrypoints/          # Extension entry points
 │   ├── background.ts     # Background script & command handlers
 │   ├── popup/            # CMDK Command Palette (default popup)
@@ -222,12 +222,12 @@ See [releases/releases.md](./releases/releases.md) for detailed changelog and in
 
 ### Quick Installation
 
-1. Download [mochi-1.0.0-chrome.zip](./releases/mochi-1.0.0-chrome.zip)
+1. Download [scout-1.0.0-chrome.zip](./releases/scout-1.0.0-chrome.zip)
 2. Unzip the file
 3. Open Chrome and navigate to `chrome://extensions/`
 4. Enable "Developer mode" (toggle in top right)
 5. Click "Load unpacked"
-6. Select the unzipped `mochi` folder
+6. Select the unzipped `scout` folder
 
 ## Troubleshooting
 
@@ -241,7 +241,7 @@ See [releases/releases.md](./releases/releases.md) for detailed changelog and in
 ### CMDK Issues
 
 - **CMDK doesn't open**: Check `chrome://extensions/shortcuts` for keyboard shortcut conflicts
-- **Quick Links not loading**: Check DevTools Console for CSV fetch errors; clear cache via `chrome.storage.local.clear()`
+- **Scout Links not loading**: Check DevTools Console for CSV fetch errors; clear cache via `chrome.storage.local.clear()`
 - **Bookmarks/History not showing**: Reload extension to re-request permissions
 - **Arrow keys don't work**: Click inside the search input to focus it
 - **eBay categories not loading**: Check internet connection and eBay API availability

@@ -130,7 +130,7 @@ export default function SettingsPopup() {
     },
     quickLinks: {
       key: "quickLinks" as const,
-      label: "Quick Links",
+      label: "Scout Links",
       description: "CSV-based custom links organized by category",
     },
     tools: {
@@ -155,123 +155,114 @@ export default function SettingsPopup() {
     .filter(Boolean);
 
   return (
-    <div className="h-screen bg-background text-foreground flex flex-col">
-      <div className="max-w-2xl mx-auto w-full flex flex-col h-full">
-        {/* Header - Compact */}
-        <div className="flex items-center gap-2 p-4 border-b border-border shrink-0">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="w-full px-8 py-8">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-8">
           <img
-            src="/assets/images/brand.png"
+            src="/assets/icons/dog.png"
             alt="PayMore"
-            className="w-8 h-8 rounded-lg"
+            className="w-10 h-10 rounded-lg"
           />
           <div>
-            <h1 className="text-lg font-bold">
-              Paymore Lite
+            <h1 className="text-2xl font-bold">
+              Scout Settings
               {version && (
-                <span className="text-xs text-muted-foreground ml-2">
+                <span className="text-sm text-muted-foreground ml-3">
                   v{version}
                 </span>
               )}
             </h1>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-1">
               Configure command menu sources and features
             </p>
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-2">
-          {/* Settings Card */}
-          <div className="bg-card rounded-lg border border-border">
-            <div className="p-6 border-b border-border">
-              <h2 className="text-lg font-semibold mb-1">Command Menu</h2>
-              <p className="text-sm text-muted-foreground">
-                Enable or disable different sources in the command menu popup
-              </p>
-            </div>
-
-            <div className="divide-y divide-border">
-              {sources.map((source, index) => (
-                <div
-                  key={source.key}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDragEnd={handleDragEnd}
-                  className={`p-4 flex items-start gap-4 hover:bg-muted/50 transition-colors cursor-move ${
-                    draggedIndex === index ? "opacity-50" : ""
-                  }`}
-                >
-                  <button
-                    className="p-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    <Menu className="w-4 h-4" />
-                  </button>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium">{source.label}</h3>
-                      {settings.enabledSources[source.key] && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {source.description}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleToggle(source.key)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      settings.enabledSources[source.key]
-                        ? "bg-primary"
-                        : "bg-muted-foreground/20"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        settings.enabledSources[source.key]
-                          ? "translate-x-6"
-                          : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3 mt-6">
-            {isSaved && (
-              <div className="flex items-center gap-2 px-4 py-2 text-green-700 dark:text-green-400">
-                <Check className="w-4 h-4" />
-                <span className="text-sm font-medium">Saved!</span>
-              </div>
-            )}
-            <button
-              onClick={handleReset}
-              className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
-            >
-              Reset to Defaults
-            </button>
-            <button
-              onClick={() => window.close()}
-              className="ml-auto px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Close
-            </button>
-          </div>
-
-          {/* Info */}
-          <div className="mt-8 p-4 bg-muted/50 rounded-lg border border-border">
+        {/* Settings Card */}
+        <div className="bg-card rounded-lg border border-border shadow-sm">
+          <div className="p-6 border-b border-border">
+            <h2 className="text-lg font-semibold mb-1">Command Menu</h2>
             <p className="text-sm text-muted-foreground">
-              <strong>Tip:</strong> Drag the <Menu className="w-3 h-3 inline" />{" "}
-              icon to reorder sources. The order you set here determines the
-              order they appear in the command menu.
+              Enable or disable different sources in the command menu popup
             </p>
           </div>
+
+          <div className="divide-y divide-border">
+            {sources.map((source, index) => (
+              <div
+                key={source.key}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragEnd={handleDragEnd}
+                className={`p-4 flex items-start gap-4 hover:bg-muted/50 transition-colors cursor-move ${
+                  draggedIndex === index ? "opacity-50" : ""
+                }`}
+              >
+                <button
+                  className="p-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <Menu className="w-4 h-4" />
+                </button>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-medium">{source.label}</h3>
+                    {settings.enabledSources[source.key] && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {source.description}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleToggle(source.key)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    settings.enabledSources[source.key]
+                      ? "bg-primary"
+                      : "bg-muted-foreground/20"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      settings.enabledSources[source.key]
+                        ? "translate-x-6"
+                        : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3 mt-6">
+          {isSaved && (
+            <div className="flex items-center gap-2 px-4 py-2 text-green-700 dark:text-green-400">
+              <Check className="w-4 h-4" />
+              <span className="text-sm font-medium">Saved!</span>
+            </div>
+          )}
+          <button
+            onClick={handleReset}
+            className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
+          >
+            Reset to Defaults
+          </button>
+        </div>
+
+        {/* Info */}
+        <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-border">
+          <p className="text-sm text-muted-foreground">
+            <strong>Tip:</strong> Drag the <Menu className="w-3 h-3 inline" />{" "}
+            icon to reorder sources. The order you set here determines the order
+            they appear in the command menu.
+          </p>
         </div>
       </div>
     </div>

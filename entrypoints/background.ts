@@ -49,28 +49,16 @@ export default defineBackground({
       indexSize: 0,
       isInitialized: false,
     };
-    const DEFAULT_ACTION_POPUP = "popup.html";
-    const OPTIONS_ACTION_POPUP = "options.html";
-
-    async function openOptionsAsActionPopup() {
-      const manifest = chrome.runtime?.getManifest?.();
-      const restoredPopup =
-        (manifest?.action && manifest.action.default_popup) ||
-        DEFAULT_ACTION_POPUP;
-
+    async function openOptionsPage() {
       try {
-        await chrome.action.setPopup({ popup: OPTIONS_ACTION_POPUP });
-        await chrome.action.openPopup();
+        await chrome.tabs.create({
+          url: chrome.runtime.getURL("options.html"),
+          active: true,
+        });
         return true;
       } catch (error) {
-        log("Failed to open options popup via action", error);
+        log("Failed to open options page", error);
         return false;
-      } finally {
-        try {
-          await chrome.action.setPopup({ popup: restoredPopup });
-        } catch (restoreError) {
-          log("Failed to restore default action popup", restoreError);
-        }
       }
     }
 
@@ -132,7 +120,7 @@ export default defineBackground({
     chrome.commands.onCommand.addListener((command) => {
       if (command === "open-options") {
         log("Open options command triggered");
-        openOptionsAsActionPopup().catch((error) =>
+        openOptionsPage().catch((error) =>
           log("openOptions command handler error", error)
         );
       } else if (command === "_execute_action") {
@@ -444,7 +432,7 @@ export default defineBackground({
                 target: { tabId, allFrames: true },
                 func: () =>
                   window.postMessage(
-                    { source: "mochi", action: "showControllerModal" },
+                    { source: "scout", action: "showControllerModal" },
                     "*"
                   ),
               });
@@ -653,7 +641,7 @@ export default defineBackground({
           return true;
         }
         case "OPEN_OPTIONS": {
-          openOptionsAsActionPopup()
+          openOptionsPage()
             .then((opened) => {
               sendResponse({ success: opened });
             })
@@ -1122,9 +1110,6 @@ export default defineBackground({
           return "/tools/ebay";
         case "links":
           return "/tools/links";
-
-        case "mochi":
-          return "/tools/mochi";
         default:
           return "/";
       }
@@ -1136,7 +1121,7 @@ export default defineBackground({
           toolsPassword: "",
         },
         (cfg) => {
-          const baseUrl = "https://mochi-extension.vercel.app";
+          const baseUrl = "https://scout-extension.vercel.app";
           const path = toolToPath(tool);
           let url = `${baseUrl}${path}`;
 
@@ -1330,7 +1315,7 @@ export default defineBackground({
           toolsPassword: "",
         },
         (cfg) => {
-          const baseUrl = "https://mochi-extension.vercel.app";
+          const baseUrl = "https://scout-extension.vercel.app";
           const path = toolToPath(tool);
           let url = `${baseUrl}${path}${
             path.includes("?") ? "&" : "?"
@@ -1401,7 +1386,7 @@ export default defineBackground({
           toolsPassword: "",
         },
         (cfg) => {
-          const baseUrl = "https://mochi-extension.vercel.app";
+          const baseUrl = "https://scout-extension.vercel.app";
           const path = toolToPath(tool);
           let url = `${baseUrl}${path}${
             path.includes("?") ? "&" : "?"

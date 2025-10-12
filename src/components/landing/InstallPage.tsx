@@ -56,7 +56,7 @@ export default function FeaturesPage() {
 
   const handleCopyLink = () => {
     const installUrl =
-      "https://chrome.google.com/webstore/detail/mochi/your-extension-id";
+      "https://chrome.google.com/webstore/detail/scout/your-extension-id";
     navigator.clipboard.writeText(installUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -152,7 +152,7 @@ export default function FeaturesPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img
-                src="/assets/images/brand.png"
+                src="/assets/icons/dog.png"
                 alt="PayMore"
                 className="w-10 h-10 rounded-lg"
               />
@@ -387,7 +387,7 @@ export default function FeaturesPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <img
-                src="/assets/images/brand.png"
+                src="/assets/icons/dog.png"
                 alt="PayMore"
                 className="w-8 h-8 rounded-lg"
               />
@@ -401,7 +401,7 @@ export default function FeaturesPage() {
               </div>
             </div>
             <a
-              href="https://github.com/JuanQuenga/mochi"
+              href="https://github.com/JuanQuenga/scout"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"

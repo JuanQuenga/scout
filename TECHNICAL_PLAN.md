@@ -1,8 +1,8 @@
-# Technical Plan: Transforming Mochi Extension
+# Technical Plan: Transforming Scout Extension
 
 ## Overview
 
-This document outlines the plan to transform the extension into Mochi, focusing on:
+This document outlines the plan to transform the extension into Scout, focusing on:
 
 1. Keeping only the context menu action and CMDK popup
 2. Removing the toolbar functionality
@@ -10,7 +10,7 @@ This document outlines the plan to transform the extension into Mochi, focusing 
 
 ## Current State Analysis
 
-The current Mochi extension includes:
+The current Scout extension includes:
 
 - Content script with toolbar injection
 - CMDK popup functionality
@@ -112,7 +112,7 @@ The current Mochi extension includes:
 ## File Structure After Changes
 
 ```
-mochi/
+scout/
 ├── entrypoints/
 │   ├── background.ts (modified)
 │   ├── content.ts (modified)
