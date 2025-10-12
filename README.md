@@ -1,10 +1,10 @@
-# Paymore Chrome Extension (Lite Version)
+# Mochi Chrome Extension
 
 ## Overview
 
-Paymore Lite is a lightweight chrome extension built with WXT (Web Extension Toolkit) and React. It provides essential tools for quick navigation and search specifically tailored for Paymore's operations. The lite version focuses on core functionality with a powerful CMDK command palette and settings interface.
+Mochi is a versatile Chrome extension built with WXT (Web Extension Toolkit) and React. It provides essential tools for quick navigation, search, and controller testing with a powerful CMDK command palette and settings interface.
 
-**Current Version:** v1.0.2 (Latest Release)
+**Current Version:** v1.0.0 (Latest Release)
 
 Key features:
 
@@ -22,7 +22,7 @@ The project uses Tailwind CSS v4 for styling, TypeScript for type safety, and PN
 
 ## Screenshots
 
-Here are some screenshots showcasing the key features of the Paymore Lite chrome extension:
+Here are some screenshots showcasing the key features of the Mochi chrome extension:
 
 ### Command Menu
 
@@ -63,7 +63,7 @@ The CMDK (Command Palette) is the fastest way to navigate, search, and access ex
 - **Bookmarks** - Search your 20 most recent bookmarks
 - **Recent History** - Browse your last 30 visited pages
 - **Search Providers** - Type a trigger word (e.g., "ama" + Tab) to search on:
-  - PayMore (`paymore`, `pm`, `pay`)
+  - Mochi Search (`mochi`, `search`)
   - Google (`google`, `g`)
   - Amazon (`amazon`, `ama`, `amz`)
   - Best Buy (`bestbuy`, `bb`, `best`)
@@ -110,8 +110,8 @@ The Controller Testing sidepanel provides real-time visualization and testing fo
 1. Clone the repository:
 
    ```
-   git clone https://github.com/yourusername/paymore-lite.git
-   cd paymore-lite
+   git clone https://github.com/JuanQuenga/mochi.git
+   cd mochi
    ```
 
 2. Install dependencies:
@@ -121,7 +121,7 @@ The Controller Testing sidepanel provides real-time visualization and testing fo
    ```
 
 3. Set up environment variables (if needed):
-   - Copy `.env.example` to `.env.local` and fill in API keys (e.g., for Paymore backend, PriceCharting API).
+   - Copy `.env.example` to `.env.local` and fill in API keys (e.g., for PriceCharting API).
 
 ## Development
 
@@ -152,7 +152,7 @@ The Controller Testing sidepanel provides real-time visualization and testing fo
 ## Project Structure
 
 ```
-paymore-lite/
+mochi/
 ├── entrypoints/          # Extension entry points
 │   ├── background.ts     # Background script & command handlers
 │   ├── popup/            # CMDK Command Palette (default popup)
@@ -181,7 +181,7 @@ paymore-lite/
 
 ## Key Configurations
 
-- **WXT Config** ([wxt.config.ts](./wxt.config.ts)): Defines runtime, permissions, keyboard shortcuts, and entry points. Current version: **1.0.2**
+- **WXT Config** ([wxt.config.ts](./wxt.config.ts)): Defines runtime, permissions, keyboard shortcuts, and entry points. Current version: **1.0.0**
 - **Tailwind** ([tailwind.config.ts](./tailwind.config.ts)): Tailwind v4 with Vite plugin for class scanning and HMR
 - **TypeScript**: Strict mode enabled for better code quality
 - **Permissions**: storage, tabs, activeTab, bookmarks, history, contextMenus, sidePanel, scripting, system.display
@@ -216,18 +216,18 @@ paymore-lite/
 
 ## Releases
 
-Stable releases are available in the [releases/](./releases/) folder. Download the latest version (v1.0.2) from the releases section.
+Stable releases are available in the [releases/](./releases/) folder. Download the latest version (v1.0.0) from the releases section.
 
 See [releases/releases.md](./releases/releases.md) for detailed changelog and installation instructions.
 
 ### Quick Installation
 
-1. Download [paymore-lite-1.0.2-chrome.zip](./releases/paymore-lite-1.0.2-chrome.zip)
+1. Download [mochi-1.0.0-chrome.zip](./releases/mochi-1.0.0-chrome.zip)
 2. Unzip the file
 3. Open Chrome and navigate to `chrome://extensions/`
 4. Enable "Developer mode" (toggle in top right)
 5. Click "Load unpacked"
-6. Select the unzipped `paymore-lite` folder
+6. Select the unzipped `mochi` folder
 
 ## Troubleshooting
 

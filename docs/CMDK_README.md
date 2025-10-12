@@ -21,15 +21,15 @@ Arc-style command palette for quick navigation, tab switching, and site-specific
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `CMD+Shift+K` / `CTRL+Shift+K` | Open CMDK popup |
-| `CMD+Shift+T` / `CTRL+Shift+T` | Toggle toolbar visibility |
-| `CMD+Shift+O` / `CTRL+Shift+O` | Open extension options |
-| `↑` / `↓` | Navigate results |
-| `Enter` | Select item / Execute search |
-| `Tab` | Activate search provider |
-| `Escape` | Close CMDK / Deactivate provider |
+| Shortcut                       | Action                           |
+| ------------------------------ | -------------------------------- |
+| `CMD+Shift+K` / `CTRL+Shift+K` | Open CMDK popup                  |
+| `CMD+Shift+T` / `CTRL+Shift+T` | Toggle toolbar visibility        |
+| `CMD+Shift+O` / `CTRL+Shift+O` | Open extension options           |
+| `↑` / `↓`                      | Navigate results                 |
+| `Enter`                        | Select item / Execute search     |
+| `Tab`                          | Activate search provider         |
+| `Escape`                       | Close CMDK / Deactivate provider |
 
 ## Architecture
 
@@ -66,6 +66,7 @@ Quick Links are loaded from Google Sheets and **cached for 30 minutes** for inst
 **CSV Configuration**: [src/utils/csv-links.ts](src/utils/csv-links.ts)
 
 **CSV Format**:
+
 ```csv
 Category,Title,URL,Description
 Warranty,Apple Warranty,https://checkcoverage.apple.com,Check Apple device warranty
@@ -73,6 +74,7 @@ Tools,Price Charting,https://pricecharting.com,View market prices
 ```
 
 **Features**:
+
 - Cached in Chrome storage (30-minute TTL)
 - Background refresh when cache exists
 - Sorted alphabetically by category
@@ -83,18 +85,18 @@ Tools,Price Charting,https://pricecharting.com,View market prices
 
 Type a trigger word and press **Tab** to activate:
 
-| Provider | Triggers | URL |
-|----------|----------|-----|
-| PayMore | `paymore`, `pm`, `pay` | https://paymore.com/shop/search/ |
-| Google | `google`, `g` | https://www.google.com/search |
-| Amazon | `amazon`, `ama`, `amz` | https://www.amazon.com/s |
-| Best Buy | `bestbuy`, `bb`, `best` | https://www.bestbuy.com/site/searchpage.jsp |
-| eBay | `ebay`, `eb` | eBay sold listings search |
+| Provider       | Triggers                       | URL                                           |
+| -------------- | ------------------------------ | --------------------------------------------- |
+| Mochi Search   | `mochi`, `search`              | https://google.com/search/                    |
+| Google         | `google`, `g`                  | https://www.google.com/search                 |
+| Amazon         | `amazon`, `ama`, `amz`         | https://www.amazon.com/s                      |
+| Best Buy       | `bestbuy`, `bb`, `best`        | https://www.bestbuy.com/site/searchpage.jsp   |
+| eBay           | `ebay`, `eb`                   | eBay sold listings search                     |
 | Price Charting | `pricecharting`, `pc`, `price` | https://www.pricecharting.com/search-products |
-| UPC Item DB | `upc`, `upcitemdb`, `barcode` | https://www.upcitemdb.com/search |
-| YouTube | `youtube`, `yt` | https://www.youtube.com/results |
-| GitHub | `github`, `gh` | https://github.com/search |
-| Twitter/X | `twitter`, `x` | https://twitter.com/search |
+| UPC Item DB    | `upc`, `upcitemdb`, `barcode`  | https://www.upcitemdb.com/search              |
+| YouTube        | `youtube`, `yt`                | https://www.youtube.com/results               |
+| GitHub         | `github`, `gh`                 | https://github.com/search                     |
+| Twitter/X      | `twitter`, `x`                 | https://twitter.com/search                    |
 
 **Add more in**: [src/components/cmdk-palette/SearchProviders.tsx](src/components/cmdk-palette/SearchProviders.tsx)
 
@@ -184,10 +186,10 @@ The CMDK tracks user navigation to determine behavior:
 ```json
 {
   "permissions": [
-    "storage",      // Cache Quick Links
-    "tabs",         // Tab switching
-    "bookmarks",    // Show bookmarks
-    "history"       // Show recent history
+    "storage", // Cache Quick Links
+    "tabs", // Tab switching
+    "bookmarks", // Show bookmarks
+    "history" // Show recent history
   ]
 }
 ```
@@ -195,29 +197,34 @@ The CMDK tracks user navigation to determine behavior:
 ## Usage Examples
 
 ### Basic Tab Switching
+
 1. Press `CMD+Shift+K`
 2. Start typing tab name
 3. Press `↓` to select
 4. Press `Enter` to switch
 
 ### Search on Amazon
+
 1. Press `CMD+Shift+K`
 2. Type `ama` then press `Tab`
 3. Type `iPhone 15`
 4. Press `Enter` → Opens Amazon search in new tab
 
 ### Access Quick Links
+
 1. Press `CMD+Shift+K`
 2. Quick Links appear at top (cached instantly)
 3. Type to filter or use arrow keys
 4. Press `Enter` to open
 
 ### Open Toolbar Tool
+
 1. Press `CMD+Shift+K`
 2. Type tool name (e.g., "price charting")
 3. Press `Enter` → Opens in sidebar
 
 ### Browse Bookmarks
+
 1. Press `CMD+Shift+K`
 2. Scroll to "Bookmarks" section
 3. Use arrow keys to navigate
@@ -226,25 +233,30 @@ The CMDK tracks user navigation to determine behavior:
 ## Troubleshooting
 
 ### CMDK doesn't open
+
 - **Check**: Extension is loaded and active
 - **Check**: Keyboard shortcut isn't conflicting
 - **Fix**: Go to `chrome://extensions/shortcuts` to verify/change shortcuts
 
 ### Quick Links not loading
+
 - **Check**: DevTools Console for CSV fetch errors
 - **Fix**: Clear cache via `chrome.storage.local.clear()` in DevTools
 - **Check**: CSV URL is accessible (view raw CSV in browser)
 
 ### Bookmarks/History not showing
+
 - **Check**: Extension has required permissions
 - **Fix**: Reload extension to re-request permissions
 
 ### Styling looks broken
+
 - **Check**: Tailwind classes are loading
 - **Fix**: Rebuild extension (`pnpm run build`)
 - **Fix**: Hard refresh the popup (close and reopen)
 
 ### Arrow keys don't work
+
 - **Check**: Focus is in the CMDK input
 - **Fix**: Click inside the search input first
 
@@ -288,11 +300,21 @@ const CACHE_DURATION = 1000 * 60 * 30; // 30 minutes
 Reorder the `Command.Group` sections in [CMDKPalette.tsx](src/components/cmdk-palette/CMDKPalette.tsx):
 
 ```tsx
-{/* Quick Links - appears first */}
-{/* Tabs - appears second */}
-{/* Tools - appears third */}
-{/* Bookmarks - appears fourth */}
-{/* History - appears fifth */}
+{
+  /* Quick Links - appears first */
+}
+{
+  /* Tabs - appears second */
+}
+{
+  /* Tools - appears third */
+}
+{
+  /* Bookmarks - appears fourth */
+}
+{
+  /* History - appears fifth */
+}
 ```
 
 ## Known Limitations

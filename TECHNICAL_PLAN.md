@@ -1,8 +1,8 @@
-# Technical Plan: Transforming @paymore-lite to Lite Version
+# Technical Plan: Transforming Mochi Extension
 
 ## Overview
 
-This document outlines the plan to transform @paymore-lite into a lite version of the cote extension, focusing on:
+This document outlines the plan to transform the extension into Mochi, focusing on:
 
 1. Keeping only the context menu action and CMDK popup
 2. Removing the toolbar functionality
@@ -10,7 +10,7 @@ This document outlines the plan to transform @paymore-lite into a lite version o
 
 ## Current State Analysis
 
-The current @paymore-lite extension includes:
+The current Mochi extension includes:
 
 - Content script with toolbar injection
 - CMDK popup functionality
@@ -66,7 +66,7 @@ The current @paymore-lite extension includes:
 
 **New implementation:**
 
-- Copy controller testing code from `paymore-nextjs/app/tools/controller-testing/page.tsx`
+- Copy controller testing code from previous implementation
 - Adapt it for sidepanel use
 - Update sidepanel to show controller testing by default or as a primary feature
 
@@ -101,7 +101,7 @@ The current @paymore-lite extension includes:
 
 1. Create new controller testing component for sidepanel
 2. Update `entrypoints/sidepanel/main.ts` to support controller testing
-3. Copy and adapt controller testing code from paymore-nextjs
+3. Copy and adapt controller testing code from previous implementation
 
 ### Step 5: Update Configuration
 
@@ -112,7 +112,7 @@ The current @paymore-lite extension includes:
 ## File Structure After Changes
 
 ```
-paymore-lite/
+mochi/
 ├── entrypoints/
 │   ├── background.ts (modified)
 │   ├── content.ts (modified)

@@ -33,4 +33,4 @@ Get started:
 2. Press `CMD+Shift+K` to open the command palette.
 3. Use `CMD+O` to customize your settings.
 
-Need help? Email support@paymore.com.
+Need help? Open an issue on the GitHub repository.

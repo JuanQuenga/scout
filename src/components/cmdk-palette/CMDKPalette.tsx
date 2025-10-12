@@ -332,7 +332,7 @@ export function CMDKPalette({
       setEbayLoading(true);
       try {
         const res = await fetch(
-          `https://paymore-extension.vercel.app/api/ebay-categories?q=${encodeURIComponent(
+          `https://mochi-extension.vercel.app/api/ebay-categories?q=${encodeURIComponent(
             q
           )}`
         );

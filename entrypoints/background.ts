@@ -444,7 +444,7 @@ export default defineBackground({
                 target: { tabId, allFrames: true },
                 func: () =>
                   window.postMessage(
-                    { source: "paymore", action: "showControllerModal" },
+                    { source: "mochi", action: "showControllerModal" },
                     "*"
                   ),
               });
@@ -1123,8 +1123,8 @@ export default defineBackground({
         case "links":
           return "/tools/links";
 
-        case "paymore":
-          return "/tools/paymore";
+        case "mochi":
+          return "/tools/mochi";
         default:
           return "/";
       }
@@ -1136,7 +1136,7 @@ export default defineBackground({
           toolsPassword: "",
         },
         (cfg) => {
-          const baseUrl = "https://paymore-extension.vercel.app";
+          const baseUrl = "https://mochi-extension.vercel.app";
           const path = toolToPath(tool);
           let url = `${baseUrl}${path}`;
 
@@ -1330,7 +1330,7 @@ export default defineBackground({
           toolsPassword: "",
         },
         (cfg) => {
-          const baseUrl = "https://paymore-extension.vercel.app";
+          const baseUrl = "https://mochi-extension.vercel.app";
           const path = toolToPath(tool);
           let url = `${baseUrl}${path}${
             path.includes("?") ? "&" : "?"
@@ -1401,7 +1401,7 @@ export default defineBackground({
           toolsPassword: "",
         },
         (cfg) => {
-          const baseUrl = "https://paymore-extension.vercel.app";
+          const baseUrl = "https://mochi-extension.vercel.app";
           const path = toolToPath(tool);
           let url = `${baseUrl}${path}${
             path.includes("?") ? "&" : "?"

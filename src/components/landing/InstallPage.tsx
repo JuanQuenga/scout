@@ -56,7 +56,7 @@ export default function FeaturesPage() {
 
   const handleCopyLink = () => {
     const installUrl =
-      "https://chrome.google.com/webstore/detail/paymore-lite/your-extension-id";
+      "https://chrome.google.com/webstore/detail/mochi/your-extension-id";
     navigator.clipboard.writeText(installUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -401,7 +401,7 @@ export default function FeaturesPage() {
               </div>
             </div>
             <a
-              href="https://github.com/juanquenga/paymore-lite"
+              href="https://github.com/JuanQuenga/mochi"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"

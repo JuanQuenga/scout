@@ -72,7 +72,7 @@ The install page is automatically included when building the extension:
 npm run build
 ```
 
-The install page will be available in the `.output/paymore-lite/` directory.
+The install page will be available in the `.output/mochi/` directory.
 
 ### WXT Configuration
 
@@ -94,7 +94,7 @@ Update the download link in the "Download Section" of `InstallPage.tsx`:
 
 ```tsx
 <a
-  href="/releases/paymore-chrome-lite-1.0.2-chrome.zip"
+  href="/releases/mochi-1.0.0-chrome.zip"
   download
   // ...
 >
