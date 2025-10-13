@@ -36,17 +36,17 @@ export default defineContentScript({
         transition: all 0.2s ease;
         position: relative;
       }
-      
+
       .scout-upc-highlight:hover {
         background-color: rgba(59, 130, 246, 0.25);
         border-bottom-style: solid;
       }
-      
+
       .scout-upc-copied {
         background-color: rgba(16, 185, 129, 0.2) !important;
         border-bottom-color: #10b981 !important;
       }
-      
+
       .scout-upc-tooltip {
         position: fixed;
         background-color: #1f2937;
@@ -61,19 +61,21 @@ export default defineContentScript({
         transition: opacity 0.2s ease;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       }
-      
+
       .scout-upc-tooltip.show {
         opacity: 1;
       }
     `;
 
-    // Inject CSS styles (only if not already injected)
-    if (!document.getElementById("scout-upc-highlighter-styles")) {
-      const styleElement = document.createElement("style");
-      styleElement.textContent = HIGHLIGHT_CSS;
-      styleElement.id = "scout-upc-highlighter-styles";
-      (document.head || document.documentElement).appendChild(styleElement);
-    }
+    // Function to inject CSS styles
+    const injectStyles = () => {
+      if (!document.getElementById("scout-upc-highlighter-styles")) {
+        const styleElement = document.createElement("style");
+        styleElement.textContent = HIGHLIGHT_CSS;
+        styleElement.id = "scout-upc-highlighter-styles";
+        (document.head || document.documentElement).appendChild(styleElement);
+      }
+    };
 
     // Function to show tooltip
     const showTooltip = (element, text) => {
@@ -276,47 +278,31 @@ export default defineContentScript({
       return observer;
     };
 
-    // Check if extension is enabled for current site
-    const checkEnabledStatus = (callback) => {
-      const domain = window.location.hostname;
-
-      // Default to enabled if can't check status
-      if (!domain || domain === "") {
-        callback(true);
-        return;
-      }
-
+    // Check if UPC highlighter is enabled in settings
+    const checkSettingsEnabled = (callback) => {
       try {
-        chrome.runtime.sendMessage(
-          {
-            action: "checkSiteStatus",
-            domain: domain,
-          },
-          (response) => {
-            if (chrome.runtime.lastError) {
-              log("Error checking site status:", chrome.runtime.lastError);
-              callback(true); // Default to enabled
-              return;
-            }
-
-            if (response && response.success) {
-              callback(!response.disabled);
-            } else {
-              callback(true); // Default to enabled
-            }
+        chrome.storage.sync.get(["cmdkSettings"], (result) => {
+          if (chrome.runtime.lastError) {
+            log("Error checking settings:", chrome.runtime.lastError);
+            callback(true); // Default to enabled
+            return;
           }
-        );
+
+          const settings = result.cmdkSettings;
+          const enabled = settings?.upcHighlighter?.enabled ?? true;
+          callback(enabled);
+        });
       } catch (e) {
-        log("Failed to check site status:", e);
+        log("Failed to check settings:", e);
         callback(true); // Default to enabled
       }
     };
 
     // Initialize the UPC highlighter
     const initializeUPCHighlighter = () => {
-      checkEnabledStatus((enabled) => {
+      checkSettingsEnabled((enabled) => {
         if (!enabled) {
-          log("UPC highlighting is disabled for this site");
+          log("UPC highlighting is disabled in settings");
           return;
         }
 
@@ -324,6 +310,9 @@ export default defineContentScript({
         if (window === window.top) {
           log("Initializing UPC highlighter");
         }
+
+        // Inject CSS styles
+        injectStyles();
 
         // Initial scan
         setTimeout(scanAndHighlightUPCs, 500);
@@ -335,40 +324,43 @@ export default defineContentScript({
         try {
           chrome.runtime.onMessage.addListener(
             (message, sender, sendResponse) => {
-              if (message.action === "pm-settings-changed") {
+              if (message.action === "upc-highlighter-settings-changed") {
                 // Re-check enabled status when settings change
-                checkEnabledStatus((newEnabled) => {
-                  if (!newEnabled) {
-                    // Remove highlighting if disabled
-                    document
-                      .querySelectorAll(".scout-upc-highlight")
-                      .forEach((element) => {
-                        const parent = element.parentNode;
-                        if (parent) {
-                          parent.replaceChild(
-                            document.createTextNode(element.textContent),
-                            element
-                          );
-                        }
-                      });
+                const newEnabled = message.enabled ?? true;
 
-                    // Remove styles
-                    const styleElement = document.getElementById(
-                      "scout-upc-highlighter-styles"
-                    );
-                    if (styleElement) {
-                      styleElement.remove();
-                    }
+                if (!newEnabled) {
+                  // Remove highlighting if disabled
+                  document
+                    .querySelectorAll(".scout-upc-highlight")
+                    .forEach((element) => {
+                      const parent = element.parentNode;
+                      if (parent) {
+                        parent.replaceChild(
+                          document.createTextNode(element.textContent),
+                          element
+                        );
+                      }
+                    });
 
-                    // Disconnect observer
-                    if (observer) {
-                      observer.disconnect();
-                    }
-                  } else {
-                    // Re-initialize if re-enabled
-                    location.reload();
+                  // Remove styles
+                  const styleElement = document.getElementById(
+                    "scout-upc-highlighter-styles"
+                  );
+                  if (styleElement) {
+                    styleElement.remove();
                   }
-                });
+
+                  // Disconnect observer
+                  if (observer) {
+                    observer.disconnect();
+                  }
+
+                  log("UPC highlighting disabled");
+                } else {
+                  // Re-initialize if re-enabled
+                  log("UPC highlighting re-enabled, reloading page");
+                  location.reload();
+                }
               }
 
               return true;

@@ -418,9 +418,23 @@ export default defineContentScript({
       return container;
     };
 
-    const renderSummary = () => {
+    const renderSummary = async () => {
       updateQueued = false;
       log("=== renderSummary called ===");
+
+      // Check if the feature is enabled in settings
+      try {
+        const result = await chrome.storage.sync.get(["cmdkSettings"]);
+        const isEnabled = result.cmdkSettings?.ebaySummary?.enabled ?? true;
+
+        if (!isEnabled) {
+          log("✗ eBay Summary feature is disabled in settings");
+          removeSummary();
+          return;
+        }
+      } catch (err) {
+        log("⚠️ Failed to check settings, assuming enabled", err);
+      }
 
       const isSold = isSoldResultsPage();
       log("Is sold results page?", isSold);
@@ -634,6 +648,15 @@ export default defineContentScript({
         setTimeout(start, 100);
         return;
       }
+
+      // Listen for settings changes from the settings page
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message.action === "ebay-summary-settings-changed") {
+          log("Received settings change message:", message);
+          // Don't reset dismiss flag when settings change
+          scheduleUpdate();
+        }
+      });
 
       // Hook into history changes for SPA-like navigation
       ["pushState", "replaceState"].forEach((method) => {

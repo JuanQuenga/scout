@@ -1,6 +1,18 @@
 /* global chrome */
 import { useState, useEffect } from "react";
-import { Check, Menu, X, Layers, Search as SearchIcon, Bookmark } from "lucide-react";
+import {
+  Check,
+  Menu,
+  X,
+  Layers,
+  Search as SearchIcon,
+  Bookmark,
+  Gamepad2,
+  Shield,
+  TrendingUp,
+  ScanLine,
+  Barcode,
+} from "lucide-react";
 import { getBookmarkFolders, BookmarkFolder } from "@/src/utils/bookmarks";
 
 interface CMDKSettings {
@@ -33,6 +45,12 @@ interface CMDKSettings {
     mediumThreshold: number;
   };
   bookmarkFolderIds?: string[];
+  ebaySummary?: {
+    enabled: boolean;
+  };
+  upcHighlighter?: {
+    enabled: boolean;
+  };
 }
 
 const DEFAULT_SETTINGS: CMDKSettings = {
@@ -80,6 +98,12 @@ const DEFAULT_SETTINGS: CMDKSettings = {
     mediumThreshold: 0.25,
   },
   bookmarkFolderIds: [],
+  ebaySummary: {
+    enabled: true,
+  },
+  upcHighlighter: {
+    enabled: true,
+  },
 };
 
 const ALL_SOURCE_KEYS = [...DEFAULT_SETTINGS.sourceOrder];
@@ -119,6 +143,16 @@ const mergeSettings = (stored?: Partial<CMDKSettings>): CMDKSettings => {
     ...(stored.controllerTesting || {}),
   };
 
+  const mergedEbaySummary = {
+    ...(DEFAULT_SETTINGS.ebaySummary || {}),
+    ...(stored.ebaySummary || {}),
+  };
+
+  const mergedUpcHighlighter = {
+    ...(DEFAULT_SETTINGS.upcHighlighter || {}),
+    ...(stored.upcHighlighter || {}),
+  };
+
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
@@ -133,6 +167,8 @@ const mergeSettings = (stored?: Partial<CMDKSettings>): CMDKSettings => {
     bookmarkFolderIds: stored.bookmarkFolderIds
       ? [...stored.bookmarkFolderIds]
       : [...DEFAULT_SETTINGS.bookmarkFolderIds],
+    ebaySummary: mergedEbaySummary,
+    upcHighlighter: mergedUpcHighlighter,
   };
 };
 
@@ -309,15 +345,17 @@ export default function SettingsPage() {
     });
   };
 
-  const handleToggleGuardrail = (type: 'condition' | 'googleFields') => {
+  const handleToggleGuardrail = (type: "condition" | "googleFields") => {
     const newGuardrails = {
       ...settings.shopifyGuardrails,
-      enableConditionCheck: type === 'condition'
-        ? !settings.shopifyGuardrails?.enableConditionCheck
-        : settings.shopifyGuardrails?.enableConditionCheck ?? true,
-      enableGoogleFieldsCheck: type === 'googleFields'
-        ? !settings.shopifyGuardrails?.enableGoogleFieldsCheck
-        : settings.shopifyGuardrails?.enableGoogleFieldsCheck ?? true,
+      enableConditionCheck:
+        type === "condition"
+          ? !settings.shopifyGuardrails?.enableConditionCheck
+          : settings.shopifyGuardrails?.enableConditionCheck ?? true,
+      enableGoogleFieldsCheck:
+        type === "googleFields"
+          ? !settings.shopifyGuardrails?.enableGoogleFieldsCheck
+          : settings.shopifyGuardrails?.enableGoogleFieldsCheck ?? true,
     };
 
     const newSettings = {
@@ -335,23 +373,34 @@ export default function SettingsPage() {
       chrome.tabs.query({}, (tabs) => {
         tabs.forEach((tab) => {
           if (tab.id) {
-            chrome.tabs.sendMessage(tab.id, {
-              action: "guardrails-settings-changed",
-              settings: newGuardrails,
-            }).catch(() => {
-              // Ignore errors for tabs that don't have the content script
-            });
+            chrome.tabs
+              .sendMessage(tab.id, {
+                action: "guardrails-settings-changed",
+                settings: newGuardrails,
+              })
+              .catch(() => {
+                // Ignore errors for tabs that don't have the content script
+              });
           }
         });
       });
     });
   };
 
-  const handleControllerThresholdChange = (type: 'light' | 'medium', value: number) => {
+  const handleControllerThresholdChange = (
+    type: "light" | "medium",
+    value: number
+  ) => {
     const newThresholds = {
       ...settings.controllerTesting,
-      lightThreshold: type === 'light' ? value : settings.controllerTesting?.lightThreshold ?? 0.1,
-      mediumThreshold: type === 'medium' ? value : settings.controllerTesting?.mediumThreshold ?? 0.25,
+      lightThreshold:
+        type === "light"
+          ? value
+          : settings.controllerTesting?.lightThreshold ?? 0.1,
+      mediumThreshold:
+        type === "medium"
+          ? value
+          : settings.controllerTesting?.mediumThreshold ?? 0.25,
     };
 
     const newSettings = {
@@ -370,7 +419,7 @@ export default function SettingsPage() {
   const handleBookmarkFolderToggle = (folderId: string) => {
     const currentFolders = settings.bookmarkFolderIds || [];
     const newFolders = currentFolders.includes(folderId)
-      ? currentFolders.filter(id => id !== folderId)
+      ? currentFolders.filter((id) => id !== folderId)
       : [...currentFolders, folderId];
 
     const newSettings = {
@@ -397,6 +446,76 @@ export default function SettingsPage() {
     chrome.storage.sync.set({ cmdkSettings: newSettings }, () => {
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
+    });
+  };
+
+  const handleToggleEbaySummary = () => {
+    const newEbaySummary = {
+      ...settings.ebaySummary,
+      enabled: !settings.ebaySummary?.enabled,
+    };
+
+    const newSettings = {
+      ...settings,
+      ebaySummary: newEbaySummary,
+    };
+    setSettings(newSettings);
+
+    // Auto-save
+    chrome.storage.sync.set({ cmdkSettings: newSettings }, () => {
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+
+      // Notify content script of settings change
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.id) {
+            chrome.tabs
+              .sendMessage(tab.id, {
+                action: "ebay-summary-settings-changed",
+                enabled: newEbaySummary.enabled,
+              })
+              .catch(() => {
+                // Ignore errors for tabs that don't have the content script
+              });
+          }
+        });
+      });
+    });
+  };
+
+  const handleToggleUpcHighlighter = () => {
+    const newUpcHighlighter = {
+      ...settings.upcHighlighter,
+      enabled: !settings.upcHighlighter?.enabled,
+    };
+
+    const newSettings = {
+      ...settings,
+      upcHighlighter: newUpcHighlighter,
+    };
+    setSettings(newSettings);
+
+    // Auto-save
+    chrome.storage.sync.set({ cmdkSettings: newSettings }, () => {
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+
+      // Notify content script of settings change
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.id) {
+            chrome.tabs
+              .sendMessage(tab.id, {
+                action: "upc-highlighter-settings-changed",
+                enabled: newUpcHighlighter.enabled,
+              })
+              .catch(() => {
+                // Ignore errors for tabs that don't have the content script
+              });
+          }
+        });
+      });
     });
   };
 
@@ -456,7 +575,9 @@ export default function SettingsPage() {
             <div>
               <h1 className="text-lg font-bold">Scout Settings</h1>
               {version && (
-                <p className="text-xs text-muted-foreground">Version {version}</p>
+                <p className="text-xs text-muted-foreground">
+                  Version {version}
+                </p>
               )}
             </div>
           </div>
@@ -487,7 +608,14 @@ export default function SettingsPage() {
               className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors text-foreground"
             >
               <Layers className="w-4 h-4" />
-              Command Sources
+              Command Menu
+            </a>
+            <a
+              href="#bookmarks"
+              className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors text-foreground"
+            >
+              <Bookmark className="w-4 h-4" />
+              Bookmarks
             </a>
             <a
               href="#providers"
@@ -500,29 +628,37 @@ export default function SettingsPage() {
               href="#guardrails"
               className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors text-foreground"
             >
-              <Check className="w-4 h-4" />
+              <Shield className="w-4 h-4" />
               Shopify Guardrails
             </a>
             <a
               href="#controller"
               className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors text-foreground"
             >
-              <Layers className="w-4 h-4" />
+              <Gamepad2 className="w-4 h-4" />
               Controller Testing
             </a>
             <a
-              href="#bookmarks"
+              href="#ebay"
               className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors text-foreground"
             >
-              <Bookmark className="w-4 h-4" />
-              Bookmarks
+              <TrendingUp className="w-4 h-4" />
+              eBay Price Summary
+            </a>
+            <a
+              href="#upc"
+              className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors text-foreground"
+            >
+              <Barcode className="w-4 h-4" />
+              UPC Highlighter
             </a>
           </nav>
 
           <div className="mt-8 p-4 bg-muted/30 rounded-lg border border-border/40">
             <p className="text-xs text-muted-foreground leading-relaxed">
               <strong className="text-foreground block mb-2">Quick Tip</strong>
-              Drag the <Menu className="w-3 h-3 inline" /> icon to reorder sources. Changes are saved automatically.
+              Drag the <Menu className="w-3 h-3 inline" /> icon to reorder
+              sources. Changes are saved automatically.
             </p>
           </div>
         </aside>
@@ -534,7 +670,8 @@ export default function SettingsPage() {
             <div className="mb-6">
               <h2 className="text-2xl font-bold mb-2">Command Menu Sources</h2>
               <p className="text-muted-foreground">
-                Control which sources appear in your command menu and customize their order
+                Control which sources appear in your command menu and customize
+                their order
               </p>
             </div>
 
@@ -559,7 +696,9 @@ export default function SettingsPage() {
                     </button>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1.5">
-                        <h3 className="font-semibold text-base">{source.label}</h3>
+                        <h3 className="font-semibold text-base">
+                          {source.label}
+                        </h3>
                         {settings.enabledSources[source.key] && (
                           <span className="text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
                             Enabled
@@ -592,12 +731,91 @@ export default function SettingsPage() {
             </div>
           </section>
 
+          {/* Bookmarks Section */}
+          <section id="bookmarks" className="scroll-mt-20">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-2">Bookmarks</h2>
+              <p className="text-muted-foreground">
+                Choose which bookmark folders to display in the command menu
+              </p>
+            </div>
+
+            <div className="bg-card rounded-xl border border-border shadow-lg overflow-hidden">
+              <div className="p-8">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="text-sm font-medium">
+                      Bookmark Folders
+                    </label>
+                    <button
+                      onClick={handleSelectAllFolders}
+                      className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                      {settings.bookmarkFolderIds?.length === 0
+                        ? "Selected: All"
+                        : "Select All"}
+                    </button>
+                  </div>
+
+                  {settings.bookmarkFolderIds?.length === 0 && (
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <p className="text-sm text-green-700 dark:text-green-400">
+                        All bookmarks from all folders are currently shown
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {bookmarkFolders.map((folder) => {
+                      const isSelected =
+                        settings.bookmarkFolderIds?.includes(folder.id) ??
+                        false;
+                      return (
+                        <div
+                          key={folder.id}
+                          onClick={() => handleBookmarkFolderToggle(folder.id)}
+                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                            isSelected
+                              ? "bg-primary/10 border-primary hover:bg-primary/15"
+                              : "bg-muted/30 border-border hover:bg-muted/50"
+                          }`}
+                        >
+                          <div
+                            className={`flex items-center justify-center w-5 h-5 rounded border-2 transition-colors ${
+                              isSelected
+                                ? "bg-primary border-primary"
+                                : "bg-background border-muted-foreground/30"
+                            }`}
+                          >
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-primary-foreground" />
+                            )}
+                          </div>
+                          <span className="text-sm font-medium flex-1">
+                            {folder.title}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <p className="text-xs text-muted-foreground mt-4">
+                    Select specific folders to show only bookmarks from those
+                    folders, or click "Select All" to show bookmarks from all
+                    folders
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Search Providers Section */}
           <section id="providers" className="scroll-mt-20">
             <div className="mb-6">
               <h2 className="text-2xl font-bold mb-2">Search Providers</h2>
               <p className="text-muted-foreground">
-                Configure built-in search engines and create custom search providers
+                Configure built-in search engines and create custom search
+                providers
               </p>
             </div>
 
@@ -605,23 +823,25 @@ export default function SettingsPage() {
               <div className="divide-y divide-border">
                 {/* Default Search Providers */}
                 <div className="p-8">
-                  <h3 className="font-semibold text-lg mb-5">Default Providers</h3>
+                  <h3 className="font-semibold text-lg mb-5">
+                    Default Providers
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {[
-                    { id: "google", name: "Google" },
-                    { id: "scout", name: "Scout Search" },
-                    { id: "amazon", name: "Amazon" },
-                    { id: "bestbuy", name: "Best Buy" },
-                    { id: "ebay", name: "eBay" },
-                    { id: "pricecharting", name: "Price Charting" },
-                    { id: "upcitemdb", name: "UPCItemDB" },
-                    { id: "youtube", name: "YouTube" },
-                    { id: "github", name: "GitHub" },
-                    { id: "twitter", name: "Twitter/X" },
-                    { id: "homedepot", name: "Home Depot" },
-                    { id: "lowes", name: "Lowe's" },
-                    { id: "menards", name: "Menards" },
-                    { id: "microcenter", name: "Micro Center" },
+                    {[
+                      { id: "google", name: "Google" },
+                      { id: "scout", name: "Scout Search" },
+                      { id: "amazon", name: "Amazon" },
+                      { id: "bestbuy", name: "Best Buy" },
+                      { id: "ebay", name: "eBay" },
+                      { id: "pricecharting", name: "Price Charting" },
+                      { id: "upcitemdb", name: "UPCItemDB" },
+                      { id: "youtube", name: "YouTube" },
+                      { id: "github", name: "GitHub" },
+                      { id: "twitter", name: "Twitter/X" },
+                      { id: "homedepot", name: "Home Depot" },
+                      { id: "lowes", name: "Lowe's" },
+                      { id: "menards", name: "Menards" },
+                      { id: "microcenter", name: "Micro Center" },
                     ].map((provider) => (
                       <div
                         key={provider.id}
@@ -631,7 +851,9 @@ export default function SettingsPage() {
                           {provider.name}
                         </span>
                         <button
-                          onClick={() => handleToggleSearchProvider(provider.id)}
+                          onClick={() =>
+                            handleToggleSearchProvider(provider.id)
+                          }
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                             settings.enabledSearchProviders[provider.id] ||
                             settings.enabledSearchProviders[provider.id] ===
@@ -697,9 +919,12 @@ export default function SettingsPage() {
                             >
                               <span
                                 className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                                  settings.enabledSearchProviders[provider.id] ||
-                                  settings.enabledSearchProviders[provider.id] ===
-                                    undefined
+                                  settings.enabledSearchProviders[
+                                    provider.id
+                                  ] ||
+                                  settings.enabledSearchProviders[
+                                    provider.id
+                                  ] === undefined
                                     ? "translate-x-6"
                                     : "translate-x-1"
                                 }`}
@@ -718,7 +943,8 @@ export default function SettingsPage() {
                   ) : (
                     <div className="text-center py-8 px-4 bg-muted/20 rounded-lg border border-dashed border-border">
                       <p className="text-sm text-muted-foreground">
-                        No custom providers added yet. Click "Add Provider" to create one.
+                        No custom providers added yet. Click "Add Provider" to
+                        create one.
                       </p>
                     </div>
                   )}
@@ -850,87 +1076,99 @@ export default function SettingsPage() {
             <div className="mb-6">
               <h2 className="text-2xl font-bold mb-2">Shopify Guardrails</h2>
               <p className="text-muted-foreground">
-                Automated validation checks for Shopify product pages to prevent common errors
+                Automated validation checks for Shopify product pages to prevent
+                common errors
               </p>
             </div>
 
             <div className="bg-card rounded-xl border border-border shadow-lg overflow-hidden">
-                <div className="divide-y divide-border">
-                  {/* Condition Mismatch Check */}
-                  <div className="p-6 flex items-start gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-base">Condition Mismatch Check</h3>
-                        {settings.shopifyGuardrails?.enableConditionCheck && (
-                          <span className="text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">
-                            Active
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        Validates that eBay condition ID matches the Shopify condition. Shows red border and notification when mismatched.
-                      </p>
+              <div className="divide-y divide-border">
+                {/* Condition Mismatch Check */}
+                <div className="p-6 flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-base">
+                        Condition Mismatch Check
+                      </h3>
+                      {settings.shopifyGuardrails?.enableConditionCheck && (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">
+                          Active
+                        </span>
+                      )}
                     </div>
-                    <button
-                      onClick={() => handleToggleGuardrail('condition')}
-                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Validates that eBay condition ID matches the Shopify
+                      condition. Shows red border and notification when
+                      mismatched.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleToggleGuardrail("condition")}
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                      settings.shopifyGuardrails?.enableConditionCheck ?? true
+                        ? "bg-primary"
+                        : "bg-muted-foreground/30"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
                         settings.shopifyGuardrails?.enableConditionCheck ?? true
-                          ? "bg-primary"
-                          : "bg-muted-foreground/30"
+                          ? "translate-x-6"
+                          : "translate-x-1"
                       }`}
-                    >
-                      <span
-                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                          settings.shopifyGuardrails?.enableConditionCheck ?? true
-                            ? "translate-x-6"
-                            : "translate-x-1"
-                        }`}
-                      />
-                    </button>
-                  </div>
+                    />
+                  </button>
+                </div>
 
-                  {/* Google Fields Check */}
-                  <div className="p-6 flex items-start gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-base">Empty Google Fields Check</h3>
-                        {settings.shopifyGuardrails?.enableGoogleFieldsCheck && (
-                          <span className="text-xs px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 font-medium">
-                            Active
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        Alerts when required Google Shopping metafields are empty. Shows orange border and notification with dismissible warning.
-                      </p>
+                {/* Google Fields Check */}
+                <div className="p-6 flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-base">
+                        Empty Google Fields Check
+                      </h3>
+                      {settings.shopifyGuardrails?.enableGoogleFieldsCheck && (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 font-medium">
+                          Active
+                        </span>
+                      )}
                     </div>
-                    <button
-                      onClick={() => handleToggleGuardrail('googleFields')}
-                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                        settings.shopifyGuardrails?.enableGoogleFieldsCheck ?? true
-                          ? "bg-primary"
-                          : "bg-muted-foreground/30"
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                          settings.shopifyGuardrails?.enableGoogleFieldsCheck ?? true
-                            ? "translate-x-6"
-                            : "translate-x-1"
-                        }`}
-                      />
-                    </button>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Alerts when required Google Shopping metafields are empty.
+                      Shows orange border and notification with dismissible
+                      warning.
+                    </p>
                   </div>
+                  <button
+                    onClick={() => handleToggleGuardrail("googleFields")}
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                      settings.shopifyGuardrails?.enableGoogleFieldsCheck ??
+                      true
+                        ? "bg-primary"
+                        : "bg-muted-foreground/30"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                        settings.shopifyGuardrails?.enableGoogleFieldsCheck ??
+                        true
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
-            </section>
+            </div>
+          </section>
 
           {/* Controller Testing Section */}
           <section id="controller" className="scroll-mt-20">
             <div className="mb-6">
               <h2 className="text-2xl font-bold mb-2">Controller Testing</h2>
               <p className="text-muted-foreground">
-                Adjust color change thresholds for controller input visualization
+                Adjust color change thresholds for controller input
+                visualization
               </p>
             </div>
 
@@ -939,11 +1177,15 @@ export default function SettingsPage() {
                 <div className="space-y-6">
                   <div className="p-4 bg-muted/20 rounded-lg border border-border/50">
                     <p className="text-sm text-muted-foreground mb-4">
-                      Set the thresholds at which controller inputs change color:
+                      Set the thresholds at which controller inputs change
+                      color:
                       <span className="block mt-2 text-xs">
-                        <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-1"></span> Green: Below light threshold
-                        <span className="inline-block w-3 h-3 bg-orange-500 rounded-full ml-3 mr-1"></span> Orange: Between light and medium
-                        <span className="inline-block w-3 h-3 bg-red-500 rounded-full ml-3 mr-1"></span> Red: Above medium threshold
+                        <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-1"></span>{" "}
+                        Green: Below light threshold
+                        <span className="inline-block w-3 h-3 bg-orange-500 rounded-full ml-3 mr-1"></span>{" "}
+                        Orange: Between light and medium
+                        <span className="inline-block w-3 h-3 bg-red-500 rounded-full ml-3 mr-1"></span>{" "}
+                        Red: Above medium threshold
                       </span>
                     </p>
                   </div>
@@ -952,14 +1194,18 @@ export default function SettingsPage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-semibold text-base">Light Input Threshold</h3>
+                        <h3 className="font-semibold text-base">
+                          Light Input Threshold
+                        </h3>
                         <p className="text-sm text-muted-foreground">
                           Green → Orange transition point
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-mono font-medium px-3 py-1 bg-muted rounded-lg">
-                          {(settings.controllerTesting?.lightThreshold ?? 0.1).toFixed(2)}
+                          {(
+                            settings.controllerTesting?.lightThreshold ?? 0.1
+                          ).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -969,8 +1215,15 @@ export default function SettingsPage() {
                         min="0.05"
                         max="0.5"
                         step="0.05"
-                        value={settings.controllerTesting?.lightThreshold ?? 0.1}
-                        onChange={(e) => handleControllerThresholdChange('light', parseFloat(e.target.value))}
+                        value={
+                          settings.controllerTesting?.lightThreshold ?? 0.1
+                        }
+                        onChange={(e) =>
+                          handleControllerThresholdChange(
+                            "light",
+                            parseFloat(e.target.value)
+                          )
+                        }
                         className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
@@ -980,14 +1233,18 @@ export default function SettingsPage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-semibold text-base">Medium Input Threshold</h3>
+                        <h3 className="font-semibold text-base">
+                          Medium Input Threshold
+                        </h3>
                         <p className="text-sm text-muted-foreground">
                           Orange → Red transition point
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-mono font-medium px-3 py-1 bg-muted rounded-lg">
-                          {(settings.controllerTesting?.mediumThreshold ?? 0.25).toFixed(2)}
+                          {(
+                            settings.controllerTesting?.mediumThreshold ?? 0.25
+                          ).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -997,8 +1254,15 @@ export default function SettingsPage() {
                         min="0.1"
                         max="0.9"
                         step="0.05"
-                        value={settings.controllerTesting?.mediumThreshold ?? 0.25}
-                        onChange={(e) => handleControllerThresholdChange('medium', parseFloat(e.target.value))}
+                        value={
+                          settings.controllerTesting?.mediumThreshold ?? 0.25
+                        }
+                        onChange={(e) =>
+                          handleControllerThresholdChange(
+                            "medium",
+                            parseFloat(e.target.value)
+                          )
+                        }
                         className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
@@ -1008,79 +1272,127 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* Bookmarks Section */}
-          <section id="bookmarks" className="scroll-mt-20">
+          {/* eBay Price Summary Section */}
+          <section id="ebay" className="scroll-mt-20">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Bookmarks</h2>
+              <h2 className="text-2xl font-bold mb-2">eBay Price Summary</h2>
               <p className="text-muted-foreground">
-                Choose which bookmark folders to display in the command menu
+                Configure the price summary feature for eBay sold listings
               </p>
             </div>
 
             <div className="bg-card rounded-xl border border-border shadow-lg overflow-hidden">
-              <div className="p-8">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <label className="text-sm font-medium">
-                      Bookmark Folders
-                    </label>
-                    <button
-                      onClick={handleSelectAllFolders}
-                      className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                    >
-                      {settings.bookmarkFolderIds?.length === 0 ? "Selected: All" : "Select All"}
-                    </button>
-                  </div>
-
-                  {settings.bookmarkFolderIds?.length === 0 && (
-                    <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                      <p className="text-sm text-green-700 dark:text-green-400">
-                        All bookmarks from all folders are currently shown
-                      </p>
+              <div className="divide-y divide-border">
+                {/* Enable/Disable Toggle */}
+                <div className="p-6 flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-base">
+                        Enable Price Summary
+                      </h3>
+                      {settings.ebaySummary?.enabled && (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
+                          Active
+                        </span>
+                      )}
                     </div>
-                  )}
-
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {bookmarkFolders.map((folder) => {
-                      const isSelected = settings.bookmarkFolderIds?.includes(folder.id) ?? false;
-                      return (
-                        <div
-                          key={folder.id}
-                          onClick={() => handleBookmarkFolderToggle(folder.id)}
-                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                            isSelected
-                              ? "bg-primary/10 border-primary hover:bg-primary/15"
-                              : "bg-muted/30 border-border hover:bg-muted/50"
-                          }`}
-                        >
-                          <div
-                            className={`flex items-center justify-center w-5 h-5 rounded border-2 transition-colors ${
-                              isSelected
-                                ? "bg-primary border-primary"
-                                : "bg-background border-muted-foreground/30"
-                            }`}
-                          >
-                            {isSelected && (
-                              <Check className="w-3.5 h-3.5 text-primary-foreground" />
-                            )}
-                          </div>
-                          <span className="text-sm font-medium flex-1">
-                            {folder.title}
-                          </span>
-                        </div>
-                      );
-                    })}
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                      Automatically displays average, median, high, and low sale
+                      prices for eBay sold listings. Includes clickable metrics
+                      to jump to specific listings and quick filters for viewing
+                      new/used items.
+                    </p>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>
+                        • Shows price statistics at the top of search results
+                      </p>
+                      <p>
+                        • Click metrics to scroll to highest/lowest/latest sold
+                        items
+                      </p>
+                      <p>• Quick filter buttons for new and used conditions</p>
+                      <p>• Dismissible per search session</p>
+                    </div>
                   </div>
-
-                  <p className="text-xs text-muted-foreground mt-4">
-                    Select specific folders to show only bookmarks from those folders, or click "Select All" to show bookmarks from all folders
-                  </p>
+                  <button
+                    onClick={handleToggleEbaySummary}
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                      settings.ebaySummary?.enabled ?? true
+                        ? "bg-primary"
+                        : "bg-muted-foreground/30"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                        settings.ebaySummary?.enabled ?? true
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
             </div>
           </section>
-          </main>
-        </div>
+
+          {/* UPC Highlighter Section */}
+          <section id="upc" className="scroll-mt-20">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-2">UPC Highlighter</h2>
+              <p className="text-muted-foreground">
+                Automatically detect and highlight UPC codes on web pages
+              </p>
+            </div>
+
+            <div className="bg-card rounded-xl border border-border shadow-lg overflow-hidden">
+              <div className="divide-y divide-border">
+                {/* Enable/Disable Toggle */}
+                <div className="p-6 flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-base">
+                        Enable UPC Detection
+                      </h3>
+                      {settings.upcHighlighter?.enabled && (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                      Automatically detects 12-digit UPC codes on web pages,
+                      highlights them with a special style, and makes them
+                      clickable to copy to clipboard.
+                    </p>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>• Automatically highlights 12-digit UPC codes</p>
+                      <p>• Click any highlighted code to copy to clipboard</p>
+                      <p>• Hover to see copy tooltip</p>
+                      <p>• Works on all websites including dynamic content</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleToggleUpcHighlighter}
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                      settings.upcHighlighter?.enabled ?? true
+                        ? "bg-primary"
+                        : "bg-muted-foreground/30"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                        settings.upcHighlighter?.enabled ?? true
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
-    );
-  }
+    </div>
+  );
+}
