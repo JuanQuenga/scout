@@ -18,6 +18,7 @@ export default defineContentScript({
     const SUMMARY_ID = "scout-ebay-sold-summary";
     const STYLE_ID = "scout-ebay-sold-summary-style";
     let updateQueued = false;
+    let isDismissed = false;
 
     const log = (...args: any[]) => {
       try {
@@ -109,6 +110,8 @@ export default defineContentScript({
           line-height: 1;
           color: #475569;
           transition: all 0.2s ease;
+          z-index: 10;
+          pointer-events: auto;
         }
         #${SUMMARY_ID} .scout-ebay-summary__dismiss:hover {
           background: rgba(239, 68, 68, 0.9);
@@ -360,6 +363,13 @@ export default defineContentScript({
         return;
       }
 
+      // Check if user has dismissed this summary
+      if (isDismissed) {
+        log("✗ Summary was dismissed by user, not showing");
+        removeSummary();
+        return;
+      }
+
       const { prices, currencyPrefix, mostRecentDate } = collectPrices();
       log("Collected prices:", prices.length, "prices found");
 
@@ -399,7 +409,7 @@ export default defineContentScript({
       }
 
       container.innerHTML = `
-        <button class="scout-ebay-summary__dismiss" title="Dismiss" data-action="dismiss">×</button>
+        <button type="button" class="scout-ebay-summary__dismiss" title="Dismiss" data-action="dismiss">×</button>
         <h2>Scout Price Summary</h2>
         <div class="scout-ebay-summary__metrics">
           <div class="scout-ebay-summary__metric">
@@ -448,6 +458,7 @@ export default defineContentScript({
           e.preventDefault();
           e.stopPropagation();
           log("Dismiss button clicked");
+          isDismissed = true;
           removeSummary();
         });
       }
@@ -483,14 +494,6 @@ export default defineContentScript({
       }
     };
 
-    const observer = new MutationObserver(() => {
-      if (!isSoldResultsPage()) {
-        removeSummary();
-        return;
-      }
-      scheduleUpdate();
-    });
-
     const start = () => {
       log("=== Scout eBay Sold Summary Starting ===");
       log("Current URL:", window.location.href);
@@ -501,22 +504,15 @@ export default defineContentScript({
         return;
       }
 
-      try {
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true,
-        });
-        log("✓ Mutation observer started");
-      } catch (err) {
-        log("Failed to observe mutations", err);
-      }
-
+      // Hook into history changes for SPA-like navigation
       ["pushState", "replaceState"].forEach((method) => {
         try {
           const original = (history as any)[method];
           if (typeof original !== "function") return;
           (history as any)[method] = function (...args: any[]) {
             const result = original.apply(this, args);
+            // Reset dismiss flag when URL changes (new search)
+            isDismissed = false;
             scheduleUpdate();
             return result;
           };
@@ -525,14 +521,16 @@ export default defineContentScript({
         }
       });
 
-      window.addEventListener("popstate", scheduleUpdate);
-      document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) {
-          scheduleUpdate();
-        }
+      window.addEventListener("popstate", () => {
+        // Reset dismiss flag when navigating back/forward
+        isDismissed = false;
+        scheduleUpdate();
       });
 
-      scheduleUpdate();
+      // Initial render - wait a bit for eBay's dynamic content to load
+      setTimeout(() => {
+        scheduleUpdate();
+      }, 500);
     };
 
     start();

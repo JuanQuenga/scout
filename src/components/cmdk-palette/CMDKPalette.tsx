@@ -36,6 +36,26 @@ import {
 } from "lucide-react";
 import "./styles.css";
 
+const DEFAULT_ENABLED_SOURCES = {
+  tabs: true,
+  bookmarks: true,
+  history: true,
+  quickLinks: true,
+  tools: true,
+  searchProviders: true,
+  ebayCategories: true,
+} as const;
+
+const DEFAULT_SOURCE_ORDER = [
+  "tabs",
+  "quickLinks",
+  "ebayCategories",
+  "bookmarks",
+  "tools",
+  "searchProviders",
+  "history",
+] as const;
+
 interface CMDKPaletteProps {
   isOpen: boolean;
   onClose: () => void;
@@ -65,22 +85,10 @@ export function CMDKPalette({
   const [selectedValue, setSelectedValue] = useState<string>("");
   const listRef = useRef<HTMLDivElement>(null);
   const [enabledSources, setEnabledSources] = useState({
-    tabs: true,
-    bookmarks: true,
-    history: true,
-    quickLinks: true,
-    tools: true,
-    searchProviders: true,
-    ebayCategories: true,
+    ...DEFAULT_ENABLED_SOURCES,
   });
   const [sourceOrder, setSourceOrder] = useState<string[]>([
-    "tabs",
-    "quickLinks",
-    "ebayCategories",
-    "tools",
-    "bookmarks",
-    "searchProviders",
-    "history",
+    ...DEFAULT_SOURCE_ORDER,
   ]);
   const trimmedSearch = search.trim();
   const previousTab =
@@ -94,11 +102,29 @@ export function CMDKPalette({
   useEffect(() => {
     // Load settings from chrome storage
     chrome.storage.sync.get(["cmdkSettings"], (result: any) => {
-      if (result.cmdkSettings?.enabledSources) {
-        setEnabledSources(result.cmdkSettings.enabledSources);
-      }
-      if (result.cmdkSettings?.sourceOrder) {
-        setSourceOrder(result.cmdkSettings.sourceOrder);
+      if (result.cmdkSettings) {
+        if (result.cmdkSettings.enabledSources) {
+          setEnabledSources((prev) => ({
+            ...DEFAULT_ENABLED_SOURCES,
+            ...prev,
+            ...result.cmdkSettings.enabledSources,
+          }));
+        }
+        if (Array.isArray(result.cmdkSettings.sourceOrder)) {
+          setSourceOrder(() => {
+            const storedOrder = result.cmdkSettings.sourceOrder.filter(
+              (key: string) =>
+                (DEFAULT_SOURCE_ORDER as readonly string[]).includes(key)
+            );
+            const mergedOrder = [...storedOrder];
+            for (const key of DEFAULT_SOURCE_ORDER) {
+              if (!mergedOrder.includes(key)) {
+                mergedOrder.push(key);
+              }
+            }
+            return mergedOrder;
+          });
+        }
       }
     });
   }, []);
@@ -343,7 +369,7 @@ export function CMDKPalette({
       setEbayLoading(true);
       try {
         const res = await fetch(
-          `https://scout-extension.vercel.app/api/ebay-categories?q=${encodeURIComponent(
+          `https://paymore-extension.vercel.app/api/ebay-categories?q=${encodeURIComponent(
             q
           )}`
         );
@@ -482,6 +508,7 @@ export function CMDKPalette({
   const content = (
     <Command
       shouldFilter={false}
+      filter={() => 1}
       onKeyDown={handleKeyDown}
       className="cmdk-root"
       value={selectedValue}
@@ -763,7 +790,7 @@ export function CMDKPalette({
                               key={s.categoryId}
                               value={`ebay-cat-${s.categoryId}`}
                               onSelect={handleSelect}
-                              keywords={[s.categoryName, s.categoryPath, search]}
+                              keywords={[s.categoryName, s.categoryPath]}
                               className="cmdk-item"
                             >
                               <div

@@ -36,6 +36,37 @@ const DEFAULT_SETTINGS: CMDKSettings = {
   ],
 };
 
+const ALL_SOURCE_KEYS = [...DEFAULT_SETTINGS.sourceOrder];
+
+const mergeSettings = (stored?: Partial<CMDKSettings>): CMDKSettings => {
+  if (!stored) {
+    return DEFAULT_SETTINGS;
+  }
+
+  const mergedEnabledSources = {
+    ...DEFAULT_SETTINGS.enabledSources,
+    ...(stored.enabledSources || {}),
+  };
+
+  const sanitizedOrder = Array.isArray(stored.sourceOrder)
+    ? stored.sourceOrder.filter((key) => ALL_SOURCE_KEYS.includes(key))
+    : [];
+
+  const mergedSourceOrder = [...sanitizedOrder];
+  for (const key of ALL_SOURCE_KEYS) {
+    if (!mergedSourceOrder.includes(key)) {
+      mergedSourceOrder.push(key);
+    }
+  }
+
+  return {
+    ...DEFAULT_SETTINGS,
+    ...stored,
+    enabledSources: mergedEnabledSources,
+    sourceOrder: mergedSourceOrder,
+  };
+};
+
 export default function SettingsPopup() {
   const [settings, setSettings] = useState<CMDKSettings>(DEFAULT_SETTINGS);
   const [isSaved, setIsSaved] = useState(false);
@@ -46,7 +77,7 @@ export default function SettingsPopup() {
     // Load settings from chrome storage
     chrome.storage.sync.get(["cmdkSettings"], (result) => {
       if (result.cmdkSettings) {
-        setSettings(result.cmdkSettings);
+        setSettings(mergeSettings(result.cmdkSettings));
       }
     });
 

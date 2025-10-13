@@ -82,6 +82,60 @@ const DEFAULT_SETTINGS: CMDKSettings = {
   bookmarkFolderIds: [],
 };
 
+const ALL_SOURCE_KEYS = [...DEFAULT_SETTINGS.sourceOrder];
+
+const mergeSettings = (stored?: Partial<CMDKSettings>): CMDKSettings => {
+  if (!stored) {
+    return DEFAULT_SETTINGS;
+  }
+
+  const mergedEnabledSources = {
+    ...DEFAULT_SETTINGS.enabledSources,
+    ...(stored.enabledSources || {}),
+  };
+
+  const sanitizedOrder = Array.isArray(stored.sourceOrder)
+    ? stored.sourceOrder.filter((key) => ALL_SOURCE_KEYS.includes(key))
+    : [];
+  const mergedSourceOrder = [...sanitizedOrder];
+  for (const key of ALL_SOURCE_KEYS) {
+    if (!mergedSourceOrder.includes(key)) {
+      mergedSourceOrder.push(key);
+    }
+  }
+
+  const mergedEnabledProviders = {
+    ...DEFAULT_SETTINGS.enabledSearchProviders,
+    ...(stored.enabledSearchProviders || {}),
+  };
+
+  const mergedShopifyGuardrails = {
+    ...(DEFAULT_SETTINGS.shopifyGuardrails || {}),
+    ...(stored.shopifyGuardrails || {}),
+  };
+
+  const mergedControllerTesting = {
+    ...(DEFAULT_SETTINGS.controllerTesting || {}),
+    ...(stored.controllerTesting || {}),
+  };
+
+  return {
+    ...DEFAULT_SETTINGS,
+    ...stored,
+    enabledSources: mergedEnabledSources,
+    sourceOrder: mergedSourceOrder,
+    enabledSearchProviders: mergedEnabledProviders,
+    customSearchProviders: stored.customSearchProviders
+      ? [...stored.customSearchProviders]
+      : [...DEFAULT_SETTINGS.customSearchProviders],
+    shopifyGuardrails: mergedShopifyGuardrails,
+    controllerTesting: mergedControllerTesting,
+    bookmarkFolderIds: stored.bookmarkFolderIds
+      ? [...stored.bookmarkFolderIds]
+      : [...DEFAULT_SETTINGS.bookmarkFolderIds],
+  };
+};
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<CMDKSettings>(DEFAULT_SETTINGS);
   const [isSaved, setIsSaved] = useState(false);
@@ -100,7 +154,7 @@ export default function SettingsPage() {
     // Load settings from chrome storage
     chrome.storage.sync.get(["cmdkSettings"], (result) => {
       if (result.cmdkSettings) {
-        setSettings(result.cmdkSettings);
+        setSettings(mergeSettings(result.cmdkSettings));
       }
     });
 
