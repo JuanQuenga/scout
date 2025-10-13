@@ -61,6 +61,20 @@ export default defineContentScript({
           border-radius: 8px;
           border: 1px solid rgba(148, 163, 184, 0.4);
         }
+        #${SUMMARY_ID} .scout-ebay-summary__metric--clickable {
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__metric--clickable:hover {
+          background: rgba(59, 130, 246, 0.15);
+          border-color: rgba(59, 130, 246, 0.6);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__metric--clickable:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+        }
         #${SUMMARY_ID} .scout-ebay-summary__metric strong {
           display: block;
           font-size: 16px;
@@ -123,6 +137,23 @@ export default defineContentScript({
           font-size: 12px;
           color: #475569;
         }
+        .scout-listing-highlight {
+          animation: scout-highlight-pulse 1s ease-in-out;
+          outline: 3px solid rgba(59, 130, 246, 0.8) !important;
+          outline-offset: 4px;
+          border-radius: 8px !important;
+          background: rgba(59, 130, 246, 0.05) !important;
+        }
+        @keyframes scout-highlight-pulse {
+          0%, 100% {
+            outline-color: rgba(59, 130, 246, 0.8);
+            outline-width: 3px;
+          }
+          50% {
+            outline-color: rgba(37, 99, 235, 1);
+            outline-width: 5px;
+          }
+        }
       `;
       document.head.appendChild(style);
     };
@@ -182,7 +213,8 @@ export default defineContentScript({
     const parseSoldDate = (element: Element) => {
       try {
         // Look for the "Sold" date text
-        const soldDateElement = element.querySelector(".s-item__title--tagblock .POSITIVE") ||
+        const soldDateElement = element.querySelector(".su-styled-text.positive") ||
+                               element.querySelector(".s-item__title--tagblock .POSITIVE") ||
                                element.querySelector(".s-item__ended-date");
 
         if (!soldDateElement) return null;
@@ -213,7 +245,14 @@ export default defineContentScript({
 
       if (!mainResultsContainer) {
         log("⚠️ Could not find main results container");
-        return { prices: [], currencyPrefix: "$", mostRecentDate: null };
+        return {
+          prices: [],
+          currencyPrefix: "$",
+          mostRecentDate: null,
+          minElement: null,
+          maxElement: null,
+          mostRecentElement: null
+        };
       }
 
       log("✓ Found main results container");
@@ -256,9 +295,8 @@ export default defineContentScript({
 
       log("✅ Final count:", productListings.length, "product listings");
 
-      // Extract prices and dates
-      const prices: number[] = [];
-      const dates: Date[] = [];
+      // Extract prices and dates with element tracking
+      const priceData: Array<{ value: number; element: Element; date: Date | null }> = [];
       let currencyPrefix: string | null = null;
 
       for (const item of productListings) {
@@ -279,27 +317,56 @@ export default defineContentScript({
           currencyPrefix = detectCurrencyPrefix(text);
         }
 
-        prices.push(value);
-
         // Try to get the sold date
         const soldDate = parseSoldDate(item);
-        if (soldDate) {
-          dates.push(soldDate);
-        }
+
+        priceData.push({ value, element: item, date: soldDate });
       }
 
-      log("💰 Extracted", prices.length, "prices");
-      log("📅 Extracted", dates.length, "dates");
+      log("💰 Extracted", priceData.length, "prices");
 
-      // Find the most recent date
-      let mostRecentDate: Date | null = null;
-      if (dates.length > 0) {
-        mostRecentDate = dates.reduce((latest, current) =>
-          current > latest ? current : latest
+      if (priceData.length === 0) {
+        return {
+          prices: [],
+          currencyPrefix: currencyPrefix || "$",
+          mostRecentDate: null,
+          minElement: null,
+          maxElement: null,
+          mostRecentElement: null
+        };
+      }
+
+      // Find min and max elements
+      const minEntry = priceData.reduce((min, curr) =>
+        curr.value < min.value ? curr : min
+      );
+      const maxEntry = priceData.reduce((max, curr) =>
+        curr.value > max.value ? curr : max
+      );
+
+      // Find the most recent date entry
+      const entriesWithDates = priceData.filter(entry => entry.date !== null);
+      let mostRecentEntry = null;
+      let mostRecentDate = null;
+
+      if (entriesWithDates.length > 0) {
+        mostRecentEntry = entriesWithDates.reduce((latest, current) =>
+          current.date! > latest.date! ? current : latest
         );
+        mostRecentDate = mostRecentEntry.date;
       }
 
-      return { prices, currencyPrefix: currencyPrefix || "$", mostRecentDate };
+      const prices = priceData.map(d => d.value);
+      log("📅 Found", entriesWithDates.length, "dates");
+
+      return {
+        prices,
+        currencyPrefix: currencyPrefix || "$",
+        mostRecentDate,
+        minElement: minEntry.element,
+        maxElement: maxEntry.element,
+        mostRecentElement: mostRecentEntry?.element || null
+      };
     };
 
     const removeSummary = () => {
@@ -370,7 +437,14 @@ export default defineContentScript({
         return;
       }
 
-      const { prices, currencyPrefix, mostRecentDate } = collectPrices();
+      const {
+        prices,
+        currencyPrefix,
+        mostRecentDate,
+        minElement,
+        maxElement,
+        mostRecentElement
+      } = collectPrices();
       log("Collected prices:", prices.length, "prices found");
 
       if (!prices.length) {
@@ -420,11 +494,11 @@ export default defineContentScript({
             <strong>Median</strong>
             <span>${formatCurrency(median, currencyPrefix)}</span>
           </div>
-          <div class="scout-ebay-summary__metric">
+          <div class="scout-ebay-summary__metric scout-ebay-summary__metric--clickable" data-scroll-to="highest" title="Click to scroll to listing">
             <strong>Highest</strong>
             <span>${formatCurrency(max, currencyPrefix)}</span>
           </div>
-          <div class="scout-ebay-summary__metric">
+          <div class="scout-ebay-summary__metric scout-ebay-summary__metric--clickable" data-scroll-to="lowest" title="Click to scroll to listing">
             <strong>Lowest</strong>
             <span>${formatCurrency(min, currencyPrefix)}</span>
           </div>
@@ -432,7 +506,7 @@ export default defineContentScript({
             <strong>Listings</strong>
             <span>${count}</span>
           </div>
-          <div class="scout-ebay-summary__metric">
+          <div class="scout-ebay-summary__metric scout-ebay-summary__metric--clickable" data-scroll-to="latest" title="Click to scroll to listing">
             <strong>Latest Sold</strong>
             <span>${formattedDate}</span>
           </div>
@@ -480,6 +554,63 @@ export default defineContentScript({
           const url = new URL(window.location.href);
           url.searchParams.set("LH_ItemCondition", "3");
           window.location.href = url.toString();
+        });
+      }
+
+      // Add scroll-to handlers for clickable metrics
+      const scrollToAndHighlight = (element: Element | null, metricName: string) => {
+        if (!element) {
+          log(`⚠️ No element found for ${metricName}`);
+          return;
+        }
+
+        // Remove any existing highlights
+        document.querySelectorAll(".scout-listing-highlight").forEach((el) => {
+          el.classList.remove("scout-listing-highlight");
+        });
+
+        // Scroll to the element with smooth behavior
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+
+        // Add highlight class
+        element.classList.add("scout-listing-highlight");
+
+        // Remove highlight after 3 seconds
+        setTimeout(() => {
+          element.classList.remove("scout-listing-highlight");
+        }, 3000);
+
+        log(`✓ Scrolled to and highlighted ${metricName}`);
+      };
+
+      const highestMetric = container.querySelector('[data-scroll-to="highest"]');
+      const lowestMetric = container.querySelector('[data-scroll-to="lowest"]');
+      const latestMetric = container.querySelector('[data-scroll-to="latest"]');
+
+      if (highestMetric) {
+        highestMetric.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          scrollToAndHighlight(maxElement, "highest price listing");
+        });
+      }
+
+      if (lowestMetric) {
+        lowestMetric.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          scrollToAndHighlight(minElement, "lowest price listing");
+        });
+      }
+
+      if (latestMetric) {
+        latestMetric.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          scrollToAndHighlight(mostRecentElement, "most recent listing");
         });
       }
     };
