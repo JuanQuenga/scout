@@ -81,11 +81,13 @@ export default defineContentScript({
       }
     `;
 
-    // Inject CSS styles
-    const styleElement = document.createElement("style");
-    styleElement.textContent = HIGHLIGHT_CSS;
-    styleElement.id = "scout-upc-highlighter-styles";
-    (document.head || document.documentElement).appendChild(styleElement);
+    // Inject CSS styles (only if not already injected)
+    if (!document.getElementById("scout-upc-highlighter-styles")) {
+      const styleElement = document.createElement("style");
+      styleElement.textContent = HIGHLIGHT_CSS;
+      styleElement.id = "scout-upc-highlighter-styles";
+      (document.head || document.documentElement).appendChild(styleElement);
+    }
 
     // Function to show tooltip
     const showTooltip = (element, text) => {
@@ -309,7 +311,10 @@ export default defineContentScript({
           return;
         }
 
-        log("Initializing UPC highlighter");
+        // Only log in main frame to avoid console spam from iframes
+        if (window === window.top) {
+          log("Initializing UPC highlighter");
+        }
 
         // Initial scan
         setTimeout(scanAndHighlightUPCs, 500);
