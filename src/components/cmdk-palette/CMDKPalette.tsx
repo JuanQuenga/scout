@@ -7,6 +7,8 @@ import { TabManager, TabInfo } from "@/src/utils/tab-manager";
 import { fetchCSVLinks, filterCSVLinks, CSVLink } from "@/src/utils/csv-links";
 import {
   getAllBookmarks,
+  getBookmarksFromFolder,
+  getBookmarksFromMultipleFolders,
   filterBookmarks,
   Bookmark,
 } from "@/src/utils/bookmarks";
@@ -136,9 +138,12 @@ export function CMDKPalette({
   };
 
   const loadBookmarks = async () => {
-    const allBookmarks = await getAllBookmarks();
-    // Limit to 20 most recent bookmarks
-    setBookmarks(allBookmarks.slice(0, 20));
+    // Get the selected folder IDs from settings
+    chrome.storage.sync.get(["cmdkSettings"], async (result: any) => {
+      const folderIds = result.cmdkSettings?.bookmarkFolderIds || [];
+      const allBookmarks = await getBookmarksFromMultipleFolders(folderIds);
+      setBookmarks(allBookmarks);
+    });
   };
 
   const loadHistory = async () => {
@@ -432,8 +437,10 @@ export function CMDKPalette({
     await openUrlAndClose(url);
   };
 
-  const openSettings = () => {
-    chrome.runtime.openOptionsPage();
+  const openSettings = async () => {
+    // Open settings page in a new tab
+    const optionsUrl = chrome.runtime.getURL('options.html');
+    await TabManager.openNewTab(optionsUrl);
     onClose();
   };
 
@@ -756,6 +763,7 @@ export function CMDKPalette({
                               key={s.categoryId}
                               value={`ebay-cat-${s.categoryId}`}
                               onSelect={handleSelect}
+                              keywords={[s.categoryName, s.categoryPath, search]}
                               className="cmdk-item"
                             >
                               <div

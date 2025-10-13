@@ -225,6 +225,32 @@ export default defineContentScript({
     let googleFieldsWarningDismissed = false; // Track if user dismissed the warning
     let conditionMismatchDismissed = false; // Track if user dismissed the condition mismatch
 
+    // Settings
+    let guardrailSettings = {
+      enableConditionCheck: true,
+      enableGoogleFieldsCheck: true,
+    };
+
+    // Load settings from storage
+    const loadSettings = () => {
+      try {
+        chrome.storage.sync.get(['cmdkSettings'], (result) => {
+          if (result.cmdkSettings?.shopifyGuardrails) {
+            guardrailSettings = {
+              enableConditionCheck: result.cmdkSettings.shopifyGuardrails.enableConditionCheck ?? true,
+              enableGoogleFieldsCheck: result.cmdkSettings.shopifyGuardrails.enableGoogleFieldsCheck ?? true,
+            };
+            log("Loaded guardrail settings:", guardrailSettings);
+
+            // Recheck after settings load
+            performAllChecks();
+          }
+        });
+      } catch (e) {
+        log("Failed to load settings:", e);
+      }
+    };
+
     // Create or update page outline
     const updatePageOutline = (variant) => {
       let outline = document.getElementById("scout-page-outline");
@@ -716,14 +742,14 @@ export default defineContentScript({
       }
 
       // Check conditions
-      const conditionsMatch = checkConditionsMatch();
-      const hasEmptyGoogleFields = findGoogleFields();
+      const conditionsMatch = guardrailSettings.enableConditionCheck ? checkConditionsMatch() : null;
+      const hasEmptyGoogleFields = guardrailSettings.enableGoogleFieldsCheck ? findGoogleFields() : false;
 
       // Determine page border variant
       let borderVariant = null;
 
-      if (conditionsMatch === false && !conditionMismatchDismissed) {
-        // Condition mismatch is the highest priority (RED) - only show if not dismissed
+      if (guardrailSettings.enableConditionCheck && conditionsMatch === false && !conditionMismatchDismissed) {
+        // Condition mismatch is the highest priority (RED) - only show if enabled and not dismissed
         borderVariant = "danger";
         showNotification("condition-mismatch", {
           shopifyCondition: conditionField.value,
@@ -733,8 +759,8 @@ export default defineContentScript({
       } else {
         removeNotification("condition-mismatch");
 
-        if (hasEmptyGoogleFields && !googleFieldsWarningDismissed) {
-          // Empty Google fields (ORANGE) - only show if not dismissed
+        if (guardrailSettings.enableGoogleFieldsCheck && hasEmptyGoogleFields && !googleFieldsWarningDismissed) {
+          // Empty Google fields (ORANGE) - only show if enabled and not dismissed
           borderVariant = "warning";
           const emptyFields = googleFields.filter((f) => f.isEmpty);
           showNotification("google-fields", {
@@ -886,12 +912,27 @@ export default defineContentScript({
             message.action === "recheck-conditions"
           ) {
             performAllChecks();
+          } else if (message.action === "guardrails-settings-changed") {
+            log("Received settings update:", message.settings);
+            guardrailSettings = {
+              enableConditionCheck: message.settings.enableConditionCheck ?? true,
+              enableGoogleFieldsCheck: message.settings.enableGoogleFieldsCheck ?? true,
+            };
+            // Clear all notifications and borders when settings change
+            removeNotification("condition-mismatch");
+            removeNotification("google-fields");
+            updatePageOutline(null);
+            // Recheck with new settings
+            performAllChecks();
           }
           return true;
         });
       } catch (e) {
         log("Failed to set up message listener:", e);
       }
+
+      // Load settings from storage
+      loadSettings();
 
       // Retry finding fields for the first 30 seconds
       let retryCount = 0;

@@ -19,7 +19,7 @@ export default defineContentScript({
 
     const log = (...args) => {
       try {
-        console.log("[Paymore Lite CS]", ...args);
+        console.log("[Scout CS]", ...args);
       } catch (_) {}
     };
 

@@ -23,6 +23,12 @@ export default function ControllerTesting() {
     index: number;
   } | null>(null);
 
+  // State for threshold settings
+  const [thresholds, setThresholds] = useState({
+    lightThreshold: 0.1,
+    mediumThreshold: 0.25,
+  });
+
   // Refs for SVG elements
   const lstickRef = useRef<SVGCircleElement>(null);
   const rstickRef = useRef<SVGCircleElement>(null);
@@ -73,6 +79,36 @@ export default function ControllerTesting() {
     "Extra2",
   ];
 
+  // Load threshold settings from chrome storage
+  useEffect(() => {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.sync.get(['cmdkSettings'], (result) => {
+        if (result.cmdkSettings?.controllerTesting) {
+          setThresholds({
+            lightThreshold: result.cmdkSettings.controllerTesting.lightThreshold ?? 0.1,
+            mediumThreshold: result.cmdkSettings.controllerTesting.mediumThreshold ?? 0.25,
+          });
+        }
+      });
+
+      // Listen for settings changes
+      const handleStorageChange = (changes: any) => {
+        if (changes.cmdkSettings?.newValue?.controllerTesting) {
+          setThresholds({
+            lightThreshold: changes.cmdkSettings.newValue.controllerTesting.lightThreshold ?? 0.1,
+            mediumThreshold: changes.cmdkSettings.newValue.controllerTesting.mediumThreshold ?? 0.25,
+          });
+        }
+      };
+
+      chrome.storage.onChanged.addListener(handleStorageChange);
+
+      return () => {
+        chrome.storage.onChanged.removeListener(handleStorageChange);
+      };
+    }
+  }, []);
+
   useEffect(() => {
     let selectedIndex = 0;
     let lastUpdateTime = 0;
@@ -98,15 +134,15 @@ export default function ControllerTesting() {
     const getStickColor = (x: number, y: number): string => {
       const magnitude = Math.max(Math.abs(x), Math.abs(y));
       if (magnitude < 0.05) return COLOR_GREEN; // Inactive
-      if (magnitude < 0.1) return COLOR_GREEN; // Light input
-      if (magnitude < 0.25) return COLOR_ORANGE; // Medium input
+      if (magnitude < thresholds.lightThreshold) return COLOR_GREEN; // Light input
+      if (magnitude < thresholds.mediumThreshold) return COLOR_ORANGE; // Medium input
       return "rgba(239,68,68,0.9)"; // Heavy input (red)
     };
 
     const getTriggerColor = (value: number): string => {
       if (value < 0.05) return COLOR_GREEN; // Default gray
-      if (value < 0.1) return COLOR_GREEN; // Green for light press
-      if (value < 0.25) return COLOR_ORANGE; // Orange for medium press
+      if (value < thresholds.lightThreshold) return COLOR_GREEN; // Green for light press
+      if (value < thresholds.mediumThreshold) return COLOR_ORANGE; // Orange for medium press
       return "rgba(239,68,68,0.9)"; // Red for heavy press
     };
 
@@ -337,7 +373,7 @@ export default function ControllerTesting() {
       window.removeEventListener("gamepadconnected", onConnect);
       window.removeEventListener("gamepaddisconnected", onDisconnect);
     };
-  }, []);
+  }, [thresholds]);
 
   return (
     <div className="h-full w-full bg-background overflow-y-auto">
@@ -680,12 +716,12 @@ export default function ControllerTesting() {
                           : Math.sqrt(
                               controllerState.lx * controllerState.lx +
                                 controllerState.ly * controllerState.ly
-                            ) < 0.1
+                            ) < thresholds.lightThreshold
                           ? "rgba(34,197,94,0.85)"
                           : Math.sqrt(
                               controllerState.lx * controllerState.lx +
                                 controllerState.ly * controllerState.ly
-                            ) < 0.25
+                            ) < thresholds.mediumThreshold
                           ? "rgba(255,140,0,1.0)"
                           : "rgba(239,68,68,0.9)",
                     }}
@@ -745,12 +781,12 @@ export default function ControllerTesting() {
                           : Math.sqrt(
                               controllerState.rx * controllerState.rx +
                                 controllerState.ry * controllerState.ry
-                            ) < 0.1
+                            ) < thresholds.lightThreshold
                           ? "rgba(34,197,94,0.85)"
                           : Math.sqrt(
                               controllerState.rx * controllerState.rx +
                                 controllerState.ry * controllerState.ry
-                            ) < 0.25
+                            ) < thresholds.mediumThreshold
                           ? "rgba(255,140,0,1.0)"
                           : "rgba(239,68,68,0.9)",
                     }}
@@ -790,9 +826,9 @@ export default function ControllerTesting() {
                       backgroundColor:
                         controllerState.lt < 0.05
                           ? "rgba(34,197,94,0.85)"
-                          : controllerState.lt < 0.1
+                          : controllerState.lt < thresholds.lightThreshold
                           ? "rgba(34,197,94,0.85)"
-                          : controllerState.lt < 0.25
+                          : controllerState.lt < thresholds.mediumThreshold
                           ? "rgba(255,140,0,1.0)"
                           : "rgba(239,68,68,0.9)",
                     }}
@@ -825,9 +861,9 @@ export default function ControllerTesting() {
                       backgroundColor:
                         controllerState.rt < 0.05
                           ? "rgba(34,197,94,0.85)"
-                          : controllerState.rt < 0.1
+                          : controllerState.rt < thresholds.lightThreshold
                           ? "rgba(34,197,94,0.85)"
-                          : controllerState.rt < 0.25
+                          : controllerState.rt < thresholds.mediumThreshold
                           ? "rgba(255,140,0,1.0)"
                           : "rgba(239,68,68,0.9)",
                     }}

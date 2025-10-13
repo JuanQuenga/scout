@@ -13,6 +13,8 @@ export default defineContentScript({
   runAt: "document_idle",
   allFrames: false,
   main() {
+    console.log("🐕 [Scout eBay Sold Summary] SCRIPT LOADED - Version 2");
+
     const SUMMARY_ID = "scout-ebay-sold-summary";
     const STYLE_ID = "scout-ebay-sold-summary-style";
     let updateQueued = false;
@@ -29,14 +31,16 @@ export default defineContentScript({
       style.id = STYLE_ID;
       style.textContent = `
         #${SUMMARY_ID} {
+          width: 100%;
           border: 1px solid #1d4ed8;
           background: rgba(37, 99, 235, 0.08);
           padding: 14px 18px;
           border-radius: 10px;
-          margin: 16px 0;
+          margin: 12px 0 0 0;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
           color: #0f172a;
           box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+          position: relative;
         }
         #${SUMMARY_ID} h2 {
           font-size: 17px;
@@ -60,6 +64,56 @@ export default defineContentScript({
           display: block;
           font-size: 16px;
           margin-bottom: 4px;
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__metric-button {
+          min-width: 120px;
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95));
+          padding: 12px 16px;
+          border-radius: 8px;
+          border: 1px solid rgba(59, 130, 246, 0.6);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-align: center;
+          color: white;
+          font-weight: 600;
+          font-size: 13px;
+          box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__metric-button:hover {
+          background: linear-gradient(135deg, rgba(37, 99, 235, 1), rgba(29, 78, 216, 1));
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+          border-color: rgba(29, 78, 216, 0.8);
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__metric-button:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__dismiss {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: rgba(148, 163, 184, 0.2);
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          border-radius: 6px;
+          width: 28px;
+          height: 28px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          line-height: 1;
+          color: #475569;
+          transition: all 0.2s ease;
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__dismiss:hover {
+          background: rgba(239, 68, 68, 0.9);
+          border-color: rgba(220, 38, 38, 0.8);
+          color: white;
         }
         #${SUMMARY_ID} .scout-ebay-summary__meta {
           margin-top: 12px;
@@ -104,7 +158,10 @@ export default defineContentScript({
 
     const detectCurrencyPrefix = (text: string) => {
       if (!text) return "$";
-      const prefix = text.replace(/[\d.,]/g, "").replace(/\s+/g, " ").trim();
+      const prefix = text
+        .replace(/[\d.,]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
       if (prefix) return prefix;
       const symbolMatch = text.match(/[$\u00a3\u00a5\u20ac]/);
       if (symbolMatch) return symbolMatch[0];
@@ -119,18 +176,94 @@ export default defineContentScript({
       return `${prefix ? prefix + " " : ""}${formatted}`.trim();
     };
 
+    const parseSoldDate = (element: Element) => {
+      try {
+        // Look for the "Sold" date text
+        const soldDateElement = element.querySelector(".s-item__title--tagblock .POSITIVE") ||
+                               element.querySelector(".s-item__ended-date");
+
+        if (!soldDateElement) return null;
+
+        const text = soldDateElement.textContent?.trim();
+        if (!text) return null;
+
+        // Extract date from text like "Sold  Jan 15, 2025" or "Sold Jan 15, 2025"
+        const match = text.match(/Sold\s+([A-Za-z]+\s+\d{1,2},\s+\d{4})/i);
+        if (!match) return null;
+
+        const dateStr = match[1];
+        const date = new Date(dateStr);
+
+        if (isNaN(date.getTime())) return null;
+
+        return date;
+      } catch {
+        return null;
+      }
+    };
+
     const collectPrices = () => {
-      const items = Array.from(
-        document.querySelectorAll("#srp-river-results li.s-item")
+      // Find the main search results container
+      const mainResultsContainer =
+        document.querySelector("ul.srp-results.srp-grid") ||
+        document.querySelector("#srp-river-results");
+
+      if (!mainResultsContainer) {
+        log("⚠️ Could not find main results container");
+        return { prices: [], currencyPrefix: "$", mostRecentDate: null };
+      }
+
+      log("✓ Found main results container");
+
+      // Get ALL direct child <li> elements
+      const allListItems = Array.from(mainResultsContainer.children).filter(
+        (child) => child.tagName === "LI"
       );
+
+      log("Found", allListItems.length, "total <li> elements");
+
+      // Collect only product listings BEFORE the "fewer words" divider
+      const productListings = [];
+
+      for (let i = 0; i < allListItems.length; i++) {
+        const item = allListItems[i];
+
+        // Check if this is a product listing (has data-listingid)
+        if (item.hasAttribute("data-listingid")) {
+          productListings.push(item);
+          continue;
+        }
+
+        // This is NOT a product listing - check if it's the "fewer words" divider
+        const classList = item.className || "";
+        const textContent = item.textContent || "";
+
+        if (
+          classList.includes("srp-river-answer--REWRITE_START") ||
+          textContent.includes("Results matching fewer words")
+        ) {
+          log("🛑 STOP: Found 'fewer words' divider at index", i);
+          log("   - Collected", productListings.length, "products before divider");
+          break; // STOP - everything after this is suggested
+        }
+
+        // Other divider/notice - skip and continue
+        log("Skipping divider/notice at index", i);
+      }
+
+      log("✅ Final count:", productListings.length, "product listings");
+
+      // Extract prices and dates
       const prices: number[] = [];
+      const dates: Date[] = [];
       let currencyPrefix: string | null = null;
 
-      for (const item of items) {
+      for (const item of productListings) {
         const priceElement =
+          item.querySelector(".s-card__price") ||
           item.querySelector(".s-item__price") ||
-          item.querySelector("[data-test-id='ITEM-PRICE']") ||
-          item.querySelector("span[itemprop='price']");
+          item.querySelector("[data-test-id='ITEM-PRICE']");
+
         if (!priceElement) continue;
 
         const text = priceElement.textContent?.trim();
@@ -144,9 +277,26 @@ export default defineContentScript({
         }
 
         prices.push(value);
+
+        // Try to get the sold date
+        const soldDate = parseSoldDate(item);
+        if (soldDate) {
+          dates.push(soldDate);
+        }
       }
 
-      return { prices, currencyPrefix: currencyPrefix || "$" };
+      log("💰 Extracted", prices.length, "prices");
+      log("📅 Extracted", dates.length, "dates");
+
+      // Find the most recent date
+      let mostRecentDate: Date | null = null;
+      if (dates.length > 0) {
+        mostRecentDate = dates.reduce((latest, current) =>
+          current > latest ? current : latest
+        );
+      }
+
+      return { prices, currencyPrefix: currencyPrefix || "$", mostRecentDate };
     };
 
     const removeSummary = () => {
@@ -158,33 +308,73 @@ export default defineContentScript({
 
     const ensureSummaryContainer = () => {
       let container = document.getElementById(SUMMARY_ID);
-      if (container) return container;
+      if (container) {
+        log("✓ Summary container already exists");
+        return container;
+      }
+
+      // Try to find the srp-controls__row-2 element
+      const srpControlsRow2 = document.querySelector(".srp-controls__row-2");
+      log(
+        "Searching for .srp-controls__row-2:",
+        srpControlsRow2 ? "FOUND" : "NOT FOUND"
+      );
+
+      if (srpControlsRow2) {
+        container = document.createElement("section");
+        container.id = SUMMARY_ID;
+        // Insert the summary as the last child of srp-controls__row-2
+        srpControlsRow2.appendChild(container);
+        log("✓ Summary container inserted into .srp-controls__row-2");
+        return container;
+      }
+
+      // Fallback to old behavior if the element is not found
       const river = document.getElementById("srp-river-results");
-      if (!river || !river.parentElement) return null;
+      log(
+        "Fallback: Searching for #srp-river-results:",
+        river ? "FOUND" : "NOT FOUND"
+      );
+
+      if (!river || !river.parentElement) {
+        log("✗ Cannot insert summary - no suitable parent found");
+        return null;
+      }
 
       container = document.createElement("section");
       container.id = SUMMARY_ID;
       river.parentElement.insertBefore(container, river);
+      log("✓ Summary container inserted before #srp-river-results (fallback)");
       return container;
     };
 
     const renderSummary = () => {
       updateQueued = false;
+      log("=== renderSummary called ===");
 
-      if (!isSoldResultsPage()) {
+      const isSold = isSoldResultsPage();
+      log("Is sold results page?", isSold);
+
+      if (!isSold) {
         removeSummary();
         return;
       }
 
-      const { prices, currencyPrefix } = collectPrices();
+      const { prices, currencyPrefix, mostRecentDate } = collectPrices();
+      log("Collected prices:", prices.length, "prices found");
+
       if (!prices.length) {
+        log("✗ No prices found, removing summary");
         removeSummary();
         return;
       }
 
       ensureStyles();
       const container = ensureSummaryContainer();
-      if (!container) return;
+      if (!container) {
+        log("✗ Could not create/find container");
+        return;
+      }
 
       const sorted = [...prices].sort((a, b) => a - b);
       const count = prices.length;
@@ -197,7 +387,19 @@ export default defineContentScript({
       const min = sorted[0];
       const max = sorted[sorted.length - 1];
 
+      // Format the most recent date
+      let formattedDate = "N/A";
+      if (mostRecentDate) {
+        const options: Intl.DateTimeFormatOptions = {
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        };
+        formattedDate = mostRecentDate.toLocaleDateString("en-US", options);
+      }
+
       container.innerHTML = `
+        <button class="scout-ebay-summary__dismiss" title="Dismiss" data-action="dismiss">×</button>
         <h2>Scout Price Summary</h2>
         <div class="scout-ebay-summary__metrics">
           <div class="scout-ebay-summary__metric">
@@ -220,11 +422,55 @@ export default defineContentScript({
             <strong>Listings</strong>
             <span>${count}</span>
           </div>
+          <div class="scout-ebay-summary__metric">
+            <strong>Latest Sold</strong>
+            <span>${formattedDate}</span>
+          </div>
+          <div class="scout-ebay-summary__metric-button" data-action="view-used">
+            View Used
+          </div>
+          <div class="scout-ebay-summary__metric-button" data-action="view-new">
+            View New
+          </div>
         </div>
         <div class="scout-ebay-summary__meta">
           Based on ${count} sold listings detected on this page. Apply filters or refresh to recalculate.
         </div>
       `;
+
+      // Add click handlers for buttons
+      const dismissBtn = container.querySelector('[data-action="dismiss"]');
+      const usedBtn = container.querySelector('[data-action="view-used"]');
+      const newBtn = container.querySelector('[data-action="view-new"]');
+
+      if (dismissBtn) {
+        dismissBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          log("Dismiss button clicked");
+          removeSummary();
+        });
+      }
+
+      if (usedBtn) {
+        usedBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const url = new URL(window.location.href);
+          url.searchParams.set("LH_ItemCondition", "4");
+          window.location.href = url.toString();
+        });
+      }
+
+      if (newBtn) {
+        newBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const url = new URL(window.location.href);
+          url.searchParams.set("LH_ItemCondition", "3");
+          window.location.href = url.toString();
+        });
+      }
     };
 
     const scheduleUpdate = () => {
@@ -246,7 +492,11 @@ export default defineContentScript({
     });
 
     const start = () => {
+      log("=== Scout eBay Sold Summary Starting ===");
+      log("Current URL:", window.location.href);
+
       if (!document.body) {
+        log("Body not ready, retrying...");
         setTimeout(start, 100);
         return;
       }
@@ -256,6 +506,7 @@ export default defineContentScript({
           childList: true,
           subtree: true,
         });
+        log("✓ Mutation observer started");
       } catch (err) {
         log("Failed to observe mutations", err);
       }
