@@ -48,36 +48,22 @@ export default defineContentScript({
       }
       
       .scout-upc-tooltip {
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
+        position: fixed;
         background-color: #1f2937;
         color: white;
         padding: 4px 8px;
         border-radius: 4px;
         font-size: 12px;
         white-space: nowrap;
-        z-index: 10000;
+        z-index: 2147483647;
         pointer-events: none;
         opacity: 0;
         transition: opacity 0.2s ease;
-        margin-bottom: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       }
       
       .scout-upc-tooltip.show {
         opacity: 1;
-      }
-      
-      .scout-upc-tooltip::after {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border-width: 4px;
-        border-style: solid;
-        border-color: #1f2937 transparent transparent transparent;
       }
     `;
 
@@ -99,7 +85,30 @@ export default defineContentScript({
       const tooltip = document.createElement("div");
       tooltip.className = "scout-upc-tooltip";
       tooltip.textContent = text;
-      element.appendChild(tooltip);
+
+      // Append to body to escape any overflow:hidden parents
+      document.body.appendChild(tooltip);
+
+      // Calculate position based on element's viewport coordinates
+      const rect = element.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+
+      // Position above the element, centered
+      let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+      let top = rect.top - tooltipRect.height - 8; // 8px gap
+
+      // Keep tooltip within viewport bounds
+      if (left < 5) left = 5;
+      if (left + tooltipRect.width > window.innerWidth - 5) {
+        left = window.innerWidth - tooltipRect.width - 5;
+      }
+      if (top < 5) {
+        // If no room above, show below
+        top = rect.bottom + 8;
+      }
+
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
 
       // Show tooltip
       setTimeout(() => {
