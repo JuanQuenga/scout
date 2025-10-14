@@ -1,10 +1,10 @@
-# Paymore Lite Install Page
+# Scout Install Page
 
-This document describes the install page for the Paymore Lite Chrome extension.
+This document describes the install page for the Scout Chrome extension.
 
 ## Overview
 
-The install page provides a user-friendly interface for installing the Paymore Lite extension. It includes step-by-step instructions, feature highlights, and download links.
+The install page provides a user-friendly interface for installing the Scout extension. It includes step-by-step instructions, feature highlights, and download links.
 
 ## Files
 
@@ -25,12 +25,27 @@ The install page guides users through 4 simple steps:
 
 ### Feature Highlights
 
-The page showcases key features of Paymore Lite:
+The page showcases key features of Scout:
 
-- Command Menu (CMD+Shift+K)
-- Lightning Fast performance
-- Secure & Private operation
-- Time-saving capabilities
+#### Core Features
+- **Command Menu (CMD+Shift+K)** - Arc-style command palette for quick navigation, tab switching, and multi-provider search
+- **Controller Testing (CMD+J)** - Real-time controller input visualization with customizable color thresholds
+- **Scout Links** - Custom links from Google Sheets with 30-minute caching and custom URL support
+- **14 Search Providers** - Google, Amazon, Best Buy, eBay, Price Charting, UPC Item DB, YouTube, GitHub, Twitter/X, Home Depot, Lowe's, Menards, Micro Center, and Scout Search
+- **eBay Taxonomy API** - Direct integration for quick category lookups with copy-to-clipboard
+
+#### Content Enhancement Features
+- **eBay Price Summary** - Automatic price statistics on eBay sold listings (average, median, high, low) with clickable metrics and quick filters
+- **UPC Highlighter** - Automatic detection and highlighting of 12-digit UPC codes with click-to-copy functionality
+- **Shopify Guardrails** - Automated validation for Shopify product pages (condition mismatch and empty Google fields checks)
+
+#### Navigation & Customization
+- **Tab Switching** - Fast switching between open tabs with search and filter
+- **Bookmarks & History** - Access your 20 most recent bookmarks and last 30 visited pages with folder filtering
+- **Settings Page** - Configure command sources, drag-and-drop reordering, customize search providers
+- **Context Menu** - Right-click search actions for eBay, UPC, MPN, and Price Charting
+- **Lightning Fast performance** - Optimized with caching and efficient rendering
+- **Secure & Private** - No data collection, all processing happens locally
 
 ### Download Section
 
@@ -82,23 +97,20 @@ The install page is automatically detected by WXT as an "unlisted-page" entrypoi
 
 ### Modifying Installation Steps
 
-Edit the `installSteps` array in `InstallPage.tsx` to customize the installation instructions.
+Edit the installation steps in `InstallPage.tsx` to customize the installation instructions. The component uses a step-by-step approach with numbered sections.
 
 ### Updating Features
 
-Modify the `features` array in `InstallPage.tsx` to update the feature highlights.
+Modify the `mainFeatures` array in `InstallPage.tsx` to update the feature highlights. Each feature includes:
+- Title and description
+- Icon from lucide-react
+- Screenshot image path
+- How-to-use steps or subsections
+- Features list (for simpler features)
 
 ### Changing Download Link
 
-Update the download link in the "Download Section" of `InstallPage.tsx`:
-
-```tsx
-<a
-  href="/releases/scout-1.0.0-chrome.zip"
-  download
-  // ...
->
-```
+If you need to update the download link, modify the reference in `InstallPage.tsx`. The current release structure uses the GitHub releases or a direct download link format.
 
 ## Browser Compatibility
 

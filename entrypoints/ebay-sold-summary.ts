@@ -48,6 +48,13 @@ export default defineContentScript({
           margin: 0 0 10px;
           font-weight: 600;
           color: #1e293b;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        #${SUMMARY_ID} h2 img {
+          width: 20px;
+          height: 20px;
         }
         #${SUMMARY_ID} .scout-ebay-summary__metrics {
           display: flex;
@@ -107,6 +114,17 @@ export default defineContentScript({
           transform: translateY(0);
           box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
         }
+        #${SUMMARY_ID} .scout-ebay-summary__metric-button[disabled] {
+          background: rgba(148, 163, 184, 0.3);
+          color: rgba(71, 85, 105, 0.6);
+          cursor: not-allowed;
+          opacity: 0.5;
+          pointer-events: none;
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__metric-button[disabled]:hover {
+          transform: none;
+          box-shadow: none;
+        }
         #${SUMMARY_ID} .scout-ebay-summary__dismiss {
           position: absolute;
           top: 10px;
@@ -130,6 +148,31 @@ export default defineContentScript({
         #${SUMMARY_ID} .scout-ebay-summary__dismiss:hover {
           background: rgba(239, 68, 68, 0.9);
           border-color: rgba(220, 38, 38, 0.8);
+          color: white;
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__settings {
+          position: absolute;
+          top: 10px;
+          right: 46px;
+          background: rgba(148, 163, 184, 0.2);
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          border-radius: 6px;
+          width: 28px;
+          height: 28px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          line-height: 1;
+          color: #475569;
+          transition: all 0.2s ease;
+          z-index: 10;
+          pointer-events: auto;
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__settings:hover {
+          background: rgba(59, 130, 246, 0.9);
+          border-color: rgba(37, 99, 235, 0.8);
           color: white;
         }
         #${SUMMARY_ID} .scout-ebay-summary__meta {
@@ -496,9 +539,19 @@ export default defineContentScript({
         formattedDate = mostRecentDate.toLocaleDateString("en-US", options);
       }
 
+      // Check current item condition to disable the appropriate button
+      const url = new URL(window.location.href);
+      const currentCondition = url.searchParams.get("LH_ItemCondition");
+      const isOnUsedPage = currentCondition === "4";
+      const isOnNewPage = currentCondition === "3";
+
+      // Get the Scout icon URL
+      const iconUrl = chrome.runtime.getURL("assets/icons/dog-32.png");
+
       container.innerHTML = `
+        <button type="button" class="scout-ebay-summary__settings" title="Settings" data-action="settings">⚙</button>
         <button type="button" class="scout-ebay-summary__dismiss" title="Dismiss" data-action="dismiss">×</button>
-        <h2>Scout Price Summary</h2>
+        <h2><img src="${iconUrl}" alt="Scout" /> Scout Price Summary</h2>
         <div class="scout-ebay-summary__metrics">
           <div class="scout-ebay-summary__metric">
             <strong>Average</strong>
@@ -524,10 +577,10 @@ export default defineContentScript({
             <strong>Latest Sold</strong>
             <span>${formattedDate}</span>
           </div>
-          <div class="scout-ebay-summary__metric-button" data-action="view-used">
+          <div class="scout-ebay-summary__metric-button" data-action="view-used" ${isOnUsedPage ? 'disabled' : ''}>
             View Used
           </div>
-          <div class="scout-ebay-summary__metric-button" data-action="view-new">
+          <div class="scout-ebay-summary__metric-button" data-action="view-new" ${isOnNewPage ? 'disabled' : ''}>
             View New
           </div>
         </div>
@@ -537,9 +590,23 @@ export default defineContentScript({
       `;
 
       // Add click handlers for buttons
+      const settingsBtn = container.querySelector('[data-action="settings"]');
       const dismissBtn = container.querySelector('[data-action="dismiss"]');
       const usedBtn = container.querySelector('[data-action="view-used"]');
       const newBtn = container.querySelector('[data-action="view-new"]');
+
+      if (settingsBtn) {
+        settingsBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          log("Settings button clicked");
+          // Open settings page and navigate to eBay section
+          chrome.runtime.sendMessage({
+            action: "open-settings",
+            section: "ebay"
+          });
+        });
+      }
 
       if (dismissBtn) {
         dismissBtn.addEventListener("click", (e) => {

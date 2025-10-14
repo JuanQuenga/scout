@@ -651,6 +651,16 @@ export default defineBackground({
             });
           return true;
         }
+        case "open-settings": {
+          const section = message?.section || "";
+          const url = section
+            ? chrome.runtime.getURL(`options.html#${section}`)
+            : chrome.runtime.getURL("options.html");
+          chrome.tabs.create({ url, active: true }, (tab) => {
+            sendResponse({ success: true, tabId: tab?.id });
+          });
+          return true;
+        }
         case "hideControllerModal":
           sendToActiveTab({ action: "hideControllerModal" });
           sendResponse({ success: true });

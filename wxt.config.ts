@@ -17,12 +17,20 @@ export default defineConfig({
       },
       {
         matches: ["<all_urls>"],
+        js: ["context-menu.js"],
+        run_at: "document_idle",
+      },
+      {
+        matches: ["<all_urls>"],
         js: ["upc-highlighter.js"],
         run_at: "document_idle",
         all_frames: true,
       },
       {
-        matches: ["https://admin.shopify.com/*", "https://*.myshopify.com/admin/*"],
+        matches: [
+          "https://admin.shopify.com/*",
+          "https://*.myshopify.com/admin/*",
+        ],
         js: ["shopify-guardrails.js"],
         run_at: "document_idle",
       },
@@ -33,7 +41,7 @@ export default defineConfig({
       },
     ],
     name: "Scout",
-    version: "1.0.0",
+    version: "1.0.1",
     description:
       "A versatile Chrome extension with command palette, controller testing, and multi-provider search capabilities.",
     permissions: [
@@ -76,6 +84,10 @@ export default defineConfig({
       },
       {
         resources: ["assets/images/*"],
+        matches: ["<all_urls>"],
+      },
+      {
+        resources: ["assets/icons/*"],
         matches: ["<all_urls>"],
       },
     ],

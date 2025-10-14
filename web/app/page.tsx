@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+"use client";
+
+import { useState } from "react";
 import {
   Command,
   MousePointer,
   Gamepad2,
   Settings,
-  Keyboard,
   Search,
   ArrowRight,
   ExternalLink,
@@ -14,6 +15,7 @@ import {
   TrendingUp,
   Barcode,
   Shield,
+  Download,
 } from "lucide-react";
 
 // Component to render text with keyboard shortcuts
@@ -47,20 +49,14 @@ const renderTextWithKbd = (text: string) => {
   });
 };
 
-export default function FeaturesPage() {
-  const [version, setVersion] = useState<string>("");
+export default function HomePage() {
   const [copied, setCopied] = useState<boolean>(false);
 
-  useEffect(() => {
-    // Get extension version
-    const manifest = chrome.runtime.getManifest();
-    setVersion(manifest.version);
-  }, []);
+  // TODO: Replace with your actual Chrome Web Store URL
+  const chromeWebStoreUrl = "https://chrome.google.com/webstore/detail/scout/YOUR_EXTENSION_ID";
 
   const handleCopyLink = () => {
-    const installUrl =
-      "https://chrome.google.com/webstore/detail/scout/your-extension-id";
-    navigator.clipboard.writeText(installUrl);
+    navigator.clipboard.writeText(chromeWebStoreUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -211,27 +207,38 @@ export default function FeaturesPage() {
               />
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  Scout - Features
+                  Scout
                 </h1>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Chrome Extension Features Overview
-                  {version && (
-                    <span className="ml-2 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-xs">
-                      v{version}
-                    </span>
-                  )}
+                  Versatile Chrome Extension
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() =>
-                  chrome.tabs.create({ url: "chrome://extensions/shortcuts" })
-                }
+              <a
+                href={chromeWebStoreUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
               >
-                <Keyboard className="w-4 h-4" />
-                Customize Keyboard Shortcuts
+                <Download className="w-4 h-4" />
+                Install Extension
+              </a>
+              <button
+                onClick={handleCopyLink}
+                className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
+              >
+                {copied ? (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy Link
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -252,11 +259,22 @@ export default function FeaturesPage() {
             <h2 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
               Scout Features
             </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
+            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-8">
               A versatile Chrome extension with command palette, controller
               testing, multi-provider search, and automated content enhancement
               features.
             </p>
+            <div className="flex items-center justify-center gap-4">
+              <a
+                href={chromeWebStoreUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-lg font-semibold"
+              >
+                <Download className="w-5 h-5" />
+                Install from Chrome Web Store
+              </a>
+            </div>
           </div>
 
           {/* Main Features */}
@@ -404,31 +422,29 @@ export default function FeaturesPage() {
             ))}
           </div>
 
-          {/* Customization Section */}
+          {/* Install CTA Section */}
           <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-8 mb-12">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-4">
-                <Settings className="w-6 h-6 text-green-600 dark:text-green-400" />
+                <Download className="w-6 h-6 text-green-600 dark:text-green-400" />
                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  Customization Options
+                  Ready to Get Started?
                 </h3>
               </div>
               <p className="text-lg text-slate-600 dark:text-slate-400 mb-6 max-w-3xl mx-auto">
-                You can customize the command menu and keyboard shortcuts to
-                match your workflow preferences. Press <kbd>Ctrl+Shift+O</kbd>{" "}
-                (or <kbd>CMD+Shift+O</kbd> on Mac) to open extension settings
-                and configure the command menu.
+                Install Scout from the Chrome Web Store and supercharge your
+                browsing experience with powerful productivity features.
               </p>
               <div className="flex items-center justify-center">
-                <button
-                  onClick={() =>
-                    chrome.tabs.create({ url: "chrome://extensions/shortcuts" })
-                  }
+                <a
+                  href={chromeWebStoreUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
                 >
-                  <Keyboard className="w-5 h-5" />
-                  Customize Keyboard Shortcuts
-                </button>
+                  <Download className="w-5 h-5" />
+                  Install from Chrome Web Store
+                </a>
               </div>
             </div>
           </div>
@@ -450,7 +466,7 @@ export default function FeaturesPage() {
                   Scout
                 </p>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Versatile Chrome Extension v1.0.0
+                  Versatile Chrome Extension
                 </p>
               </div>
             </div>

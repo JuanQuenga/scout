@@ -6,8 +6,32 @@ export interface CSVLink {
   description?: string;
 }
 
-const CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSCj4wc4-d9BJO03Asa0FiHm3vYY2MOW7XcmKXM42kdBEoaCDxQNoqaIYBl5PSO_deooc1VnYl18bVo/pub?gid=9974464&single=true&output=csv";
+const DEFAULT_CSV_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8y5eHw3bj0MA0pyMS81o9AbAKrYQL_-a04P_hjoNrkYrrT9VyfsFZk8GE_RM_GRBKJG2J2r3OsZQj/pub?gid=808603945&single=true&output=csv";
+
+/**
+ * Get the CSV URL from settings or use default
+ */
+async function getCSVUrl(): Promise<string> {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(["cmdkSettings"], (result) => {
+      if (chrome.runtime.lastError) {
+        console.log("[CSV] Error reading settings, using default URL");
+        resolve(DEFAULT_CSV_URL);
+        return;
+      }
+
+      const customUrl = result.cmdkSettings?.csvLinks?.customUrl;
+      if (customUrl && customUrl.trim()) {
+        console.log("[CSV] Using custom URL from settings");
+        resolve(customUrl.trim());
+      } else {
+        console.log("[CSV] Using default URL");
+        resolve(DEFAULT_CSV_URL);
+      }
+    });
+  });
+}
 
 /**
  * Basic CSV row parser that supports quoted fields and commas inside quotes
@@ -105,7 +129,10 @@ const CACHE_DURATION = 1000 * 60 * 30; // 30 minutes
  * Fetch CSV links from Google Sheets with caching
  * Returns an object with links and a flag indicating if this is initial load
  */
-export async function fetchCSVLinks(): Promise<{ links: CSVLink[]; isInitialLoad: boolean }> {
+export async function fetchCSVLinks(): Promise<{
+  links: CSVLink[];
+  isInitialLoad: boolean;
+}> {
   try {
     // Try to get cached data first
     const result = await getCachedLinks();
@@ -133,7 +160,10 @@ export async function fetchCSVLinks(): Promise<{ links: CSVLink[]; isInitialLoad
  * Get cached links if they exist
  * Returns cached links and whether they are expired
  */
-async function getCachedLinks(): Promise<{ cached: CSVLink[] | null; isExpired: boolean }> {
+async function getCachedLinks(): Promise<{
+  cached: CSVLink[] | null;
+  isExpired: boolean;
+}> {
   return new Promise((resolve) => {
     chrome.storage.local.get([CACHE_KEY, CACHE_TIMESTAMP_KEY], (result) => {
       if (chrome.runtime.lastError) {
@@ -170,9 +200,11 @@ async function getCachedLinks(): Promise<{ cached: CSVLink[] | null; isExpired: 
  */
 async function fetchFreshLinks(): Promise<CSVLink[]> {
   try {
+    const csvUrl = await getCSVUrl();
+
     // Try direct fetch first (works in popup context)
     try {
-      const response = await fetch(CSV_URL);
+      const response = await fetch(csvUrl);
       if (response.ok) {
         const data = await response.text();
         console.log("[CSV] Fetched data:", data.substring(0, 200)); // Debug
@@ -193,7 +225,7 @@ async function fetchFreshLinks(): Promise<CSVLink[]> {
     // Fallback: Use background script to fetch
     return new Promise((resolve) => {
       chrome.runtime.sendMessage(
-        { action: "FETCH_CSV_LINKS", url: CSV_URL },
+        { action: "FETCH_CSV_LINKS", url: csvUrl },
         async (response) => {
           if (chrome.runtime.lastError) {
             console.error(
@@ -278,5 +310,22 @@ export function filterCSVLinks(links: CSVLink[], query: string): CSVLink[] {
       description.includes(lowerQuery) ||
       url.includes(lowerQuery)
     );
+  });
+}
+
+/**
+ * Clear the CSV links cache
+ * This forces a fresh fetch on the next request
+ */
+export async function clearCSVCache(): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.remove([CACHE_KEY, CACHE_TIMESTAMP_KEY], () => {
+      if (chrome.runtime.lastError) {
+        console.error("[CSV] Failed to clear cache:", chrome.runtime.lastError);
+      } else {
+        console.log("[CSV] Cache cleared successfully");
+      }
+      resolve();
+    });
   });
 }
