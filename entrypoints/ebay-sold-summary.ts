@@ -256,9 +256,10 @@ export default defineContentScript({
     const parseSoldDate = (element: Element) => {
       try {
         // Look for the "Sold" date text
-        const soldDateElement = element.querySelector(".su-styled-text.positive") ||
-                               element.querySelector(".s-item__title--tagblock .POSITIVE") ||
-                               element.querySelector(".s-item__ended-date");
+        const soldDateElement =
+          element.querySelector(".su-styled-text.positive") ||
+          element.querySelector(".s-item__title--tagblock .POSITIVE") ||
+          element.querySelector(".s-item__ended-date");
 
         if (!soldDateElement) return null;
 
@@ -294,7 +295,7 @@ export default defineContentScript({
           mostRecentDate: null,
           minElement: null,
           maxElement: null,
-          mostRecentElement: null
+          mostRecentElement: null,
         };
       }
 
@@ -328,7 +329,11 @@ export default defineContentScript({
           textContent.includes("Results matching fewer words")
         ) {
           log("🛑 STOP: Found 'fewer words' divider at index", i);
-          log("   - Collected", productListings.length, "products before divider");
+          log(
+            "   - Collected",
+            productListings.length,
+            "products before divider"
+          );
           break; // STOP - everything after this is suggested
         }
 
@@ -339,7 +344,11 @@ export default defineContentScript({
       log("✅ Final count:", productListings.length, "product listings");
 
       // Extract prices and dates with element tracking
-      const priceData: Array<{ value: number; element: Element; date: Date | null }> = [];
+      const priceData: Array<{
+        value: number;
+        element: Element;
+        date: Date | null;
+      }> = [];
       let currencyPrefix: string | null = null;
 
       for (const item of productListings) {
@@ -375,7 +384,7 @@ export default defineContentScript({
           mostRecentDate: null,
           minElement: null,
           maxElement: null,
-          mostRecentElement: null
+          mostRecentElement: null,
         };
       }
 
@@ -388,7 +397,7 @@ export default defineContentScript({
       );
 
       // Find the most recent date entry
-      const entriesWithDates = priceData.filter(entry => entry.date !== null);
+      const entriesWithDates = priceData.filter((entry) => entry.date !== null);
       let mostRecentEntry = null;
       let mostRecentDate = null;
 
@@ -399,7 +408,7 @@ export default defineContentScript({
         mostRecentDate = mostRecentEntry.date;
       }
 
-      const prices = priceData.map(d => d.value);
+      const prices = priceData.map((d) => d.value);
       log("📅 Found", entriesWithDates.length, "dates");
 
       return {
@@ -408,7 +417,7 @@ export default defineContentScript({
         mostRecentDate,
         minElement: minEntry.element,
         maxElement: maxEntry.element,
-        mostRecentElement: mostRecentEntry?.element || null
+        mostRecentElement: mostRecentEntry?.element || null,
       };
     };
 
@@ -500,7 +509,7 @@ export default defineContentScript({
         mostRecentDate,
         minElement,
         maxElement,
-        mostRecentElement
+        mostRecentElement,
       } = collectPrices();
       log("Collected prices:", prices.length, "prices found");
 
@@ -534,7 +543,7 @@ export default defineContentScript({
         const options: Intl.DateTimeFormatOptions = {
           month: "short",
           day: "numeric",
-          year: "numeric"
+          year: "numeric",
         };
         formattedDate = mostRecentDate.toLocaleDateString("en-US", options);
       }
@@ -574,13 +583,17 @@ export default defineContentScript({
             <span>${count}</span>
           </div>
           <div class="scout-ebay-summary__metric scout-ebay-summary__metric--clickable" data-scroll-to="latest" title="Click to scroll to listing">
-            <strong>Latest Sold</strong>
+            <strong>Last Sold</strong>
             <span>${formattedDate}</span>
           </div>
-          <div class="scout-ebay-summary__metric-button" data-action="view-used" ${isOnUsedPage ? 'disabled' : ''}>
+          <div class="scout-ebay-summary__metric-button" data-action="view-used" ${
+            isOnUsedPage ? "disabled" : ""
+          }>
             View Used
           </div>
-          <div class="scout-ebay-summary__metric-button" data-action="view-new" ${isOnNewPage ? 'disabled' : ''}>
+          <div class="scout-ebay-summary__metric-button" data-action="view-new" ${
+            isOnNewPage ? "disabled" : ""
+          }>
             View New
           </div>
         </div>
@@ -603,7 +616,7 @@ export default defineContentScript({
           // Open settings page and navigate to eBay section
           chrome.runtime.sendMessage({
             action: "open-settings",
-            section: "ebay"
+            section: "ebay",
           });
         });
       }
@@ -639,7 +652,10 @@ export default defineContentScript({
       }
 
       // Add scroll-to handlers for clickable metrics
-      const scrollToAndHighlight = (element: Element | null, metricName: string) => {
+      const scrollToAndHighlight = (
+        element: Element | null,
+        metricName: string
+      ) => {
         if (!element) {
           log(`⚠️ No element found for ${metricName}`);
           return;
@@ -667,7 +683,9 @@ export default defineContentScript({
         log(`✓ Scrolled to and highlighted ${metricName}`);
       };
 
-      const highestMetric = container.querySelector('[data-scroll-to="highest"]');
+      const highestMetric = container.querySelector(
+        '[data-scroll-to="highest"]'
+      );
       const lowestMetric = container.querySelector('[data-scroll-to="lowest"]');
       const latestMetric = container.querySelector('[data-scroll-to="latest"]');
 
