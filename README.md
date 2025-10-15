@@ -28,19 +28,23 @@ Here are some screenshots showcasing the key features of the Scout chrome extens
 
 ### Command Menu
 
-![Command Menu](public/assets/screenshots/command-menu.jpg)
-
-### Context Menu
-
-![Context Menu](public/assets/screenshots/context-menu.jpg)
+![Command Menu](public/assets/screenshots/command-menu.png)
 
 ### Controller Testing
 
-![Controller Testing](public/assets/screenshots/controller-testing.jpg)
+![Controller Testing](public/assets/screenshots/controller-testing.png)
 
-### Search Providers
+### eBay Price Summary
 
-![Search Providers](public/assets/screenshots/search-providers.jpg)
+![eBay Price Summary](public/assets/screenshots/ebay-price-summary.png)
+
+### Quick Actions
+
+![Quick Actions](public/assets/screenshots/quick-actions.png)
+
+### UPC Highlighter
+
+![UPC Highlighter](public/assets/screenshots/upc-highlighter.png)
 
 ## Keyboard Shortcuts
 
