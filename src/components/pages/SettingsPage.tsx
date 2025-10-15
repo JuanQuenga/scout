@@ -723,7 +723,12 @@ export default function SettingsPage() {
       console.log("[Settings] Default CSV downloaded successfully");
     } catch (error) {
       console.error("[Settings] Error downloading default CSV:", error);
-      alert("Failed to download CSV. Please try again.");
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "/assets/icons/icon-48.png",
+        title: "Download Failed",
+        message: "Failed to download CSV. Please try again.",
+      });
     } finally {
       setCsvDownloading(false);
     }
@@ -1413,8 +1418,10 @@ export default function SettingsPage() {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        Automatically start detecting controller inputs when opening the controller testing panel.
-                        Disable this if you want to manually connect your controller before starting detection.
+                        Automatically start detecting controller inputs when
+                        opening the controller testing panel. Disable this if
+                        you want to manually connect your controller before
+                        starting detection.
                       </p>
                     </div>
                     <button
