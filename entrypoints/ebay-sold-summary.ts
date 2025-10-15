@@ -7,12 +7,22 @@ import { defineContentScript } from "wxt/utils/define-content-script";
 /**
  * Adds an inline summary to eBay sold listing search result pages showing
  * average, median, high, and low sale prices for the visible results.
+ *
+ * This script ONLY runs on eBay search pages (https://www.ebay.com/sch/*).
+ * It will only display the summary when the LH_Sold=1 parameter is present.
  */
 export default defineContentScript({
   matches: ["https://www.ebay.com/sch/*"],
   runAt: "document_idle",
   allFrames: false,
   main() {
+    // Early safety check: ensure we're on an eBay search page
+    if (!window.location.hostname.includes("ebay.com") ||
+        !window.location.pathname.startsWith("/sch/")) {
+      console.log("🐕 [Scout eBay Sold Summary] Not on eBay search page, exiting");
+      return;
+    }
+
     console.log("🐕 [Scout eBay Sold Summary] SCRIPT LOADED - Version 2");
 
     const SUMMARY_ID = "scout-ebay-sold-summary";
@@ -727,6 +737,8 @@ export default defineContentScript({
     const start = () => {
       log("=== Scout eBay Sold Summary Starting ===");
       log("Current URL:", window.location.href);
+      log("Is eBay search page:", window.location.pathname.startsWith("/sch/"));
+      log("Is sold results page:", isSoldResultsPage());
 
       if (!document.body) {
         log("Body not ready, retrying...");

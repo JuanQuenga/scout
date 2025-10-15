@@ -1,5 +1,5 @@
 /**
- * PayMore Lite Chrome Extension Background Service Worker
+ * Scout Chrome Extension Background Service Worker
  * Migrated to WXT background entrypoint.
  */
 // @ts-nocheck
@@ -10,7 +10,7 @@ import { defineBackground } from "wxt/utils/define-background";
 export default defineBackground({
   main() {
     /**
-     * @fileoverview PayMore Lite Chrome Extension Background Service Worker
+     * @fileoverview Scout Chrome Extension Background Service Worker
      * @description Manages extension lifecycle, message handling, and core functionality
      * @version 1.0.0
      * @author PayMore Team
@@ -819,6 +819,138 @@ export default defineBackground({
           toggleSidePanelForTab(sender?.tab?.id, tool);
           sendResponse({ success: true });
           break;
+        }
+        case "previousTab": {
+          // Switch to previous tab in current window
+          chrome.tabs.query({ currentWindow: true }, (tabs) => {
+            if (tabs.length < 2) {
+              sendResponse({ success: false, error: "not_enough_tabs" });
+              return;
+            }
+            const currentIndex = tabs.findIndex((t) => t.active);
+            const prevIndex =
+              currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+            const prevTab = tabs[prevIndex];
+            if (prevTab?.id) {
+              chrome.tabs.update(prevTab.id, { active: true });
+              sendResponse({ success: true, tabId: prevTab.id });
+            } else {
+              sendResponse({ success: false, error: "no_prev_tab" });
+            }
+          });
+          return true;
+        }
+        case "nextTab": {
+          // Switch to next tab in current window
+          chrome.tabs.query({ currentWindow: true }, (tabs) => {
+            if (tabs.length < 2) {
+              sendResponse({ success: false, error: "not_enough_tabs" });
+              return;
+            }
+            const currentIndex = tabs.findIndex((t) => t.active);
+            const nextIndex = (currentIndex + 1) % tabs.length;
+            const nextTab = tabs[nextIndex];
+            if (nextTab?.id) {
+              chrome.tabs.update(nextTab.id, { active: true });
+              sendResponse({ success: true, tabId: nextTab.id });
+            } else {
+              sendResponse({ success: false, error: "no_next_tab" });
+            }
+          });
+          return true;
+        }
+        case "closeTab": {
+          // Close current tab
+          const tabId = sender?.tab?.id;
+          if (tabId) {
+            chrome.tabs.remove(tabId, () => {
+              sendResponse({ success: true });
+            });
+            return true;
+          } else {
+            // If called from context menu without sender tab, close active tab
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+              if (tabs.length > 0 && tabs[0]?.id) {
+                chrome.tabs.remove(tabs[0].id, () => {
+                  sendResponse({ success: true });
+                });
+              } else {
+                sendResponse({ success: false, error: "no_active_tab" });
+              }
+            });
+            return true;
+          }
+        }
+        case "downloadFile": {
+          const url = message?.url;
+          if (!url) {
+            sendResponse({ success: false, error: "missing_url" });
+            break;
+          }
+          try {
+            chrome.downloads.download({ url }, (downloadId) => {
+              if (chrome.runtime.lastError) {
+                log("Download error:", chrome.runtime.lastError);
+                sendResponse({
+                  success: false,
+                  error: chrome.runtime.lastError.message,
+                });
+              } else {
+                sendResponse({ success: true, downloadId });
+              }
+            });
+          } catch (error) {
+            log("Download error:", error);
+            sendResponse({ success: false, error: String(error) });
+          }
+          return true;
+        }
+        case "openDevTools": {
+          try {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+              if (tabs.length > 0 && tabs[0]?.id) {
+                const tabId = tabs[0].id;
+
+                // Inject debugger statement - this will pause if DevTools is open
+                chrome.scripting.executeScript(
+                  {
+                    target: { tabId },
+                    func: () => {
+                      console.log(
+                        "%c[Scout] Debug Tools Activated",
+                        "color: #00ff00; font-size: 16px; font-weight: bold;"
+                      );
+                      console.log(
+                        "%cDevTools should now be visible. If not, press F12 or Cmd+Option+I (Mac) / Ctrl+Shift+I (Windows/Linux)",
+                        "color: #ffaa00; font-size: 14px;"
+                      );
+                      debugger; // This will break if DevTools is already open
+                    },
+                  },
+                  () => {
+                    if (chrome.runtime.lastError) {
+                      log("executeScript error:", chrome.runtime.lastError);
+                    }
+                    log("Debugger statement injected");
+                    sendResponse({
+                      success: true,
+                      message:
+                        "Debug tools activated. Check the Console tab in DevTools.",
+                    });
+                  }
+                );
+              } else {
+                sendResponse({ success: false, error: "no_active_tab" });
+              }
+            });
+          } catch (error) {
+            log("openDevTools error:", error);
+            sendResponse({
+              success: false,
+              error: String(error),
+            });
+          }
+          return true;
         }
         case "goBackToPOS":
           goBackToPOS();

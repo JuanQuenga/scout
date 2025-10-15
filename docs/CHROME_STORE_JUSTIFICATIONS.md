@@ -48,7 +48,7 @@
 
 ## Single Purpose Description
 
-Paymore Lite is a browser extension that provides a command palette, controller testing interface, and productivity tools to enhance the browsing experience.
+Scout is a browser extension that provides a command palette, controller testing interface, and productivity tools to enhance the browsing experience.
 
 ## Detailed Description
 

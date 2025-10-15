@@ -16,6 +16,7 @@ import {
   Barcode,
   Shield,
   Download,
+  Pin,
 } from "lucide-react";
 
 // Component to render text with keyboard shortcuts
@@ -50,24 +51,17 @@ const renderTextWithKbd = (text: string) => {
 };
 
 export default function HomePage() {
-  const [copied, setCopied] = useState<boolean>(false);
-
-  // TODO: Replace with your actual Chrome Web Store URL
-  const chromeWebStoreUrl = "https://chrome.google.com/webstore/detail/scout/YOUR_EXTENSION_ID";
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(chromeWebStoreUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  // Updated Chrome Web Store URL
+  const chromeWebStoreUrl =
+    "https://chromewebstore.google.com/detail/scout/bmgghhmlflbhlnomgnoodpidekpaaifk?authuser=0&hl=en";
 
   const mainFeatures = [
     {
       id: 1,
-      title: "Context Menu Actions",
+      title: "Quick Actions",
       description:
         "Highlight text and instantly search for Sold Listings on eBay, MPN codes (Google), UPC codes (UPCItemDB & Google), or PriceCharting pricing data.",
-      image: "/assets/images/context-menu.png",
+      image: "/assets/images/quick-actions.png",
       icon: MousePointer,
       howToUse: [
         "Highlight/select the text for a product anywhere on the page.",
@@ -77,10 +71,10 @@ export default function HomePage() {
     },
     {
       id: 2,
-      title: "Command Menu Popup",
+      title: "Command Menu",
       description:
         "Arc-style command palette for quick navigation, tab switching, and multi-provider search with 14 integrated search providers.",
-      image: "/assets/images/command-popup.png",
+      image: "/assets/images/command-menu.png",
       icon: Command,
       howToUse: [
         "Pin the Scout extension icon to your toolbar (or use CMD+Shift+K / CTRL+Shift+K).",
@@ -148,7 +142,7 @@ export default function HomePage() {
       title: "eBay Price Summary",
       description:
         "Automatic price statistics displayed at the top of eBay sold listings pages. Get instant market insights without manual calculations.",
-      image: "/assets/images/ebay-summary.png",
+      image: "/assets/images/ebay-price-summary.png",
       icon: TrendingUp,
       features: [
         "Displays average, median, high, and low sale prices automatically",
@@ -210,7 +204,7 @@ export default function HomePage() {
                   Scout
                 </h1>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Versatile Chrome Extension
+                  Chrome Extension
                 </p>
               </div>
             </div>
@@ -224,57 +218,85 @@ export default function HomePage() {
                 <Download className="w-4 h-4" />
                 Install Extension
               </a>
-              <button
-                onClick={handleCopyLink}
+              <a
+                href="https://github.com/JuanQuenga/scout"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
               >
-                {copied ? (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" />
-                    Copy Link
-                  </>
-                )}
-              </button>
+                <Github className="w-4 h-4" />
+                GitHub
+              </a>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <section className="py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          {/* Hero Section */}
-          <div className="text-center mb-12">
+      {/* Hero Section - Full Screen */}
+      <section className="min-h-screen flex items-center justify-center px-6 py-12">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="mb-8">
+            <img
+              src="/assets/icons/dog.png"
+              alt="Scout"
+              className="w-24 h-24 rounded-lg mx-auto mb-8"
+            />
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full mb-6">
               <Command className="w-4 h-4" />
               <span className="text-sm font-medium">
                 Powerful Features for Enhanced Productivity
               </span>
             </div>
+            <h1 className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-white mb-6">
+              Scout Chrome Extension
+            </h1>
+            <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-12">
+              Transform your browsing experience with Scout. A versatile Chrome
+              extension with command palette, controller testing, multi-provider
+              search, and automated content enhancement features.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+            <a
+              href={chromeWebStoreUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-3 text-lg font-semibold"
+            >
+              <Download className="w-5 h-5" />
+              Install from Chrome Web Store
+            </a>
+            <a
+              href="https://github.com/JuanQuenga/scout"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-8 py-4 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center gap-3 text-lg font-semibold"
+            >
+              <Github className="w-5 h-5" />
+              View on GitHub
+            </a>
+          </div>
+
+          <div className="flex items-center justify-center">
+            <a
+              href="#features"
+              className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors animate-bounce"
+            >
+              <span>Explore Features</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
               Scout Features
             </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-8">
-              A versatile Chrome extension with command palette, controller
-              testing, multi-provider search, and automated content enhancement
-              features.
-            </p>
-            <div className="flex items-center justify-center gap-4">
-              <a
-                href={chromeWebStoreUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-lg font-semibold"
-              >
-                <Download className="w-5 h-5" />
-                Install from Chrome Web Store
-              </a>
-            </div>
           </div>
 
           {/* Main Features */}
@@ -422,28 +444,61 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Install CTA Section */}
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-8 mb-12">
+          {/* Open Source CTA Section */}
+          <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-8 mb-12">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-4">
-                <Download className="w-6 h-6 text-green-600 dark:text-green-400" />
+                <Github className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  Ready to Get Started?
+                  Open Source & Open for Contributions
                 </h3>
               </div>
               <p className="text-lg text-slate-600 dark:text-slate-400 mb-6 max-w-3xl mx-auto">
-                Install Scout from the Chrome Web Store and supercharge your
-                browsing experience with powerful productivity features.
+                Scout is open source and built by the community. We welcome
+                contributions from developers of all skill levels. Whether you
+                want to fix a bug, add a feature, or improve documentation, we'd
+                love your help.
               </p>
+              <div className="bg-white dark:bg-slate-700 rounded-lg p-8 text-left max-w-2xl mx-auto mb-6">
+                <h4 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
+                  Ways to Contribute
+                </h4>
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-slate-700 dark:text-slate-300">
+                      Report bugs or request features on GitHub Issues
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-slate-700 dark:text-slate-300">
+                      Submit pull requests with bug fixes or new features
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-slate-700 dark:text-slate-300">
+                      Help improve documentation and write guides
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-slate-700 dark:text-slate-300">
+                      Share feedback and suggestions for improvement
+                    </span>
+                  </li>
+                </ul>
+              </div>
               <div className="flex items-center justify-center">
                 <a
-                  href={chromeWebStoreUrl}
+                  href="https://github.com/JuanQuenga/scout"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                  className="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
                 >
-                  <Download className="w-5 h-5" />
-                  Install from Chrome Web Store
+                  <Github className="w-5 h-5" />
+                  View on GitHub
                 </a>
               </div>
             </div>

@@ -56,6 +56,8 @@ export default defineConfig({
       // Needed for CMDK bookmarks and history
       "bookmarks",
       "history",
+      // Needed for Save As button in context menu
+      "downloads",
     ],
     host_permissions: ["<all_urls>"],
     icons: {

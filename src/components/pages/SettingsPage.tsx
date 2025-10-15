@@ -16,6 +16,7 @@ import {
   Trash2,
   RefreshCw,
   Download,
+  MousePointerClick,
 } from "lucide-react";
 import { getBookmarkFolders, BookmarkFolder } from "@/src/utils/bookmarks";
 
@@ -57,6 +58,9 @@ interface CMDKSettings {
   };
   csvLinks?: {
     customUrl?: string;
+  };
+  contextMenu?: {
+    enabled: boolean;
   };
 }
 
@@ -114,6 +118,9 @@ const DEFAULT_SETTINGS: CMDKSettings = {
   csvLinks: {
     customUrl: "",
   },
+  contextMenu: {
+    enabled: true,
+  },
 };
 
 const ALL_SOURCE_KEYS = [...DEFAULT_SETTINGS.sourceOrder];
@@ -168,6 +175,11 @@ const mergeSettings = (stored?: Partial<CMDKSettings>): CMDKSettings => {
     ...(stored.csvLinks || {}),
   };
 
+  const mergedContextMenu = {
+    ...(DEFAULT_SETTINGS.contextMenu || {}),
+    ...(stored.contextMenu || {}),
+  };
+
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
@@ -185,6 +197,7 @@ const mergeSettings = (stored?: Partial<CMDKSettings>): CMDKSettings => {
     ebaySummary: mergedEbaySummary,
     upcHighlighter: mergedUpcHighlighter,
     csvLinks: mergedCsvLinks,
+    contextMenu: mergedContextMenu,
   };
 };
 
@@ -538,6 +551,41 @@ export default function SettingsPage() {
     });
   };
 
+  const handleToggleContextMenu = () => {
+    const newContextMenu = {
+      ...settings.contextMenu,
+      enabled: !settings.contextMenu?.enabled,
+    };
+
+    const newSettings = {
+      ...settings,
+      contextMenu: newContextMenu,
+    };
+    setSettings(newSettings);
+
+    // Auto-save
+    chrome.storage.sync.set({ cmdkSettings: newSettings }, () => {
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+
+      // Notify content script of settings change
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.id) {
+            chrome.tabs
+              .sendMessage(tab.id, {
+                action: "context-menu-settings-changed",
+                enabled: newContextMenu.enabled,
+              })
+              .catch(() => {
+                // Ignore errors for tabs that don't have the content script
+              });
+          }
+        });
+      });
+    });
+  };
+
   const handleCsvUrlChange = (url: string) => {
     const newCsvLinks = {
       ...settings.csvLinks,
@@ -768,6 +816,13 @@ export default function SettingsPage() {
             >
               <Barcode className="w-4 h-4" />
               UPC Highlighter
+            </a>
+            <a
+              href="#contextmenu"
+              className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors text-foreground"
+            >
+              <MousePointerClick className="w-4 h-4" />
+              Context Menu
             </a>
             <a
               href="#csvlinks"
@@ -1516,6 +1571,71 @@ export default function SettingsPage() {
             </div>
           </section>
 
+          {/* Context Menu Section */}
+          <section id="contextmenu" className="scroll-mt-20">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-2">Context Menu</h2>
+              <p className="text-muted-foreground">
+                Configure the right-click context menu behavior
+              </p>
+            </div>
+
+            <div className="bg-card rounded-xl border border-border shadow-lg overflow-hidden">
+              <div className="divide-y divide-border">
+                {/* Enable/Disable Toggle */}
+                <div className="p-6 flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-base">
+                        Enable Context Menu
+                      </h3>
+                      {settings.contextMenu?.enabled && (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                      Shows a custom right-click menu with quick actions and
+                      search tools. The menu includes a dismiss button to
+                      temporarily disable it until page refresh.
+                    </p>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>
+                        • Quick actions: Copy, Paste, Open in New Tab, Save As
+                      </p>
+                      <p>
+                        • Search tools: Google UPC/MPN, eBay Sold, UPCItemDB,
+                        PriceCharting
+                      </p>
+                      <p>• Controller testing tool access</p>
+                      <p>• Alt+Right-click to show native menu instead</p>
+                      <p>
+                        • Click dismiss button to disable until page refresh
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleToggleContextMenu}
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                      settings.contextMenu?.enabled ?? true
+                        ? "bg-primary"
+                        : "bg-muted-foreground/30"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                        settings.contextMenu?.enabled ?? true
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* CSV Scout Links Section */}
           <section id="csvlinks" className="scroll-mt-20">
             <div className="mb-6">
@@ -1539,8 +1659,14 @@ export default function SettingsPage() {
                         disabled={csvDownloading}
                         className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-muted text-foreground hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
                       >
-                        <Download className={`w-3.5 h-3.5 ${csvDownloading ? 'animate-pulse' : ''}`} />
-                        {csvDownloading ? 'Downloading...' : 'Download Template'}
+                        <Download
+                          className={`w-3.5 h-3.5 ${
+                            csvDownloading ? "animate-pulse" : ""
+                          }`}
+                        />
+                        {csvDownloading
+                          ? "Downloading..."
+                          : "Download Template"}
                       </button>
                     </div>
                     <p className="text-sm text-muted-foreground mb-4">
@@ -1556,8 +1682,10 @@ export default function SettingsPage() {
                     />
                     <div className="flex items-start gap-2 mt-2">
                       <p className="text-xs text-muted-foreground flex-1">
-                        💡 Tip: Download the template to see the required format (Category, Name, URL, Description).
-                        Upload to your own Google Sheet, then use "File → Share → Publish to web" and select CSV format.
+                        💡 Tip: Download the template to see the required format
+                        (Category, Name, URL, Description). Upload to your own
+                        Google Sheet, then use "File → Share → Publish to web"
+                        and select CSV format.
                       </p>
                     </div>
                   </div>
