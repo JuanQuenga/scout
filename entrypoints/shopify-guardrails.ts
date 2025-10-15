@@ -745,31 +745,33 @@ export default defineContentScript({
       const conditionsMatch = guardrailSettings.enableConditionCheck ? checkConditionsMatch() : null;
       const hasEmptyGoogleFields = guardrailSettings.enableGoogleFieldsCheck ? findGoogleFields() : false;
 
-      // Determine page border variant
+      // Determine page border variant (danger takes priority over warning)
       let borderVariant = null;
 
+      // Handle condition mismatch (highest priority)
       if (guardrailSettings.enableConditionCheck && conditionsMatch === false && !conditionMismatchDismissed) {
-        // Condition mismatch is the highest priority (RED) - only show if enabled and not dismissed
-        borderVariant = "danger";
+        borderVariant = "danger"; // RED takes priority
         showNotification("condition-mismatch", {
           shopifyCondition: conditionField.value,
           ebayConditionId: ebayConditionField.id,
         });
-        removeNotification("google-fields");
       } else {
         removeNotification("condition-mismatch");
+      }
 
-        if (guardrailSettings.enableGoogleFieldsCheck && hasEmptyGoogleFields && !googleFieldsWarningDismissed) {
-          // Empty Google fields (ORANGE) - only show if enabled and not dismissed
+      // Handle empty Google fields (can coexist with condition mismatch)
+      if (guardrailSettings.enableGoogleFieldsCheck && hasEmptyGoogleFields && !googleFieldsWarningDismissed) {
+        // Only set border to warning if there's no danger border already
+        if (!borderVariant) {
           borderVariant = "warning";
-          const emptyFields = googleFields.filter((f) => f.isEmpty);
-          showNotification("google-fields", {
-            count: emptyFields.length,
-            fields: emptyFields,
-          });
-        } else {
-          removeNotification("google-fields");
         }
+        const emptyFields = googleFields.filter((f) => f.isEmpty);
+        showNotification("google-fields", {
+          count: emptyFields.length,
+          fields: emptyFields,
+        });
+      } else {
+        removeNotification("google-fields");
       }
 
       updatePageOutline(borderVariant);

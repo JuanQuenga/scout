@@ -12,6 +12,11 @@ import {
   TrendingUp,
   ScanLine,
   Barcode,
+  Link2,
+  Trash2,
+  RefreshCw,
+  Download,
+  MousePointerClick,
 } from "lucide-react";
 import { getBookmarkFolders, BookmarkFolder } from "@/src/utils/bookmarks";
 
@@ -37,19 +42,26 @@ interface CMDKSettings {
     color: string;
   }>;
   shopifyGuardrails?: {
-    enableConditionCheck: boolean;
-    enableGoogleFieldsCheck: boolean;
+    enableConditionCheck?: boolean;
+    enableGoogleFieldsCheck?: boolean;
   };
   controllerTesting?: {
-    lightThreshold: number;
-    mediumThreshold: number;
+    lightThreshold?: number;
+    mediumThreshold?: number;
+    autoStart?: boolean;
   };
   bookmarkFolderIds?: string[];
   ebaySummary?: {
-    enabled: boolean;
+    enabled?: boolean;
   };
   upcHighlighter?: {
-    enabled: boolean;
+    enabled?: boolean;
+  };
+  csvLinks?: {
+    customUrl?: string;
+  };
+  contextMenu?: {
+    enabled?: boolean;
   };
 }
 
@@ -96,12 +108,19 @@ const DEFAULT_SETTINGS: CMDKSettings = {
   controllerTesting: {
     lightThreshold: 0.1,
     mediumThreshold: 0.25,
+    autoStart: true,
   },
   bookmarkFolderIds: [],
   ebaySummary: {
     enabled: true,
   },
   upcHighlighter: {
+    enabled: true,
+  },
+  csvLinks: {
+    customUrl: "",
+  },
+  contextMenu: {
     enabled: true,
   },
 };
@@ -153,6 +172,16 @@ const mergeSettings = (stored?: Partial<CMDKSettings>): CMDKSettings => {
     ...(stored.upcHighlighter || {}),
   };
 
+  const mergedCsvLinks = {
+    ...(DEFAULT_SETTINGS.csvLinks || {}),
+    ...(stored.csvLinks || {}),
+  };
+
+  const mergedContextMenu = {
+    ...(DEFAULT_SETTINGS.contextMenu || {}),
+    ...(stored.contextMenu || {}),
+  };
+
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
@@ -169,6 +198,8 @@ const mergeSettings = (stored?: Partial<CMDKSettings>): CMDKSettings => {
       : [...DEFAULT_SETTINGS.bookmarkFolderIds],
     ebaySummary: mergedEbaySummary,
     upcHighlighter: mergedUpcHighlighter,
+    csvLinks: mergedCsvLinks,
+    contextMenu: mergedContextMenu,
   };
 };
 
@@ -185,6 +216,9 @@ export default function SettingsPage() {
     color: "bg-blue-500",
   });
   const [bookmarkFolders, setBookmarkFolders] = useState<BookmarkFolder[]>([]);
+  const [csvCacheCleared, setCsvCacheCleared] = useState(false);
+  const [csvRefreshing, setCsvRefreshing] = useState(false);
+  const [csvDownloading, setCsvDownloading] = useState(false);
 
   useEffect(() => {
     // Load settings from chrome storage
@@ -200,6 +234,30 @@ export default function SettingsPage() {
 
     // Load bookmark folders
     getBookmarkFolders().then(setBookmarkFolders);
+
+    // Handle hash fragment for auto-scrolling to sections
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1); // Remove the #
+      if (hash) {
+        // Small delay to ensure the page is fully rendered
+        setTimeout(() => {
+          const element = document.getElementById(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 100);
+      }
+    };
+
+    // Check for hash on initial load
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener("hashchange", handleHashChange);
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+    };
   }, []);
 
   const handleToggle = (source: keyof CMDKSettings["enabledSources"]) => {
@@ -416,6 +474,25 @@ export default function SettingsPage() {
     });
   };
 
+  const handleToggleControllerAutoStart = () => {
+    const newControllerTesting = {
+      ...settings.controllerTesting,
+      autoStart: !settings.controllerTesting?.autoStart,
+    };
+
+    const newSettings = {
+      ...settings,
+      controllerTesting: newControllerTesting,
+    };
+    setSettings(newSettings);
+
+    // Auto-save
+    chrome.storage.sync.set({ cmdkSettings: newSettings }, () => {
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+    });
+  };
+
   const handleBookmarkFolderToggle = (folderId: string) => {
     const currentFolders = settings.bookmarkFolderIds || [];
     const newFolders = currentFolders.includes(folderId)
@@ -517,6 +594,144 @@ export default function SettingsPage() {
         });
       });
     });
+  };
+
+  const handleToggleContextMenu = () => {
+    const newContextMenu = {
+      ...settings.contextMenu,
+      enabled: !settings.contextMenu?.enabled,
+    };
+
+    const newSettings = {
+      ...settings,
+      contextMenu: newContextMenu,
+    };
+    setSettings(newSettings);
+
+    // Auto-save
+    chrome.storage.sync.set({ cmdkSettings: newSettings }, () => {
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+
+      // Notify content script of settings change
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.id) {
+            chrome.tabs
+              .sendMessage(tab.id, {
+                action: "context-menu-settings-changed",
+                enabled: newContextMenu.enabled,
+              })
+              .catch(() => {
+                // Ignore errors for tabs that don't have the content script
+              });
+          }
+        });
+      });
+    });
+  };
+
+  const handleCsvUrlChange = (url: string) => {
+    const newCsvLinks = {
+      ...settings.csvLinks,
+      customUrl: url,
+    };
+
+    const newSettings = {
+      ...settings,
+      csvLinks: newCsvLinks,
+    };
+    setSettings(newSettings);
+
+    // Auto-save
+    chrome.storage.sync.set({ cmdkSettings: newSettings }, () => {
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+    });
+  };
+
+  const handleClearCsvCache = () => {
+    // Clear the CSV cache from chrome.storage.local
+    chrome.storage.local.remove(
+      ["csvLinksCache", "csvLinksCacheTimestamp"],
+      () => {
+        if (chrome.runtime.lastError) {
+          console.error("Error clearing cache:", chrome.runtime.lastError);
+        } else {
+          setCsvCacheCleared(true);
+          setTimeout(() => setCsvCacheCleared(false), 3000);
+        }
+      }
+    );
+  };
+
+  const handleRefreshCsvLinks = async () => {
+    setCsvRefreshing(true);
+
+    // Clear cache first
+    chrome.storage.local.remove(
+      ["csvLinksCache", "csvLinksCacheTimestamp"],
+      async () => {
+        if (chrome.runtime.lastError) {
+          console.error("Error clearing cache:", chrome.runtime.lastError);
+          setCsvRefreshing(false);
+          return;
+        }
+
+        // Import the fetchCSVLinks function dynamically and trigger a refresh
+        try {
+          const { fetchCSVLinks } = await import("@/src/utils/csv-links");
+          await fetchCSVLinks();
+          setCsvCacheCleared(true);
+          setTimeout(() => setCsvCacheCleared(false), 3000);
+        } catch (error) {
+          console.error("Error refreshing CSV links:", error);
+        } finally {
+          setCsvRefreshing(false);
+        }
+      }
+    );
+  };
+
+  const handleDownloadDefaultCsv = async () => {
+    setCsvDownloading(true);
+
+    try {
+      // Default CSV URL
+      const defaultUrl =
+        "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8y5eHw3bj0MA0pyMS81o9AbAKrYQL_-a04P_hjoNrkYrrT9VyfsFZk8GE_RM_GRBKJG2J2r3OsZQj/pub?gid=808603945&single=true&output=csv";
+
+      // Fetch the CSV
+      const response = await fetch(defaultUrl);
+      if (!response.ok) {
+        throw new Error("Failed to fetch default CSV");
+      }
+
+      const csvContent = await response.text();
+
+      // Create a blob and download it
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "scout-quicklinks-template.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      console.log("[Settings] Default CSV downloaded successfully");
+    } catch (error) {
+      console.error("[Settings] Error downloading default CSV:", error);
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "/assets/icons/icon-48.png",
+        title: "Download Failed",
+        message: "Failed to download CSV. Please try again.",
+      });
+    } finally {
+      setCsvDownloading(false);
+    }
   };
 
   const sourcesConfig = {
@@ -651,6 +866,20 @@ export default function SettingsPage() {
             >
               <Barcode className="w-4 h-4" />
               UPC Highlighter
+            </a>
+            <a
+              href="#contextmenu"
+              className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors text-foreground"
+            >
+              <MousePointerClick className="w-4 h-4" />
+              Context Menu
+            </a>
+            <a
+              href="#csvlinks"
+              className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors text-foreground"
+            >
+              <Link2 className="w-4 h-4" />
+              Quick Links
             </a>
           </nav>
 
@@ -1175,6 +1404,43 @@ export default function SettingsPage() {
             <div className="bg-card rounded-xl border border-border shadow-lg overflow-hidden">
               <div className="p-8">
                 <div className="space-y-6">
+                  {/* Auto-Start Toggle */}
+                  <div className="p-6 flex items-start gap-4 bg-muted/20 rounded-lg border border-border/50">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-base">
+                          Auto-Start Controller Detection
+                        </h3>
+                        {settings.controllerTesting?.autoStart !== false && (
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                            Enabled
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Automatically start detecting controller inputs when
+                        opening the controller testing panel. Disable this if
+                        you want to manually connect your controller before
+                        starting detection.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleToggleControllerAutoStart}
+                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                        settings.controllerTesting?.autoStart !== false
+                          ? "bg-primary"
+                          : "bg-muted-foreground/30"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                          settings.controllerTesting?.autoStart !== false
+                            ? "translate-x-6"
+                            : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
                   <div className="p-4 bg-muted/20 rounded-lg border border-border/50">
                     <p className="text-sm text-muted-foreground mb-4">
                       Set the thresholds at which controller inputs change
@@ -1387,6 +1653,201 @@ export default function SettingsPage() {
                       }`}
                     />
                   </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Context Menu Section */}
+          <section id="contextmenu" className="scroll-mt-20">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-2">Context Menu</h2>
+              <p className="text-muted-foreground">
+                Configure the right-click context menu behavior
+              </p>
+            </div>
+
+            <div className="bg-card rounded-xl border border-border shadow-lg overflow-hidden">
+              <div className="divide-y divide-border">
+                {/* Enable/Disable Toggle */}
+                <div className="p-6 flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-base">
+                        Enable Context Menu
+                      </h3>
+                      {settings.contextMenu?.enabled && (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                      Shows a custom right-click menu with quick actions and
+                      search tools. The menu includes a dismiss button to
+                      temporarily disable it until page refresh.
+                    </p>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>
+                        • Quick actions: Copy, Paste, Open in New Tab, Save As
+                      </p>
+                      <p>
+                        • Search tools: Google UPC/MPN, eBay Sold, UPCItemDB,
+                        PriceCharting
+                      </p>
+                      <p>• Controller testing tool access</p>
+                      <p>• Alt+Right-click to show native menu instead</p>
+                      <p>
+                        • Click dismiss button to disable until page refresh
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleToggleContextMenu}
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                      settings.contextMenu?.enabled ?? true
+                        ? "bg-primary"
+                        : "bg-muted-foreground/30"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                        settings.contextMenu?.enabled ?? true
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* CSV Scout Links Section */}
+          <section id="csvlinks" className="scroll-mt-20">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-2">Quick Links</h2>
+              <p className="text-muted-foreground">
+                Configure custom CSV URL for Quick Links and manage cache
+              </p>
+            </div>
+
+            <div className="bg-card rounded-xl border border-border shadow-lg overflow-hidden">
+              <div className="divide-y divide-border">
+                {/* Custom CSV URL */}
+                <div className="p-6">
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-base">
+                        Custom CSV URL
+                      </h3>
+                      <button
+                        onClick={handleDownloadDefaultCsv}
+                        disabled={csvDownloading}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-muted text-foreground hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+                      >
+                        <Download
+                          className={`w-3.5 h-3.5 ${
+                            csvDownloading ? "animate-pulse" : ""
+                          }`}
+                        />
+                        {csvDownloading
+                          ? "Downloading..."
+                          : "Download Template"}
+                      </button>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Enter a custom Google Sheets CSV URL to load your own
+                      Scout Links. Leave empty to use the default URL.
+                    </p>
+                    <input
+                      type="text"
+                      value={settings.csvLinks?.customUrl || ""}
+                      onChange={(e) => handleCsvUrlChange(e.target.value)}
+                      placeholder="https://docs.google.com/spreadsheets/..."
+                      className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm font-mono"
+                    />
+                    <div className="flex items-start gap-2 mt-2">
+                      <p className="text-xs text-muted-foreground flex-1">
+                        💡 Tip: Download the template to see the required format
+                        (Category, Name, URL, Description). Upload to your own
+                        Google Sheet, then use "File → Share → Publish to web"
+                        and select CSV format.
+                      </p>
+                    </div>
+                  </div>
+
+                  {settings.csvLinks?.customUrl && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <p className="text-xs text-blue-700 dark:text-blue-400">
+                        ✓ Using custom CSV URL. Clear the cache to reload from
+                        your new URL.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Cache Management */}
+                <div className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-base mb-2">
+                        Cache Management
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Scout Links are cached for 30 minutes to improve
+                        performance. Use these options to manage your CSV cache.
+                      </p>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p>
+                          • <strong>Refresh Now:</strong> Clears cache and
+                          immediately fetches latest links
+                        </p>
+                        <p>
+                          • <strong>Clear Cache:</strong> Only clears cache
+                          (fetches on next open)
+                        </p>
+                        <p>
+                          • Use after updating your Google Sheet or changing CSV
+                          URL
+                        </p>
+                      </div>
+                      <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                        <p className="text-xs text-amber-700 dark:text-amber-400">
+                          <strong>Note:</strong> Clearing CSV cache does NOT
+                          affect your Chrome bookmarks. These are separate
+                          features.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={handleRefreshCsvLinks}
+                        disabled={csvRefreshing}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors text-sm font-medium"
+                      >
+                        <RefreshCw
+                          className={`w-4 h-4 ${
+                            csvRefreshing ? "animate-spin" : ""
+                          }`}
+                        />
+                        {csvRefreshing ? "Refreshing..." : "Refresh Now"}
+                      </button>
+                      <button
+                        onClick={handleClearCsvCache}
+                        className="flex items-center gap-2 px-4 py-2 bg-muted text-foreground hover:bg-muted/80 rounded-lg transition-colors text-sm font-medium"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Clear Cache
+                      </button>
+                      {csvCacheCleared && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                          <Check className="w-4 h-4" />
+                          <span className="text-xs font-medium">Done!</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

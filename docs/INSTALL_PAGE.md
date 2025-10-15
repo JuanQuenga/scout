@@ -1,40 +1,82 @@
-# Paymore Lite Install Page
+# Scout Thank You Page
 
-This document describes the install page for the Paymore Lite Chrome extension.
+This document describes the thank you page for the Scout Chrome extension.
 
 ## Overview
 
-The install page provides a user-friendly interface for installing the Paymore Lite extension. It includes step-by-step instructions, feature highlights, and download links.
+The thank you page provides a user-friendly interface that appears after installing the Scout extension. It thanks the user for installing, provides instructions for pinning the extension, and showcases all the features available in Scout.
 
 ## Files
 
-- `src/components/landing/InstallPage.tsx` - The main React component for the install page
-- `entrypoints/install/index.html` - HTML template for the install page
-- `entrypoints/install/main.tsx` - Entry point that renders the InstallPage component
+- `src/components/landing/ThankYouPage.tsx` - The main React component for the thank you page
+- `entrypoints/install/index.html` - HTML template for the thank you page
+- `entrypoints/install/main.tsx` - Entry point that renders the ThankYouPage component
 
 ## Features
 
-### Installation Steps
+### Thank You Message
 
-The install page guides users through 4 simple steps:
+The thank you page displays a welcoming message to users who have just installed Scout, encouraging them to pin the extension for easy access.
 
-1. Download the Extension
-2. Open Chrome Extensions
-3. Enable Developer Mode
-4. Install the Extension
+### Pinning Instructions
+
+The page includes detailed instructions on how to pin the Scout extension to the Chrome toolbar, with step-by-step guidance and visual cues.
 
 ### Feature Highlights
 
-The page showcases key features of Paymore Lite:
+The page showcases all key features of Scout:
 
-- Command Menu (CMD+Shift+K)
-- Lightning Fast performance
-- Secure & Private operation
-- Time-saving capabilities
+#### Core Features
+
+- **Command Menu (CMD+Shift+K)** - Arc-style command palette for quick navigation, tab switching, and multi-provider search
+- **Controller Testing (CMD+J)** - Real-time controller input visualization with customizable color thresholds
+- **Scout Links** - Custom links from Google Sheets with 30-minute caching and custom URL support
+- **14 Search Providers** - Google, Amazon, Best Buy, eBay, Price Charting, UPC Item DB, YouTube, GitHub, Twitter/X, Home Depot, Lowe's, Menards, Micro Center, and Scout Search
+- **eBay Taxonomy API** - Direct integration for quick category lookups with copy-to-clipboard
+
+#### Content Enhancement Features
+
+- **eBay Price Summary** - Automatic price statistics on eBay sold listings (average, median, high, low) with clickable metrics and quick filters
+- **UPC Highlighter** - Automatic detection and highlighting of 12-digit UPC codes with click-to-copy functionality
+- **Shopify Guardrails** - Automated validation for Shopify product pages (condition mismatch and empty Google fields checks)
+
+#### Navigation & Customization
+
+- **Tab Switching** - Fast switching between open tabs with search and filter
+- **Bookmarks & History** - Access your 20 most recent bookmarks and last 30 visited pages with folder filtering
+- **Settings Page** - Configure command sources, drag-and-drop reordering, customize search providers
+- **Context Menu** - Right-click search actions for eBay, UPC, MPN, and Price Charting
+- **Lightning Fast performance** - Optimized with caching and efficient rendering
+- **Secure & Private** - No data collection, all processing happens locally
 
 ### Download Section
 
 Users can download the latest version directly from the install page with a single click.
+
+## Pinning the Extension
+
+After installing the Scout extension, users should pin it to their Chrome toolbar for quick access:
+
+### Why Pin the Extension?
+
+- Quick access to the extension icon
+- Easy visual indicator that Scout is active
+- One-click access to extension features
+- Faster access to the popup menu
+
+### How to Pin
+
+1. Click the **Extensions icon** (puzzle piece) in the Chrome toolbar
+2. Find **Scout** in the list of extensions
+3. Click the **pin icon** next to Scout
+4. The Scout icon will now appear in your toolbar
+
+Alternatively:
+
+- Navigate to `chrome://extensions/`
+- Find Scout and ensure it's enabled
+- Click the Extensions icon (puzzle piece) in the toolbar
+- Pin Scout from the dropdown
 
 ## Accessing the Install Page
 
@@ -80,37 +122,35 @@ The install page is automatically detected by WXT as an "unlisted-page" entrypoi
 
 ## Customization
 
-### Modifying Installation Steps
+### Modifying Thank You Message
 
-Edit the `installSteps` array in `InstallPage.tsx` to customize the installation instructions.
+Edit the thank you message in `ThankYouPage.tsx` to customize the post-installation experience. The component uses a welcoming approach with clear pinning instructions.
 
 ### Updating Features
 
-Modify the `features` array in `InstallPage.tsx` to update the feature highlights.
+Modify the `mainFeatures` array in `ThankYouPage.tsx` to update the feature highlights. Each feature includes:
+
+- Title and description
+- Icon from lucide-react
+- Screenshot image path
+- How-to-use steps or subsections
+- Features list (for simpler features)
 
 ### Changing Download Link
 
-Update the download link in the "Download Section" of `InstallPage.tsx`:
-
-```tsx
-<a
-  href="/releases/scout-1.0.0-chrome.zip"
-  download
-  // ...
->
-```
+If you need to update the download link, modify the reference in `ThankYouPage.tsx`. The current release structure uses the GitHub releases or a direct download link format.
 
 ## Browser Compatibility
 
-The install page is designed for Google Chrome. A compatibility notice is shown for non-Chrome browsers.
+The thank you page is designed for Google Chrome. A compatibility notice is shown for non-Chrome browsers.
 
 ## Styling
 
-The install page uses Tailwind CSS for styling and follows the same design system as the rest of the extension.
+The thank you page uses Tailwind CSS for styling and follows the same design system as the rest of the extension.
 
 ## Troubleshooting
 
-### Install Page Not Loading
+### Thank You Page Not Loading
 
 1. Ensure the extension is properly loaded in developer mode
 2. Check the browser console for any errors

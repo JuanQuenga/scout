@@ -7,12 +7,22 @@ import { defineContentScript } from "wxt/utils/define-content-script";
 /**
  * Adds an inline summary to eBay sold listing search result pages showing
  * average, median, high, and low sale prices for the visible results.
+ *
+ * This script ONLY runs on eBay search pages (https://www.ebay.com/sch/*).
+ * It will only display the summary when the LH_Sold=1 parameter is present.
  */
 export default defineContentScript({
   matches: ["https://www.ebay.com/sch/*"],
   runAt: "document_idle",
   allFrames: false,
   main() {
+    // Early safety check: ensure we're on an eBay search page
+    if (!window.location.hostname.includes("ebay.com") ||
+        !window.location.pathname.startsWith("/sch/")) {
+      console.log("🐕 [Scout eBay Sold Summary] Not on eBay search page, exiting");
+      return;
+    }
+
     console.log("🐕 [Scout eBay Sold Summary] SCRIPT LOADED - Version 2");
 
     const SUMMARY_ID = "scout-ebay-sold-summary";
@@ -48,6 +58,13 @@ export default defineContentScript({
           margin: 0 0 10px;
           font-weight: 600;
           color: #1e293b;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        #${SUMMARY_ID} h2 img {
+          width: 20px;
+          height: 20px;
         }
         #${SUMMARY_ID} .scout-ebay-summary__metrics {
           display: flex;
@@ -107,6 +124,17 @@ export default defineContentScript({
           transform: translateY(0);
           box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
         }
+        #${SUMMARY_ID} .scout-ebay-summary__metric-button[disabled] {
+          background: rgba(148, 163, 184, 0.3);
+          color: rgba(71, 85, 105, 0.6);
+          cursor: not-allowed;
+          opacity: 0.5;
+          pointer-events: none;
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__metric-button[disabled]:hover {
+          transform: none;
+          box-shadow: none;
+        }
         #${SUMMARY_ID} .scout-ebay-summary__dismiss {
           position: absolute;
           top: 10px;
@@ -130,6 +158,31 @@ export default defineContentScript({
         #${SUMMARY_ID} .scout-ebay-summary__dismiss:hover {
           background: rgba(239, 68, 68, 0.9);
           border-color: rgba(220, 38, 38, 0.8);
+          color: white;
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__settings {
+          position: absolute;
+          top: 10px;
+          right: 46px;
+          background: rgba(148, 163, 184, 0.2);
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          border-radius: 6px;
+          width: 28px;
+          height: 28px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          line-height: 1;
+          color: #475569;
+          transition: all 0.2s ease;
+          z-index: 10;
+          pointer-events: auto;
+        }
+        #${SUMMARY_ID} .scout-ebay-summary__settings:hover {
+          background: rgba(59, 130, 246, 0.9);
+          border-color: rgba(37, 99, 235, 0.8);
           color: white;
         }
         #${SUMMARY_ID} .scout-ebay-summary__meta {
@@ -213,9 +266,10 @@ export default defineContentScript({
     const parseSoldDate = (element: Element) => {
       try {
         // Look for the "Sold" date text
-        const soldDateElement = element.querySelector(".su-styled-text.positive") ||
-                               element.querySelector(".s-item__title--tagblock .POSITIVE") ||
-                               element.querySelector(".s-item__ended-date");
+        const soldDateElement =
+          element.querySelector(".su-styled-text.positive") ||
+          element.querySelector(".s-item__title--tagblock .POSITIVE") ||
+          element.querySelector(".s-item__ended-date");
 
         if (!soldDateElement) return null;
 
@@ -251,7 +305,7 @@ export default defineContentScript({
           mostRecentDate: null,
           minElement: null,
           maxElement: null,
-          mostRecentElement: null
+          mostRecentElement: null,
         };
       }
 
@@ -285,7 +339,11 @@ export default defineContentScript({
           textContent.includes("Results matching fewer words")
         ) {
           log("🛑 STOP: Found 'fewer words' divider at index", i);
-          log("   - Collected", productListings.length, "products before divider");
+          log(
+            "   - Collected",
+            productListings.length,
+            "products before divider"
+          );
           break; // STOP - everything after this is suggested
         }
 
@@ -296,7 +354,11 @@ export default defineContentScript({
       log("✅ Final count:", productListings.length, "product listings");
 
       // Extract prices and dates with element tracking
-      const priceData: Array<{ value: number; element: Element; date: Date | null }> = [];
+      const priceData: Array<{
+        value: number;
+        element: Element;
+        date: Date | null;
+      }> = [];
       let currencyPrefix: string | null = null;
 
       for (const item of productListings) {
@@ -332,7 +394,7 @@ export default defineContentScript({
           mostRecentDate: null,
           minElement: null,
           maxElement: null,
-          mostRecentElement: null
+          mostRecentElement: null,
         };
       }
 
@@ -345,7 +407,7 @@ export default defineContentScript({
       );
 
       // Find the most recent date entry
-      const entriesWithDates = priceData.filter(entry => entry.date !== null);
+      const entriesWithDates = priceData.filter((entry) => entry.date !== null);
       let mostRecentEntry = null;
       let mostRecentDate = null;
 
@@ -356,7 +418,7 @@ export default defineContentScript({
         mostRecentDate = mostRecentEntry.date;
       }
 
-      const prices = priceData.map(d => d.value);
+      const prices = priceData.map((d) => d.value);
       log("📅 Found", entriesWithDates.length, "dates");
 
       return {
@@ -365,7 +427,7 @@ export default defineContentScript({
         mostRecentDate,
         minElement: minEntry.element,
         maxElement: maxEntry.element,
-        mostRecentElement: mostRecentEntry?.element || null
+        mostRecentElement: mostRecentEntry?.element || null,
       };
     };
 
@@ -457,7 +519,7 @@ export default defineContentScript({
         mostRecentDate,
         minElement,
         maxElement,
-        mostRecentElement
+        mostRecentElement,
       } = collectPrices();
       log("Collected prices:", prices.length, "prices found");
 
@@ -491,14 +553,24 @@ export default defineContentScript({
         const options: Intl.DateTimeFormatOptions = {
           month: "short",
           day: "numeric",
-          year: "numeric"
+          year: "numeric",
         };
         formattedDate = mostRecentDate.toLocaleDateString("en-US", options);
       }
 
+      // Check current item condition to disable the appropriate button
+      const url = new URL(window.location.href);
+      const currentCondition = url.searchParams.get("LH_ItemCondition");
+      const isOnUsedPage = currentCondition === "4";
+      const isOnNewPage = currentCondition === "3";
+
+      // Get the Scout icon URL
+      const iconUrl = chrome.runtime.getURL("assets/icons/dog-32.png");
+
       container.innerHTML = `
+        <button type="button" class="scout-ebay-summary__settings" title="Settings" data-action="settings">⚙</button>
         <button type="button" class="scout-ebay-summary__dismiss" title="Dismiss" data-action="dismiss">×</button>
-        <h2>Scout Price Summary</h2>
+        <h2><img src="${iconUrl}" alt="Scout" /> Scout Price Summary</h2>
         <div class="scout-ebay-summary__metrics">
           <div class="scout-ebay-summary__metric">
             <strong>Average</strong>
@@ -521,13 +593,17 @@ export default defineContentScript({
             <span>${count}</span>
           </div>
           <div class="scout-ebay-summary__metric scout-ebay-summary__metric--clickable" data-scroll-to="latest" title="Click to scroll to listing">
-            <strong>Latest Sold</strong>
+            <strong>Last Sold</strong>
             <span>${formattedDate}</span>
           </div>
-          <div class="scout-ebay-summary__metric-button" data-action="view-used">
+          <div class="scout-ebay-summary__metric-button" data-action="view-used" ${
+            isOnUsedPage ? "disabled" : ""
+          }>
             View Used
           </div>
-          <div class="scout-ebay-summary__metric-button" data-action="view-new">
+          <div class="scout-ebay-summary__metric-button" data-action="view-new" ${
+            isOnNewPage ? "disabled" : ""
+          }>
             View New
           </div>
         </div>
@@ -537,9 +613,23 @@ export default defineContentScript({
       `;
 
       // Add click handlers for buttons
+      const settingsBtn = container.querySelector('[data-action="settings"]');
       const dismissBtn = container.querySelector('[data-action="dismiss"]');
       const usedBtn = container.querySelector('[data-action="view-used"]');
       const newBtn = container.querySelector('[data-action="view-new"]');
+
+      if (settingsBtn) {
+        settingsBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          log("Settings button clicked");
+          // Open settings page and navigate to eBay section
+          chrome.runtime.sendMessage({
+            action: "open-settings",
+            section: "ebay",
+          });
+        });
+      }
 
       if (dismissBtn) {
         dismissBtn.addEventListener("click", (e) => {
@@ -572,7 +662,10 @@ export default defineContentScript({
       }
 
       // Add scroll-to handlers for clickable metrics
-      const scrollToAndHighlight = (element: Element | null, metricName: string) => {
+      const scrollToAndHighlight = (
+        element: Element | null,
+        metricName: string
+      ) => {
         if (!element) {
           log(`⚠️ No element found for ${metricName}`);
           return;
@@ -600,7 +693,9 @@ export default defineContentScript({
         log(`✓ Scrolled to and highlighted ${metricName}`);
       };
 
-      const highestMetric = container.querySelector('[data-scroll-to="highest"]');
+      const highestMetric = container.querySelector(
+        '[data-scroll-to="highest"]'
+      );
       const lowestMetric = container.querySelector('[data-scroll-to="lowest"]');
       const latestMetric = container.querySelector('[data-scroll-to="latest"]');
 
@@ -642,6 +737,8 @@ export default defineContentScript({
     const start = () => {
       log("=== Scout eBay Sold Summary Starting ===");
       log("Current URL:", window.location.href);
+      log("Is eBay search page:", window.location.pathname.startsWith("/sch/"));
+      log("Is sold results page:", isSoldResultsPage());
 
       if (!document.body) {
         log("Body not ready, retrying...");

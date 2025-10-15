@@ -4,14 +4,55 @@ Download the latest version of the Scout Chrome Extension.
 
 ## Latest Release
 
-### v1.0.0 (Current)
+### v1.0.1 (Current)
+
+**Release Date:** October 15, 2025
+**Download:** [scout-1.0.1-chrome.zip](./scout-1.0.1-chrome.zip)
+
+**What's New:**
+
+This update adds a comprehensive Thank You/Install page and enhances the user experience with improved context menu functionality and better controller detection.
+
+### Features
+
+- **Thank You/Install Page**: Comprehensive post-installation page with feature documentation and pinning instructions
+
+  - Interactive navigation with progress indicator
+  - Mobile-responsive design with sticky navigation
+  - Image gallery with modal viewer for feature screenshots
+  - Step-by-step extension pinning instructions
+
+- **Enhanced Context Menu**: Improved right-click menu with additional quick actions
+
+  - Copy/Paste functionality for text
+  - Open in New Tab for links
+  - Save As for downloadable content
+  - Delete Element option for page elements
+  - Print functionality
+  - Dismiss button to temporarily disable until page refresh
+
+- **Improved Controller Detection**: Enhanced background service worker with offscreen document support
+  - More reliable controller connection detection
+  - Better error handling and logging
+  - Automatic opening of controller testing when new controllers are connected
+
+### Improvements
+
+- **Background Service Worker**: Enhanced tab management for CMDK "return to previous tab" feature
+- **Install Experience**: Automatic opening of install page on first installation
+- **Error Handling**: Better error handling throughout the extension
+- **Performance**: Optimized content script injection and message handling
+
+## Previous Release
+
+### v1.0.0
 
 **Release Date:** October 12, 2025
 **Download:** [scout-1.0.0-chrome.zip](./scout-1.0.0-chrome.zip)
 
 **What's New:**
 
-This is the first release of Scout, a versatile browser extension with command palette, controller testing, and multi-provider search capabilities.
+This was the first release of Scout, a versatile browser extension with command palette, controller testing, and multi-provider search capabilities.
 
 ### Features
 

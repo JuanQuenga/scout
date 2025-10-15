@@ -4,7 +4,7 @@
 
 Scout is a versatile Chrome extension built with WXT (Web Extension Toolkit) and React. It provides essential tools for quick navigation, search, and controller testing with a powerful CMDK command palette and settings interface.
 
-**Current Version:** v1.0.0 (Latest Release)
+**Current Version:** v1.0.1 (Latest Release)
 
 Key features:
 
@@ -12,11 +12,13 @@ Key features:
 - **Controller Testing**: Dedicated sidepanel (CMD+J) for testing game controllers with real-time input visualization
 - **Scout Links**: Cached custom links from Google Sheets with 30-minute caching
 - **Tab Switching**: Fast switching between open tabs with search and filter
-- **Search Providers**: 10 integrated search providers including PayMore, Google, Amazon, Best Buy, eBay (sold listings), Price Charting, UPC Item DB (UPC - Codes), YouTube, GitHub, and Twitter/X
+- **Search Providers**: 14 integrated search providers including PayMore, Google, Amazon, Best Buy, eBay (sold listings), Price Charting, UPC Item DB (UPC - Codes), YouTube, GitHub, Twitter/X, Home Depot, Lowe's, Menards, and Micro Center
 - **eBay Taxonomy API**: Direct integration with eBay's category taxonomy for quick category lookups
-- **Bookmarks & History**: Access your 20 most recent bookmarks and last 30 visited pages
+- **Bookmarks & History**: Access your 20 most recent bookmarks and last 30 visited pages (optionally select a bookmark folder)
 - **Settings Page**: Configure which command sources are enabled/disabled with drag-and-drop reordering
 - **Background Services**: Handle persistent tasks like API calls, storage, and notifications
+- **Thank You Page**: Comprehensive post-installation page with feature documentation and pinning instructions
+- **Enhanced Context Menu**: Improved right-click menu with additional quick actions
 
 The project uses Tailwind CSS v4 for styling, TypeScript for type safety, and PNPM for package management.
 
@@ -158,7 +160,7 @@ scout/
 │   ├── popup/            # CMDK Command Palette (default popup)
 │   ├── sidepanel/        # Controller Testing sidepanel
 │   ├── options/          # Settings page
-│   └── install/          # Installation page
+│   └── install/          # Installation page with Thank You content
 ├── public/               # Static assets (images, icons, etc.)
 ├── src/                  # Source code
 │   ├── components/       # React components
@@ -181,7 +183,7 @@ scout/
 
 ## Key Configurations
 
-- **WXT Config** ([wxt.config.ts](./wxt.config.ts)): Defines runtime, permissions, keyboard shortcuts, and entry points. Current version: **1.0.0**
+- **WXT Config** ([wxt.config.ts](./wxt.config.ts)): Defines runtime, permissions, keyboard shortcuts, and entry points. Current version: **1.0.1**
 - **Tailwind** ([tailwind.config.ts](./tailwind.config.ts)): Tailwind v4 with Vite plugin for class scanning and HMR
 - **TypeScript**: Strict mode enabled for better code quality
 - **Permissions**: storage, tabs, activeTab, bookmarks, history, contextMenus, sidePanel, scripting, system.display
@@ -216,13 +218,13 @@ scout/
 
 ## Releases
 
-Stable releases are available in the [releases/](./releases/) folder. Download the latest version (v1.0.0) from the releases section.
+Stable releases are available in the [releases/](./releases/) folder. Download the latest version (v1.0.1) from the releases section.
 
 See [releases/releases.md](./releases/releases.md) for detailed changelog and installation instructions.
 
 ### Quick Installation
 
-1. Download [scout-1.0.0-chrome.zip](./releases/scout-1.0.0-chrome.zip)
+1. Download [scout-1.0.1-chrome.zip](./releases/scout-1.0.1-chrome.zip)
 2. Unzip the file
 3. Open Chrome and navigate to `chrome://extensions/`
 4. Enable "Developer mode" (toggle in top right)

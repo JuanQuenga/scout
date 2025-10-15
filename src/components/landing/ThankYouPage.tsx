@@ -19,6 +19,8 @@ import {
   ChevronUp,
   Menu,
   X,
+  Pin,
+  ExternalLink,
 } from "lucide-react";
 import { Dialog, DialogContent } from "../ui/dialog";
 
@@ -53,7 +55,7 @@ const renderTextWithKbd = (text: string) => {
   });
 };
 
-export default function InstallPage() {
+export default function ThankYouPage() {
   const [version, setVersion] = useState<string>("");
   const [copied, setCopied] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
@@ -304,7 +306,7 @@ export default function InstallPage() {
               {[
                 { name: "hero", label: "Home" },
                 { name: "features", label: "Features" },
-                { name: "install", label: "Install" },
+                { name: "install", label: "Pin Extension" },
               ].map((item) => (
                 <button
                   key={item.name}
@@ -340,7 +342,7 @@ export default function InstallPage() {
             {[
               { name: "hero", label: "Home" },
               { name: "features", label: "Features" },
-              { name: "install", label: "Install" },
+              { name: "install", label: "Pin Extension" },
             ].map((item) => (
               <button
                 key={item.name}
@@ -369,7 +371,7 @@ export default function InstallPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Hero Section */}
+      {/* Hero Section - Thank You Message */}
       <section ref={heroRef} className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-8">
@@ -379,45 +381,93 @@ export default function InstallPage() {
               className="w-20 h-20 rounded-lg mx-auto mb-6"
             />
             <h1 className="text-5xl font-bold text-slate-900 dark:text-white mb-4">
-              Scout Chrome Extension
+              Thank You for Installing Scout!
             </h1>
             <p className="text-xl text-slate-600 dark:text-slate-400 mb-8">
-              Transform your browsing experience with Scout. Scout is a Chromium
-              extension that provides a powerful command palette, intelligent
-              content enhancement, and seamless productivity tools.
+              We're excited to have you on board! Scout is now ready to enhance
+              your browsing experience with powerful productivity tools.
             </p>
+          </div>
+
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-8 mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Pin className="w-8 h-8 text-green-600 dark:text-green-400" />
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                Please Pin Scout to Your Toolbar
+              </h2>
+            </div>
+            <p className="text-lg text-slate-600 dark:text-slate-400 mb-6">
+              For quick access to all Scout features, we recommend pinning the
+              extension to your Chrome toolbar:
+            </p>
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-6 text-left max-w-2xl mx-auto">
+              <ol className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-sm flex items-center justify-center font-medium">
+                    1
+                  </span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    Click the <strong>Extensions icon</strong> (puzzle piece) in
+                    the Chrome toolbar
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-sm flex items-center justify-center font-medium">
+                    2
+                  </span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    Find <strong>Scout</strong> in the list of extensions
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-sm flex items-center justify-center font-medium">
+                    3
+                  </span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    Click the <strong>pin icon</strong> next to Scout
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-sm flex items-center justify-center font-medium">
+                    4
+                  </span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    The Scout icon will now appear in your toolbar for quick
+                    access!
+                  </span>
+                </li>
+              </ol>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
             <button
-              onClick={() => handleNavClick("install")}
-              className="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-3 text-lg font-semibold"
-            >
-              <Download className="w-5 h-5" />
-              Install Scout Now
-            </button>
-            <button
               onClick={() => handleNavClick("features")}
-              className="px-8 py-4 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center gap-3 text-lg font-semibold"
+              className="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-3 text-lg font-semibold"
             >
               <Search className="w-5 h-5" />
               Explore Features
             </button>
+            <button
+              onClick={() => handleNavClick("install")}
+              className="px-8 py-4 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center gap-3 text-lg font-semibold"
+            >
+              <Pin className="w-5 h-5" />
+              Pin Instructions
+            </button>
           </div>
 
-          <div className="flex items-center justify-center gap-8 text-sm text-slate-600 dark:text-slate-400">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span>10,000+ Active Users</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 text-yellow-500" />
-              <span>4.8 Rating</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4" />
-              <span>Privacy First</span>
-            </div>
+          <div className="flex items-center justify-center">
+            <a
+              href="https://github.com/JuanQuenga/scout"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <Github className="w-4 h-4" />
+              <span>Contribute to Scout on GitHub</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
           </div>
         </div>
       </section>
@@ -427,7 +477,7 @@ export default function InstallPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              Features
+              Scout Features
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
               Everything you need to enhance your browsing and research workflow
@@ -560,34 +610,75 @@ export default function InstallPage() {
         </div>
       </section>
 
-      {/* Install Section */}
+      {/* Pin Extension Section */}
       <section ref={installRef} className="py-20 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-12 text-center">
-            <h2 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              Ready to Supercharge Your Browser?
-            </h2>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Pin className="w-8 h-8 text-green-600 dark:text-green-400" />
+              <h2 className="text-4xl font-bold text-slate-900 dark:text-white">
+                Pin Scout for Easy Access
+              </h2>
+            </div>
             <p className="text-xl text-slate-600 dark:text-slate-400 mb-8">
-              Join thousands of users who have transformed their browsing
-              experience with Scout
+              Pinning Scout to your toolbar gives you one-click access to all
+              features
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-              <button
-                onClick={handleCopyLink}
-                className="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-3 text-lg font-semibold"
-              >
-                {copied ? (
-                  <>
-                    <CheckCircle className="w-5 h-5" />
-                    Link Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-5 h-5" />
-                    Copy Install Link
-                  </>
-                )}
-              </button>
+            <div className="bg-white dark:bg-slate-700 rounded-lg p-8 text-left max-w-2xl mx-auto mb-8">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
+                Why Pin Scout?
+              </h3>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-slate-700 dark:text-slate-300">
+                    Quick access to the command menu with CMD+Shift+K
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-slate-700 dark:text-slate-300">
+                    Visual indicator that Scout is active and ready to use
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-slate-700 dark:text-slate-300">
+                    One-click access to controller testing and settings
+                  </span>
+                </li>
+              </ul>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
+                How to Pin Scout:
+              </h3>
+              <ol className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-sm flex items-center justify-center font-medium">
+                    1
+                  </span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    Click the Extensions icon (puzzle piece) in Chrome toolbar
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-sm flex items-center justify-center font-medium">
+                    2
+                  </span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    Find Scout in the extensions list
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-sm flex items-center justify-center font-medium">
+                    3
+                  </span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    Click the pin icon next to Scout
+                  </span>
+                </li>
+              </ol>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 onClick={() =>
                   chrome.tabs.create({ url: "chrome://extensions/shortcuts" })
@@ -597,20 +688,6 @@ export default function InstallPage() {
                 <Keyboard className="w-5 h-5" />
                 Customize Shortcuts
               </button>
-            </div>
-            <div className="flex items-center justify-center gap-8 text-sm text-slate-600 dark:text-slate-400">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>Free to Use</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>No Registration Required</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>Privacy Focused</span>
-              </div>
             </div>
           </div>
         </div>
