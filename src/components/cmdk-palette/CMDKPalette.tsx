@@ -470,6 +470,27 @@ export function CMDKPalette({
     onClose();
   };
 
+  const openControllerTesting = async () => {
+    // Send message to open controller testing in sidebar
+    try {
+      const response = await new Promise<any>((resolve) => {
+        try {
+          chrome.runtime.sendMessage(
+            { action: "openInSidebar", tool: "controller-testing" },
+            (resp: any) => resolve(resp)
+          );
+        } catch (err) {
+          resolve({ success: false, error: String(err) });
+        }
+      });
+      if (!response?.success && chrome.runtime.lastError) {
+        console.error("Error opening sidebar:", chrome.runtime.lastError);
+      }
+    } finally {
+      onClose();
+    }
+  };
+
   // Group CSV links by category
   const csvLinksByCategory = filteredCSVLinks.reduce((acc, link) => {
     const category = link.category || "General";
@@ -580,13 +601,22 @@ export function CMDKPalette({
           />
         </div>
         {!trimmedSearch && !activeProvider && (
-          <button
-            onClick={openSettings}
-            className="cmdk-settings-button"
-            title="Settings"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={openControllerTesting}
+              className="cmdk-settings-button"
+              title="Controller Testing"
+            >
+              <Gamepad2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={openSettings}
+              className="cmdk-settings-button"
+              title="Settings"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          </div>
         )}
       </div>
 

@@ -42,25 +42,26 @@ interface CMDKSettings {
     color: string;
   }>;
   shopifyGuardrails?: {
-    enableConditionCheck: boolean;
-    enableGoogleFieldsCheck: boolean;
+    enableConditionCheck?: boolean;
+    enableGoogleFieldsCheck?: boolean;
   };
   controllerTesting?: {
-    lightThreshold: number;
-    mediumThreshold: number;
+    lightThreshold?: number;
+    mediumThreshold?: number;
+    autoStart?: boolean;
   };
   bookmarkFolderIds?: string[];
   ebaySummary?: {
-    enabled: boolean;
+    enabled?: boolean;
   };
   upcHighlighter?: {
-    enabled: boolean;
+    enabled?: boolean;
   };
   csvLinks?: {
     customUrl?: string;
   };
   contextMenu?: {
-    enabled: boolean;
+    enabled?: boolean;
   };
 }
 
@@ -107,6 +108,7 @@ const DEFAULT_SETTINGS: CMDKSettings = {
   controllerTesting: {
     lightThreshold: 0.1,
     mediumThreshold: 0.25,
+    autoStart: true,
   },
   bookmarkFolderIds: [],
   ebaySummary: {
@@ -232,6 +234,30 @@ export default function SettingsPage() {
 
     // Load bookmark folders
     getBookmarkFolders().then(setBookmarkFolders);
+
+    // Handle hash fragment for auto-scrolling to sections
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1); // Remove the #
+      if (hash) {
+        // Small delay to ensure the page is fully rendered
+        setTimeout(() => {
+          const element = document.getElementById(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 100);
+      }
+    };
+
+    // Check for hash on initial load
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener("hashchange", handleHashChange);
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+    };
   }, []);
 
   const handleToggle = (source: keyof CMDKSettings["enabledSources"]) => {
@@ -438,6 +464,25 @@ export default function SettingsPage() {
     const newSettings = {
       ...settings,
       controllerTesting: newThresholds,
+    };
+    setSettings(newSettings);
+
+    // Auto-save
+    chrome.storage.sync.set({ cmdkSettings: newSettings }, () => {
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+    });
+  };
+
+  const handleToggleControllerAutoStart = () => {
+    const newControllerTesting = {
+      ...settings.controllerTesting,
+      autoStart: !settings.controllerTesting?.autoStart,
+    };
+
+    const newSettings = {
+      ...settings,
+      controllerTesting: newControllerTesting,
     };
     setSettings(newSettings);
 
@@ -1354,6 +1399,41 @@ export default function SettingsPage() {
             <div className="bg-card rounded-xl border border-border shadow-lg overflow-hidden">
               <div className="p-8">
                 <div className="space-y-6">
+                  {/* Auto-Start Toggle */}
+                  <div className="p-6 flex items-start gap-4 bg-muted/20 rounded-lg border border-border/50">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-base">
+                          Auto-Start Controller Detection
+                        </h3>
+                        {settings.controllerTesting?.autoStart !== false && (
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                            Enabled
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Automatically start detecting controller inputs when opening the controller testing panel.
+                        Disable this if you want to manually connect your controller before starting detection.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleToggleControllerAutoStart}
+                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                        settings.controllerTesting?.autoStart !== false
+                          ? "bg-primary"
+                          : "bg-muted-foreground/30"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                          settings.controllerTesting?.autoStart !== false
+                            ? "translate-x-6"
+                            : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
                   <div className="p-4 bg-muted/20 rounded-lg border border-border/50">
                     <p className="text-sm text-muted-foreground mb-4">
                       Set the thresholds at which controller inputs change

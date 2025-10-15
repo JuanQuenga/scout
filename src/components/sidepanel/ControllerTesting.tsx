@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Progress } from "../ui/progress";
 import { Badge } from "../ui/badge";
+import { Settings } from "lucide-react";
 
 export default function ControllerTesting() {
   // State for controller input values
@@ -28,6 +29,9 @@ export default function ControllerTesting() {
     lightThreshold: 0.1,
     mediumThreshold: 0.25,
   });
+
+  // State for auto-start setting
+  const [autoStart, setAutoStart] = useState(true);
 
   // Refs for SVG elements
   const lstickRef = useRef<SVGCircleElement>(null);
@@ -79,15 +83,18 @@ export default function ControllerTesting() {
     "Extra2",
   ];
 
-  // Load threshold settings from chrome storage
+  // Load threshold settings and auto-start from chrome storage
   useEffect(() => {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.sync.get(['cmdkSettings'], (result) => {
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.sync.get(["cmdkSettings"], (result) => {
         if (result.cmdkSettings?.controllerTesting) {
           setThresholds({
-            lightThreshold: result.cmdkSettings.controllerTesting.lightThreshold ?? 0.1,
-            mediumThreshold: result.cmdkSettings.controllerTesting.mediumThreshold ?? 0.25,
+            lightThreshold:
+              result.cmdkSettings.controllerTesting.lightThreshold ?? 0.1,
+            mediumThreshold:
+              result.cmdkSettings.controllerTesting.mediumThreshold ?? 0.25,
           });
+          setAutoStart(result.cmdkSettings.controllerTesting.autoStart ?? true);
         }
       });
 
@@ -95,9 +102,16 @@ export default function ControllerTesting() {
       const handleStorageChange = (changes: any) => {
         if (changes.cmdkSettings?.newValue?.controllerTesting) {
           setThresholds({
-            lightThreshold: changes.cmdkSettings.newValue.controllerTesting.lightThreshold ?? 0.1,
-            mediumThreshold: changes.cmdkSettings.newValue.controllerTesting.mediumThreshold ?? 0.25,
+            lightThreshold:
+              changes.cmdkSettings.newValue.controllerTesting.lightThreshold ??
+              0.1,
+            mediumThreshold:
+              changes.cmdkSettings.newValue.controllerTesting.mediumThreshold ??
+              0.25,
           });
+          setAutoStart(
+            changes.cmdkSettings.newValue.controllerTesting.autoStart ?? true
+          );
         }
       };
 
@@ -124,7 +138,6 @@ export default function ControllerTesting() {
         .fill(null)
         .map(() => ({ pressed: false, value: 0 })),
     };
-
 
     const COLOR_GREEN = "rgba(34,197,94,0.85)";
     const COLOR_GREEN_LIGHT = "rgba(34,197,94,0.65)";
@@ -352,17 +365,20 @@ export default function ControllerTesting() {
     window.addEventListener("gamepadconnected", onConnect);
     window.addEventListener("gamepaddisconnected", onDisconnect);
 
-    // Fallback: light polling until first gamepad appears
-    pollIntervalRef.current = window.setInterval(() => {
-      const gps = navigator.getGamepads?.() || [];
-      if (gps.some(Boolean)) {
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-          pollIntervalRef.current = null;
+    // Only start polling if autoStart is enabled
+    if (autoStart) {
+      // Fallback: light polling until first gamepad appears
+      pollIntervalRef.current = window.setInterval(() => {
+        const gps = navigator.getGamepads?.() || [];
+        if (gps.some(Boolean)) {
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+          startLoop();
         }
-        startLoop();
-      }
-    }, 500) as unknown as number;
+      }, 500) as unknown as number;
+    }
 
     return () => {
       stopLoop();
@@ -373,7 +389,7 @@ export default function ControllerTesting() {
       window.removeEventListener("gamepadconnected", onConnect);
       window.removeEventListener("gamepaddisconnected", onDisconnect);
     };
-  }, [thresholds]);
+  }, [thresholds, autoStart]);
 
   return (
     <div className="h-full w-full bg-background overflow-y-auto">
@@ -655,7 +671,24 @@ export default function ControllerTesting() {
         {/* Controls Panel */}
         <Card className="border-stone-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Controller Input</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">Controller Input</CardTitle>
+              <button
+                onClick={() => {
+                  chrome.tabs.create({
+                    url: chrome.runtime.getURL("/options.html#controller"),
+                  });
+                }}
+                className="p-0.5 rounded bg-white hover:bg-gray-50 dark:bg-white dark:hover:bg-gray-100 border border-stone-200 dark:border-stone-200 transition-colors !important"
+                style={{
+                  backgroundColor: "white",
+                  borderColor: "rgb(231 229 228)", // stone-200 equivalent
+                }}
+                title="Controller Settings"
+              >
+                <Settings className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
+              </button>
+            </div>
           </CardHeader>
           <CardContent className="pt-0 space-y-4">
             {/* Sticks Section */}

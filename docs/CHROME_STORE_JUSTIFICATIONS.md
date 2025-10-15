@@ -42,6 +42,10 @@
 
 **Justification:** System display permission may be used to adapt the extension's UI based on the user's screen size and resolution, ensuring optimal display across different devices.
 
+### downloads
+
+**Justification:** Enables users to download files directly through the extension's interface when explicitly requested, such as exporting search results or saving data from extension features.
+
 ### tabs
 
 **Justification:** Tabs permission is used to manage and interact with browser tabs, allowing users to switch between tabs, create new tabs, and access tab information through the extension's interface.
