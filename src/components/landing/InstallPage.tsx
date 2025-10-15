@@ -53,7 +53,7 @@ const renderTextWithKbd = (text: string) => {
   });
 };
 
-export default function FeaturesPage() {
+export default function InstallPage() {
   const [version, setVersion] = useState<string>("");
   const [copied, setCopied] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
