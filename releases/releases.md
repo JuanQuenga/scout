@@ -4,44 +4,26 @@ Download the latest version of the Scout Chrome Extension.
 
 ## Latest Release
 
-### v1.0.1 (Current)
+### v1.0.2 (Current)
 
-**Release Date:** October 15, 2025
-**Download:** [scout-1.0.1-chrome.zip](./scout-1.0.1-chrome.zip)
+**Release Date:** October 16, 2025
+**Download:** [scout-1.0.2-chrome.zip](./scout-1.0.2-chrome.zip)
 
 **What's New:**
 
-This update adds a comprehensive Thank You/Install page and enhances the user experience with improved context menu functionality and better controller detection.
+This update includes bug fixes and usability improvements based on user feedback, focusing on context menu behavior and settings stability.
 
-### Features
+### Fixes
 
-- **Thank You/Install Page**: Comprehensive post-installation page with feature documentation and pinning instructions
-
-  - Interactive navigation with progress indicator
-  - Mobile-responsive design with sticky navigation
-  - Image gallery with modal viewer for feature screenshots
-  - Step-by-step extension pinning instructions
-
-- **Enhanced Context Menu**: Improved right-click menu with additional quick actions
-
-  - Copy/Paste functionality for text
-  - Open in New Tab for links
-  - Save As for downloadable content
-  - Delete Element option for page elements
-  - Print functionality
-  - Dismiss button to temporarily disable until page refresh
-
-- **Improved Controller Detection**: Enhanced background service worker with offscreen document support
-  - More reliable controller connection detection
-  - Better error handling and logging
-  - Automatic opening of controller testing when new controllers are connected
+- **Context Menu Shortcut**: Changed from `Alt+Right-click` to `Ctrl+Right-click` to show native browser menu instead of Scout menu
+- **Settings Stability**: Fixed potential undefined error in bookmark folder settings initialization
+- **Code Cleanup**: Removed unused radial menu code and improved overall code organization
 
 ### Improvements
 
-- **Background Service Worker**: Enhanced tab management for CMDK "return to previous tab" feature
-- **Install Experience**: Automatic opening of install page on first installation
-- **Error Handling**: Better error handling throughout the extension
-- **Performance**: Optimized content script injection and message handling
+- **Better User Experience**: More intuitive keyboard shortcut for accessing native context menu
+- **Enhanced Reliability**: Improved error handling in settings management
+- **Performance**: Streamlined code by removing deprecated features
 
 ## Previous Release
 
@@ -122,6 +104,8 @@ After installation, you can customize keyboard shortcuts:
 
 ## Changelog Summary
 
+**v1.0.2** - Bug fixes and usability improvements including context menu shortcut changes and settings stability
+**v1.0.1** - Enhanced user experience with install page, improved context menu, and better controller detection  
 **v1.0.0** - Initial Release with CMDK Command Palette, Controller Testing, Settings Page, and Multi-Platform Search
 
 For questions or support, open an issue on the GitHub repository.

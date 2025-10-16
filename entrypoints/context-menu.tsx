@@ -25,7 +25,7 @@ import {
  * Context Menu Content Script
  * - Light theme, rounded, shadowed menu
  * - Keyboard: Up/Down/Enter/Esc
- * - Alt+right-click => native menu
+ * - Ctrl+right-click => native menu
  * - Works everywhere including inputs/contentEditable
  */
 export default defineContentScript({
@@ -47,7 +47,7 @@ export default defineContentScript({
     try {
       chrome.storage.sync.get(["cmdkSettings"], (result) => {
         const s = result?.cmdkSettings || {};
-        enabled = s?.contextMenu?.enabled ?? s?.radialMenu?.enabled ?? true;
+        enabled = s?.contextMenu?.enabled ?? true;
       });
     } catch (_) {}
 
@@ -678,8 +678,8 @@ export default defineContentScript({
     };
 
     const onContextMenu = (e: MouseEvent) => {
-      // Alt+right-click shows native menu, otherwise show Scout menu
-      if (e.altKey || !enabled || dismissedUntilRefresh) return; // pass through
+      // Ctrl+right-click shows native menu, otherwise show Scout menu
+      if (e.ctrlKey || !enabled || dismissedUntilRefresh) return; // pass through
 
       e.preventDefault();
       e.stopPropagation();

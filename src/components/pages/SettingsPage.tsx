@@ -195,7 +195,7 @@ const mergeSettings = (stored?: Partial<CMDKSettings>): CMDKSettings => {
     controllerTesting: mergedControllerTesting,
     bookmarkFolderIds: stored.bookmarkFolderIds
       ? [...stored.bookmarkFolderIds]
-      : [...DEFAULT_SETTINGS.bookmarkFolderIds],
+      : [...(DEFAULT_SETTINGS.bookmarkFolderIds || [])],
     ebaySummary: mergedEbaySummary,
     upcHighlighter: mergedUpcHighlighter,
     csvLinks: mergedCsvLinks,
@@ -1696,7 +1696,7 @@ export default function SettingsPage() {
                         PriceCharting
                       </p>
                       <p>• Controller testing tool access</p>
-                      <p>• Alt+Right-click to show native menu instead</p>
+                      <p>• Ctrl+Right-click to show native menu instead</p>
                       <p>
                         • Click dismiss button to disable until page refresh
                       </p>

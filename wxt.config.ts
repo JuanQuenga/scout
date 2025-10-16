@@ -41,7 +41,7 @@ export default defineConfig({
       },
     ],
     name: "Scout",
-    version: "1.0.1",
+    version: "1.0.2",
     description:
       "A versatile Chrome extension with command palette, controller testing, and multi-provider search capabilities.",
     permissions: [

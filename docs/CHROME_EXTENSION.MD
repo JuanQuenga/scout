@@ -2,12 +2,18 @@ Scout Chrome Extension
 
 Scout is a powerful browser extension designed to enhance productivity with quick navigation, search capabilities, and intelligent price tracking. Built with efficiency in mind, Scout provides a powerful command palette interface for instant access to bookmarks, browsing history, open tabs, and multi-platform search. The extension integrates with multiple popular platforms and includes advanced features like eBay price analysis, Shopify guardrails, and UPC highlighting for comprehensive workflow optimization.
 
+### v1.0.2 - Bug Fixes & Improvements
+
+This update includes important bug fixes and usability improvements based on user feedback:
+
+- **Context Menu Shortcut Fix** - Changed from `Alt+Right-click` to `Ctrl+Right-click` to show native browser menu instead of Scout menu for better compatibility
+
 ### v1.0.1 - Enhanced User Experience
 
 This update focuses on improving your first-time experience and making Scout more intuitive to use:
 
 - **Welcome & Setup Guide** - New install page automatically opens when you first install Scout with step-by-step setup instructions and feature overview
-- **Quick Actions** - Enhanced right-click menu with useful shortcuts like copy/paste, open in new tab, save as, print, and delete element for faster browsing
+- **Quick Actions** - Enhanced right-click menu with useful shortcuts like copy/paste, open in new tab, save as, print, and delete element for faster browsing (use `Ctrl+Right-click` for native browser menu)
 - **UPC Highlighter** - Click to copy UPC codes directly from any webpage - just click on highlighted product codes to copy them instantly
 - **eBay Price Summary** - Intelligent price analysis for eBay sold listings with filtering and category insights
 - **Improved Controller Detection** - More reliable game controller detection that automatically opens controller testing when you connect a new controller
