@@ -5,11 +5,10 @@
 import { defineContentScript } from "wxt/utils/define-content-script";
 
 /**
- * Adds an inline summary to eBay sold listing search result pages showing
- * average, median, high, and low sale prices for the visible results.
+ * Adds an inline summary to eBay search result pages showing
+ * the current search context (Sold vs Active, Condition).
  *
- * This script ONLY runs on eBay search pages (https://www.ebay.com/sch/*).
- * It will only display the summary when the LH_Sold=1 parameter is present.
+ * This script runs on eBay search pages (https://www.ebay.com/sch/*).
  */
 export default defineContentScript({
   matches: ["https://www.ebay.com/sch/*"],
@@ -19,20 +18,20 @@ export default defineContentScript({
     // Early safety check: ensure we're on an eBay search page
     if (!window.location.hostname.includes("ebay.com") ||
         !window.location.pathname.startsWith("/sch/")) {
-      console.log("🐕 [Scout eBay Sold Summary] Not on eBay search page, exiting");
+      console.log("⚡ [Volt eBay Summary] Not on eBay search page, exiting");
       return;
     }
 
-    console.log("🐕 [Scout eBay Sold Summary] SCRIPT LOADED - Version 2");
+    console.log("⚡ [Volt eBay Summary] SCRIPT LOADED");
 
-    const SUMMARY_ID = "scout-ebay-sold-summary";
-    const STYLE_ID = "scout-ebay-sold-summary-style";
+    const SUMMARY_ID = "volt-ebay-summary";
+    const STYLE_ID = "volt-ebay-summary-style";
     let updateQueued = false;
     let isDismissed = false;
 
     const log = (...args: any[]) => {
       try {
-        console.log("[Scout eBay Sold Summary]", ...args);
+        console.log("[Volt eBay Summary]", ...args);
       } catch {}
     };
 
@@ -43,392 +42,177 @@ export default defineContentScript({
       style.textContent = `
         #${SUMMARY_ID} {
           width: 100%;
-          border: 1px solid #1d4ed8;
-          background: rgba(37, 99, 235, 0.08);
-          padding: 14px 18px;
+          padding: 16px 20px;
           border-radius: 10px;
           margin: 12px 0 0 0;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
           color: #0f172a;
-          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
           position: relative;
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
         }
+        
+        /* Green theme for Sold Listings */
+        #${SUMMARY_ID}.volt-state-sold {
+          border: 1px solid #16a34a; /* Green-600 */
+          background: #f0fdf4; /* Green-50 */
+        }
+        
+        /* Orange theme for Active/Completed Listings (Warning) */
+        #${SUMMARY_ID}.volt-state-active {
+          border: 1px solid #f97316; /* Orange-500 */
+          background: #fff7ed; /* Orange-50 */
+        }
+
         #${SUMMARY_ID} h2 {
-          font-size: 17px;
-          margin: 0 0 10px;
-          font-weight: 600;
+          font-size: 18px;
+          margin: 0;
+          font-weight: 700;
           color: #1e293b;
           display: flex;
           align-items: center;
           gap: 8px;
         }
         #${SUMMARY_ID} h2 img {
-          width: 20px;
-          height: 20px;
+          width: 24px;
+          height: 24px;
         }
-        #${SUMMARY_ID} .scout-ebay-summary__metrics {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 12px;
-        }
-        #${SUMMARY_ID} .scout-ebay-summary__metric {
-          min-width: 120px;
-          background: rgba(255, 255, 255, 0.6);
-          padding: 10px 12px;
-          border-radius: 8px;
-          border: 1px solid rgba(148, 163, 184, 0.4);
-        }
-        #${SUMMARY_ID} .scout-ebay-summary__metric--clickable {
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        #${SUMMARY_ID} .scout-ebay-summary__metric--clickable:hover {
-          background: rgba(59, 130, 246, 0.15);
-          border-color: rgba(59, 130, 246, 0.6);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-        }
-        #${SUMMARY_ID} .scout-ebay-summary__metric--clickable:active {
-          transform: translateY(0);
-          box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
-        }
-        #${SUMMARY_ID} .scout-ebay-summary__metric strong {
-          display: block;
+        #${SUMMARY_ID} .volt-ebay-summary__content {
           font-size: 16px;
-          margin-bottom: 4px;
+          color: #334155;
+          line-height: 1.5;
         }
-        #${SUMMARY_ID} .scout-ebay-summary__metric-button {
-          min-width: 120px;
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95));
-          padding: 12px 16px;
-          border-radius: 8px;
-          border: 1px solid rgba(59, 130, 246, 0.6);
-          cursor: pointer;
-          transition: all 0.2s ease;
-          text-align: center;
-          color: white;
+        #${SUMMARY_ID} .volt-ebay-summary__content strong {
+          color: #0f172a;
+          font-weight: 700;
+        }
+        #${SUMMARY_ID} .volt-ebay-summary__action {
+          display: inline-block;
+          margin-top: 8px;
           font-weight: 600;
-          font-size: 13px;
-          box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          text-decoration: underline;
+          cursor: pointer;
+          color: #c2410c; /* Orange-700 */
+          font-size: 15px;
         }
-        #${SUMMARY_ID} .scout-ebay-summary__metric-button:hover {
-          background: linear-gradient(135deg, rgba(37, 99, 235, 1), rgba(29, 78, 216, 1));
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
-          border-color: rgba(29, 78, 216, 0.8);
+        #${SUMMARY_ID} .volt-ebay-summary__action:hover {
+          color: #9a3412; /* Orange-800 */
         }
-        #${SUMMARY_ID} .scout-ebay-summary__metric-button:active {
-          transform: translateY(0);
-          box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+
+        #${SUMMARY_ID} .volt-ebay-summary__links {
+          margin-left: 4px;
+          color: #475569;
         }
-        #${SUMMARY_ID} .scout-ebay-summary__metric-button[disabled] {
-          background: rgba(148, 163, 184, 0.3);
-          color: rgba(71, 85, 105, 0.6);
-          cursor: not-allowed;
-          opacity: 0.5;
-          pointer-events: none;
+        #${SUMMARY_ID} .volt-ebay-summary__links a {
+          color: #15803d; /* Green-700 */
+          text-decoration: underline;
+          font-weight: 600;
+          cursor: pointer;
         }
-        #${SUMMARY_ID} .scout-ebay-summary__metric-button[disabled]:hover {
-          transform: none;
-          box-shadow: none;
+        #${SUMMARY_ID} .volt-ebay-summary__links a:hover {
+          color: #166534; /* Green-800 */
         }
-        #${SUMMARY_ID} .scout-ebay-summary__dismiss {
+
+        #${SUMMARY_ID} .volt-ebay-summary__dismiss {
           position: absolute;
-          top: 10px;
-          right: 10px;
-          background: rgba(148, 163, 184, 0.2);
-          border: 1px solid rgba(148, 163, 184, 0.4);
+          top: 12px;
+          right: 12px;
+          background: rgba(0, 0, 0, 0.05);
+          border: none;
           border-radius: 6px;
-          width: 28px;
-          height: 28px;
+          width: 24px;
+          height: 24px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 18px;
           line-height: 1;
-          color: #475569;
+          color: #64748b;
           transition: all 0.2s ease;
           z-index: 10;
-          pointer-events: auto;
         }
-        #${SUMMARY_ID} .scout-ebay-summary__dismiss:hover {
-          background: rgba(239, 68, 68, 0.9);
-          border-color: rgba(220, 38, 38, 0.8);
-          color: white;
+        #${SUMMARY_ID} .volt-ebay-summary__dismiss:hover {
+          background: rgba(239, 68, 68, 0.1);
+          color: #dc2626;
         }
-        #${SUMMARY_ID} .scout-ebay-summary__settings {
+        
+        #${SUMMARY_ID} .volt-ebay-summary__settings {
           position: absolute;
-          top: 10px;
-          right: 46px;
-          background: rgba(148, 163, 184, 0.2);
-          border: 1px solid rgba(148, 163, 184, 0.4);
+          top: 12px;
+          right: 44px;
+          background: rgba(0, 0, 0, 0.05);
+          border: none;
           border-radius: 6px;
-          width: 28px;
-          height: 28px;
+          width: 24px;
+          height: 24px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 16px;
           line-height: 1;
-          color: #475569;
+          color: #64748b;
           transition: all 0.2s ease;
           z-index: 10;
-          pointer-events: auto;
         }
-        #${SUMMARY_ID} .scout-ebay-summary__settings:hover {
-          background: rgba(59, 130, 246, 0.9);
-          border-color: rgba(37, 99, 235, 0.8);
-          color: white;
-        }
-        #${SUMMARY_ID} .scout-ebay-summary__meta {
-          margin-top: 12px;
-          font-size: 12px;
-          color: #475569;
-        }
-        .scout-listing-highlight {
-          animation: scout-highlight-pulse 1s ease-in-out;
-          outline: 3px solid rgba(59, 130, 246, 0.8) !important;
-          outline-offset: 4px;
-          border-radius: 8px !important;
-          background: rgba(59, 130, 246, 0.05) !important;
-        }
-        @keyframes scout-highlight-pulse {
-          0%, 100% {
-            outline-color: rgba(59, 130, 246, 0.8);
-            outline-width: 3px;
-          }
-          50% {
-            outline-color: rgba(37, 99, 235, 1);
-            outline-width: 5px;
-          }
+        #${SUMMARY_ID} .volt-ebay-summary__settings:hover {
+          background: rgba(59, 130, 246, 0.1);
+          color: #2563eb;
         }
       `;
       document.head.appendChild(style);
     };
 
-    const isSoldResultsPage = () => {
+    const getListingState = () => {
       try {
         const url = new URL(window.location.href);
-        if (!/\.ebay\./i.test(url.hostname)) return false;
-        if (!url.pathname.startsWith("/sch/")) return false;
+        if (!/\.ebay\./i.test(url.hostname)) return "unknown";
+        if (!url.pathname.startsWith("/sch/")) return "unknown";
+        
         const soldParam = url.searchParams.get("LH_Sold");
-        return soldParam === "1" || soldParam === "true";
+        const completeParam = url.searchParams.get("LH_Complete");
+        
+        const isSold = soldParam === "1" || soldParam === "true";
+        const isComplete = completeParam === "1" || completeParam === "true";
+
+        if (isSold) return "sold";
+        if (isComplete) return "completed";
+        return "active";
       } catch {
-        return false;
+        return "active";
       }
     };
 
-    const parsePrice = (text: string) => {
-      if (!text) return null;
-      let cleaned = text
-        .replace(/\(.*?\)/g, "")
-        .replace(/Approximately\s+/i, "")
-        .replace(/About\s+/i, "")
-        .trim();
-
-      const rangeSplit = cleaned.split(/\bto\b|-/i);
-      if (rangeSplit.length > 1) {
-        cleaned = rangeSplit[0];
-      }
-
-      const match = cleaned.match(/[\d,.]+/);
-      if (!match) return null;
-      const numeric = parseFloat(match[0].replace(/,/g, ""));
-      if (!Number.isFinite(numeric)) return null;
-      return numeric;
-    };
-
-    const detectCurrencyPrefix = (text: string) => {
-      if (!text) return "$";
-      const prefix = text
-        .replace(/[\d.,]/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-      if (prefix) return prefix;
-      const symbolMatch = text.match(/[$\u00a3\u00a5\u20ac]/);
-      if (symbolMatch) return symbolMatch[0];
-      return "$";
-    };
-
-    const formatCurrency = (value: number, prefix: string) => {
-      const formatted = value.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+    const getConditionsText = (conditionParam: string | null) => {
+      if (!conditionParam) return "All Conditions";
+      
+      // Decode URL encoded chars just in case (though new URL() usually handles params)
+      const decoded = decodeURIComponent(conditionParam);
+      const codes = decoded.split('|');
+      
+      const labels = new Set<string>();
+      
+      codes.forEach(code => {
+        // Standard eBay Condition IDs and legacy URL params
+        if (["1000", "3", "10"].includes(code)) labels.add("New");
+        else if (["1500", "1750"].includes(code)) labels.add("Open Box");
+        else if (code >= "2000" && code <= "2500") labels.add("Refurbished");
+        else if (["3000", "4", "5000", "6000"].includes(code)) labels.add("Used");
+        else if (["7000"].includes(code)) labels.add("For Parts");
+        else labels.add("Other");
       });
-      return `${prefix ? prefix + " " : ""}${formatted}`.trim();
-    };
 
-    const parseSoldDate = (element: Element) => {
-      try {
-        // Look for the "Sold" date text
-        const soldDateElement =
-          element.querySelector(".su-styled-text.positive") ||
-          element.querySelector(".s-item__title--tagblock .POSITIVE") ||
-          element.querySelector(".s-item__ended-date");
-
-        if (!soldDateElement) return null;
-
-        const text = soldDateElement.textContent?.trim();
-        if (!text) return null;
-
-        // Extract date from text like "Sold  Jan 15, 2025" or "Sold Jan 15, 2025"
-        const match = text.match(/Sold\s+([A-Za-z]+\s+\d{1,2},\s+\d{4})/i);
-        if (!match) return null;
-
-        const dateStr = match[1];
-        const date = new Date(dateStr);
-
-        if (isNaN(date.getTime())) return null;
-
-        return date;
-      } catch {
-        return null;
+      if (labels.size === 0) return "All Conditions";
+      
+      const labelArray = Array.from(labels);
+      if (labelArray.length <= 2) {
+        return labelArray.join(" & ");
       }
-    };
-
-    const collectPrices = () => {
-      // Find the main search results container
-      const mainResultsContainer =
-        document.querySelector("ul.srp-results.srp-grid") ||
-        document.querySelector("#srp-river-results");
-
-      if (!mainResultsContainer) {
-        log("⚠️ Could not find main results container");
-        return {
-          prices: [],
-          currencyPrefix: "$",
-          mostRecentDate: null,
-          minElement: null,
-          maxElement: null,
-          mostRecentElement: null,
-        };
-      }
-
-      log("✓ Found main results container");
-
-      // Get ALL direct child <li> elements
-      const allListItems = Array.from(mainResultsContainer.children).filter(
-        (child) => child.tagName === "LI"
-      );
-
-      log("Found", allListItems.length, "total <li> elements");
-
-      // Collect only product listings BEFORE the "fewer words" divider
-      const productListings = [];
-
-      for (let i = 0; i < allListItems.length; i++) {
-        const item = allListItems[i];
-
-        // Check if this is a product listing (has data-listingid)
-        if (item.hasAttribute("data-listingid")) {
-          productListings.push(item);
-          continue;
-        }
-
-        // This is NOT a product listing - check if it's the "fewer words" divider
-        const classList = item.className || "";
-        const textContent = item.textContent || "";
-
-        if (
-          classList.includes("srp-river-answer--REWRITE_START") ||
-          textContent.includes("Results matching fewer words")
-        ) {
-          log("🛑 STOP: Found 'fewer words' divider at index", i);
-          log(
-            "   - Collected",
-            productListings.length,
-            "products before divider"
-          );
-          break; // STOP - everything after this is suggested
-        }
-
-        // Other divider/notice - skip and continue
-        log("Skipping divider/notice at index", i);
-      }
-
-      log("✅ Final count:", productListings.length, "product listings");
-
-      // Extract prices and dates with element tracking
-      const priceData: Array<{
-        value: number;
-        element: Element;
-        date: Date | null;
-      }> = [];
-      let currencyPrefix: string | null = null;
-
-      for (const item of productListings) {
-        const priceElement =
-          item.querySelector(".s-card__price") ||
-          item.querySelector(".s-item__price") ||
-          item.querySelector("[data-test-id='ITEM-PRICE']");
-
-        if (!priceElement) continue;
-
-        const text = priceElement.textContent?.trim();
-        if (!text) continue;
-
-        const value = parsePrice(text);
-        if (value === null) continue;
-
-        if (!currencyPrefix) {
-          currencyPrefix = detectCurrencyPrefix(text);
-        }
-
-        // Try to get the sold date
-        const soldDate = parseSoldDate(item);
-
-        priceData.push({ value, element: item, date: soldDate });
-      }
-
-      log("💰 Extracted", priceData.length, "prices");
-
-      if (priceData.length === 0) {
-        return {
-          prices: [],
-          currencyPrefix: currencyPrefix || "$",
-          mostRecentDate: null,
-          minElement: null,
-          maxElement: null,
-          mostRecentElement: null,
-        };
-      }
-
-      // Find min and max elements
-      const minEntry = priceData.reduce((min, curr) =>
-        curr.value < min.value ? curr : min
-      );
-      const maxEntry = priceData.reduce((max, curr) =>
-        curr.value > max.value ? curr : max
-      );
-
-      // Find the most recent date entry
-      const entriesWithDates = priceData.filter((entry) => entry.date !== null);
-      let mostRecentEntry = null;
-      let mostRecentDate = null;
-
-      if (entriesWithDates.length > 0) {
-        mostRecentEntry = entriesWithDates.reduce((latest, current) =>
-          current.date! > latest.date! ? current : latest
-        );
-        mostRecentDate = mostRecentEntry.date;
-      }
-
-      const prices = priceData.map((d) => d.value);
-      log("📅 Found", entriesWithDates.length, "dates");
-
-      return {
-        prices,
-        currencyPrefix: currencyPrefix || "$",
-        mostRecentDate,
-        minElement: minEntry.element,
-        maxElement: maxEntry.element,
-        mostRecentElement: mostRecentEntry?.element || null,
-      };
+      return labelArray.join(", ");
     };
 
     const removeSummary = () => {
@@ -441,17 +225,11 @@ export default defineContentScript({
     const ensureSummaryContainer = () => {
       let container = document.getElementById(SUMMARY_ID);
       if (container) {
-        log("✓ Summary container already exists");
         return container;
       }
 
       // Try to find the srp-controls__row-2 element
       const srpControlsRow2 = document.querySelector(".srp-controls__row-2");
-      log(
-        "Searching for .srp-controls__row-2:",
-        srpControlsRow2 ? "FOUND" : "NOT FOUND"
-      );
-
       if (srpControlsRow2) {
         container = document.createElement("section");
         container.id = SUMMARY_ID;
@@ -463,11 +241,6 @@ export default defineContentScript({
 
       // Fallback to old behavior if the element is not found
       const river = document.getElementById("srp-river-results");
-      log(
-        "Fallback: Searching for #srp-river-results:",
-        river ? "FOUND" : "NOT FOUND"
-      );
-
       if (!river || !river.parentElement) {
         log("✗ Cannot insert summary - no suitable parent found");
         return null;
@@ -482,8 +255,7 @@ export default defineContentScript({
 
     const renderSummary = async () => {
       updateQueued = false;
-      log("=== renderSummary called ===");
-
+      
       // Check if the feature is enabled in settings
       try {
         const result = await chrome.storage.sync.get(["cmdkSettings"]);
@@ -498,33 +270,8 @@ export default defineContentScript({
         log("⚠️ Failed to check settings, assuming enabled", err);
       }
 
-      const isSold = isSoldResultsPage();
-      log("Is sold results page?", isSold);
-
-      if (!isSold) {
-        removeSummary();
-        return;
-      }
-
       // Check if user has dismissed this summary
       if (isDismissed) {
-        log("✗ Summary was dismissed by user, not showing");
-        removeSummary();
-        return;
-      }
-
-      const {
-        prices,
-        currencyPrefix,
-        mostRecentDate,
-        minElement,
-        maxElement,
-        mostRecentElement,
-      } = collectPrices();
-      log("Collected prices:", prices.length, "prices found");
-
-      if (!prices.length) {
-        log("✗ No prices found, removing summary");
         removeSummary();
         return;
       }
@@ -532,97 +279,97 @@ export default defineContentScript({
       ensureStyles();
       const container = ensureSummaryContainer();
       if (!container) {
-        log("✗ Could not create/find container");
         return;
       }
 
-      const sorted = [...prices].sort((a, b) => a - b);
-      const count = prices.length;
-      const total = prices.reduce((sum, value) => sum + value, 0);
-      const average = total / count;
-      const median =
-        count % 2 === 1
-          ? sorted[(count - 1) / 2]
-          : (sorted[count / 2 - 1] + sorted[count / 2]) / 2;
-      const min = sorted[0];
-      const max = sorted[sorted.length - 1];
+      const state = getListingState();
+      const isSold = state === "sold";
+      const url = new URL(window.location.href);
+      const conditionParam = url.searchParams.get("LH_ItemCondition");
+      
+      // Determine state class - Green only for strictly Sold
+      container.className = isSold ? "volt-state-sold" : "volt-state-active";
+      
+      let listingType = "Active Listings";
+      if (state === "sold") listingType = "Sold Listings";
+      else if (state === "completed") listingType = "Completed Listings (Sold & Unsold)";
+      
+      const conditionText = getConditionsText(conditionParam);
+      
+      // Get the Volt icon URL
+      const iconUrl = chrome.runtime.getURL("assets/icons/logo-32.png");
 
-      // Format the most recent date
-      let formattedDate = "N/A";
-      if (mostRecentDate) {
-        const options: Intl.DateTimeFormatOptions = {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        };
-        formattedDate = mostRecentDate.toLocaleDateString("en-US", options);
+      let contentHtml = `
+        You are currently viewing <strong>${listingType}</strong> for <strong>${conditionText}</strong> items.
+      `;
+
+      if (isSold) {
+        if (conditionText === "All Conditions") {
+          contentHtml += `
+            <span class="volt-ebay-summary__links">
+              — View <a href="#" data-action="filter-used">Used</a> or <a href="#" data-action="filter-new">New</a> only
+            </span>
+          `;
+        } else if (conditionParam === "3000") {
+          contentHtml += `
+            <span class="volt-ebay-summary__links">
+              — View <a href="#" data-action="filter-new">New</a> or <a href="#" data-action="filter-all">All Conditions</a>
+            </span>
+          `;
+        } else if (conditionParam === "1000") {
+          contentHtml += `
+            <span class="volt-ebay-summary__links">
+              — View <a href="#" data-action="filter-used">Used</a> or <a href="#" data-action="filter-all">All Conditions</a>
+            </span>
+          `;
+        }
       }
 
-      // Check current item condition to disable the appropriate button
-      const url = new URL(window.location.href);
-      const currentCondition = url.searchParams.get("LH_ItemCondition");
-      const isOnUsedPage = currentCondition === "4";
-      const isOnNewPage = currentCondition === "3";
-
-      // Get the Scout icon URL
-      const iconUrl = chrome.runtime.getURL("assets/icons/dog-32.png");
+      if (!isSold) {
+        contentHtml += `
+          <div class="volt-ebay-summary__action" role="button" tabindex="0" data-action="switch-to-sold">
+            Switch to Sold Listings to view pricing data →
+          </div>
+        `;
+      }
 
       container.innerHTML = `
-        <button type="button" class="scout-ebay-summary__settings" title="Settings" data-action="settings">⚙</button>
-        <button type="button" class="scout-ebay-summary__dismiss" title="Dismiss" data-action="dismiss">×</button>
-        <h2><img src="${iconUrl}" alt="Scout" /> Scout Price Summary</h2>
-        <div class="scout-ebay-summary__metrics">
-          <div class="scout-ebay-summary__metric">
-            <strong>Average</strong>
-            <span>${formatCurrency(average, currencyPrefix)}</span>
-          </div>
-          <div class="scout-ebay-summary__metric">
-            <strong>Median</strong>
-            <span>${formatCurrency(median, currencyPrefix)}</span>
-          </div>
-          <div class="scout-ebay-summary__metric scout-ebay-summary__metric--clickable" data-scroll-to="highest" title="Click to scroll to listing">
-            <strong>Highest</strong>
-            <span>${formatCurrency(max, currencyPrefix)}</span>
-          </div>
-          <div class="scout-ebay-summary__metric scout-ebay-summary__metric--clickable" data-scroll-to="lowest" title="Click to scroll to listing">
-            <strong>Lowest</strong>
-            <span>${formatCurrency(min, currencyPrefix)}</span>
-          </div>
-          <div class="scout-ebay-summary__metric">
-            <strong>Listings</strong>
-            <span>${count}</span>
-          </div>
-          <div class="scout-ebay-summary__metric scout-ebay-summary__metric--clickable" data-scroll-to="latest" title="Click to scroll to listing">
-            <strong>Last Sold</strong>
-            <span>${formattedDate}</span>
-          </div>
-          <div class="scout-ebay-summary__metric-button" data-action="view-used" ${
-            isOnUsedPage ? "disabled" : ""
-          }>
-            View Used
-          </div>
-          <div class="scout-ebay-summary__metric-button" data-action="view-new" ${
-            isOnNewPage ? "disabled" : ""
-          }>
-            View New
-          </div>
-        </div>
-        <div class="scout-ebay-summary__meta">
-          Based on ${count} sold listings detected on this page. Apply filters or refresh to recalculate.
+        <button type="button" class="volt-ebay-summary__settings" title="Settings" data-action="settings">⚙</button>
+        <button type="button" class="volt-ebay-summary__dismiss" title="Dismiss" data-action="dismiss">×</button>
+        <h2><img src="${iconUrl}" alt="Volt" /> Volt</h2>
+        <div class="volt-ebay-summary__content">
+          ${contentHtml}
         </div>
       `;
 
-      // Add click handlers for buttons
+      // Add click handlers
       const settingsBtn = container.querySelector('[data-action="settings"]');
       const dismissBtn = container.querySelector('[data-action="dismiss"]');
-      const usedBtn = container.querySelector('[data-action="view-used"]');
-      const newBtn = container.querySelector('[data-action="view-new"]');
+      const switchToSoldBtn = container.querySelector('[data-action="switch-to-sold"]');
+      const filterUsedBtn = container.querySelector('[data-action="filter-used"]');
+      const filterNewBtn = container.querySelector('[data-action="filter-new"]');
+      const filterAllBtn = container.querySelector('[data-action="filter-all"]');
+
+      const handleFilterClick = (conditionId: string | null) => (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const currentUrl = new URL(window.location.href);
+        if (conditionId) {
+          currentUrl.searchParams.set("LH_ItemCondition", conditionId);
+        } else {
+          currentUrl.searchParams.delete("LH_ItemCondition");
+        }
+        window.location.href = currentUrl.toString();
+      };
+
+      if (filterUsedBtn) filterUsedBtn.addEventListener("click", handleFilterClick("3000"));
+      if (filterNewBtn) filterNewBtn.addEventListener("click", handleFilterClick("1000"));
+      if (filterAllBtn) filterAllBtn.addEventListener("click", handleFilterClick(null));
 
       if (settingsBtn) {
         settingsBtn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          log("Settings button clicked");
           // Open settings page and navigate to eBay section
           chrome.runtime.sendMessage({
             action: "open-settings",
@@ -635,91 +382,19 @@ export default defineContentScript({
         dismissBtn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          log("Dismiss button clicked");
           isDismissed = true;
           removeSummary();
         });
       }
 
-      if (usedBtn) {
-        usedBtn.addEventListener("click", (e) => {
+      if (switchToSoldBtn) {
+        switchToSoldBtn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const url = new URL(window.location.href);
-          url.searchParams.set("LH_ItemCondition", "4");
-          window.location.href = url.toString();
-        });
-      }
-
-      if (newBtn) {
-        newBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const url = new URL(window.location.href);
-          url.searchParams.set("LH_ItemCondition", "3");
-          window.location.href = url.toString();
-        });
-      }
-
-      // Add scroll-to handlers for clickable metrics
-      const scrollToAndHighlight = (
-        element: Element | null,
-        metricName: string
-      ) => {
-        if (!element) {
-          log(`⚠️ No element found for ${metricName}`);
-          return;
-        }
-
-        // Remove any existing highlights
-        document.querySelectorAll(".scout-listing-highlight").forEach((el) => {
-          el.classList.remove("scout-listing-highlight");
-        });
-
-        // Scroll to the element with smooth behavior
-        element.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-
-        // Add highlight class
-        element.classList.add("scout-listing-highlight");
-
-        // Remove highlight after 3 seconds
-        setTimeout(() => {
-          element.classList.remove("scout-listing-highlight");
-        }, 3000);
-
-        log(`✓ Scrolled to and highlighted ${metricName}`);
-      };
-
-      const highestMetric = container.querySelector(
-        '[data-scroll-to="highest"]'
-      );
-      const lowestMetric = container.querySelector('[data-scroll-to="lowest"]');
-      const latestMetric = container.querySelector('[data-scroll-to="latest"]');
-
-      if (highestMetric) {
-        highestMetric.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          scrollToAndHighlight(maxElement, "highest price listing");
-        });
-      }
-
-      if (lowestMetric) {
-        lowestMetric.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          scrollToAndHighlight(minElement, "lowest price listing");
-        });
-      }
-
-      if (latestMetric) {
-        latestMetric.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          scrollToAndHighlight(mostRecentElement, "most recent listing");
+          const currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.set("LH_Sold", "1");
+          currentUrl.searchParams.set("LH_Complete", "1");
+          window.location.href = currentUrl.toString();
         });
       }
     };
@@ -735,13 +410,9 @@ export default defineContentScript({
     };
 
     const start = () => {
-      log("=== Scout eBay Sold Summary Starting ===");
-      log("Current URL:", window.location.href);
-      log("Is eBay search page:", window.location.pathname.startsWith("/sch/"));
-      log("Is sold results page:", isSoldResultsPage());
-
+      log("=== Volt eBay Summary Starting ===");
+      
       if (!document.body) {
-        log("Body not ready, retrying...");
         setTimeout(start, 100);
         return;
       }
@@ -749,8 +420,6 @@ export default defineContentScript({
       // Listen for settings changes from the settings page
       chrome.runtime.onMessage.addListener((message) => {
         if (message.action === "ebay-summary-settings-changed") {
-          log("Received settings change message:", message);
-          // Don't reset dismiss flag when settings change
           scheduleUpdate();
         }
       });
@@ -762,18 +431,14 @@ export default defineContentScript({
           if (typeof original !== "function") return;
           (history as any)[method] = function (...args: any[]) {
             const result = original.apply(this, args);
-            // Reset dismiss flag when URL changes (new search)
             isDismissed = false;
             scheduleUpdate();
             return result;
           };
-        } catch (err) {
-          log(`Failed to wrap history.${method}`, err);
-        }
+        } catch (err) {}
       });
 
       window.addEventListener("popstate", () => {
-        // Reset dismiss flag when navigating back/forward
         isDismissed = false;
         scheduleUpdate();
       });

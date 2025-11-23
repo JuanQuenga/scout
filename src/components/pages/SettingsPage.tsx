@@ -788,7 +788,7 @@ export default function SettingsPage() {
               className="w-8 h-8 rounded-lg shadow-sm"
             />
             <div>
-              <h1 className="text-lg font-bold">Scout Settings</h1>
+              <h1 className="text-lg font-bold">Volt Settings</h1>
               {version && (
                 <p className="text-xs text-muted-foreground">
                   Version {version}

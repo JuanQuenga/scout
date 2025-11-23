@@ -141,6 +141,17 @@ export default defineBackground({
             log("open-controller-testing: no active tab id");
           }
         });
+      } else if (command === "open-quick-links") {
+        log("Quick links shortcut triggered");
+        // Open the quick links sidepanel
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          const active = tabs && tabs[0];
+          if (active?.id) {
+            toggleSidePanelForTab(active.id, "quick-links");
+          } else {
+            log("open-quick-links: no active tab id");
+          }
+        });
       }
     });
 
@@ -445,6 +456,23 @@ export default defineBackground({
       trySend(1);
     }
 
+    /**
+     * Helper to handle clipboard via offscreen document
+     */
+    async function handleClipboardWithOffscreen(action, text) {
+      // Create offscreen document if needed
+      const offscreenCreated = await createOffscreenDocument();
+      if (!offscreenCreated) {
+        throw new Error("Failed to create offscreen document for clipboard access");
+      }
+      
+      // Send message to offscreen document
+      return chrome.runtime.sendMessage({
+        action,
+        text
+      });
+    }
+
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       log("onMessage", {
         message,
@@ -473,11 +501,14 @@ export default defineBackground({
             break;
           }
 
-          // Prefer the sender's tab if available (content script). When invoked from
-          // the action popup, sender.tab will be undefined, so fall back to our
+          // Use the explicitly provided tabId if available, otherwise prefer the sender's tab
+          // When invoked from the action popup, sender.tab will be undefined, so fall back to our
           // tracked active tab or query the current active tab explicitly.
           const candidateId =
-            sender?.tab?.id ?? currentActiveTabId ?? lastActiveTabId;
+            message?.tabId ??
+            sender?.tab?.id ??
+            currentActiveTabId ??
+            lastActiveTabId;
           if (candidateId) {
             toggleSidePanelForTab(candidateId, tool);
             sendResponse({ success: true, tabId: candidateId });
@@ -905,6 +936,50 @@ export default defineBackground({
           }
           return true;
         }
+        case "copyToClipboard": {
+          const text = message?.text;
+          if (!text) {
+            sendResponse({ success: false, error: "missing_text" });
+            break;
+          }
+          
+          // Try offscreen document for clipboard operations
+          handleClipboardWithOffscreen("copyToClipboard", text)
+            .then((response) => {
+              sendResponse(response);
+            })
+            .catch((err) => {
+              log("copyToClipboard offscreen error:", err);
+              // Fallback to navigator.clipboard in SW (requires permission)
+              if (navigator.clipboard) {
+                navigator.clipboard.writeText(text)
+                  .then(() => sendResponse({ success: true }))
+                  .catch((e) => sendResponse({ success: false, error: String(e) }));
+              } else {
+                sendResponse({ success: false, error: String(err) });
+              }
+            });
+          return true;
+        }
+        case "readFromClipboard": {
+          // Try offscreen document for clipboard operations
+          handleClipboardWithOffscreen("readFromClipboard")
+            .then((response) => {
+              sendResponse(response);
+            })
+            .catch((err) => {
+               log("readFromClipboard offscreen error:", err);
+               // Fallback to navigator.clipboard in SW (requires permission)
+               if (navigator.clipboard) {
+                 navigator.clipboard.readText()
+                   .then((text) => sendResponse({ success: true, text }))
+                   .catch((e) => sendResponse({ success: false, error: String(e) }));
+               } else {
+                 sendResponse({ success: false, error: String(err) });
+               }
+            });
+          return true;
+        }
         case "openDevTools": {
           try {
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -1133,6 +1208,7 @@ export default defineBackground({
         const openForTab = (id) => {
           const prev = SIDE_PANEL_STATE.get(id) || { open: false, tool: null };
 
+          // If sidepanel is already open with the same tool, close it
           if (prev.open && prev.tool === desiredTool) {
             try {
               chrome.sidePanel.close({ tabId: id });
@@ -1144,6 +1220,25 @@ export default defineBackground({
             return;
           }
 
+          // If sidepanel is open with a different tool, just switch the tab
+          if (prev.open && prev.tool !== desiredTool) {
+            try {
+              chrome.storage.local.set({
+                sidePanelTool: desiredTool,
+                sidePanelUrl: null,
+              });
+              SIDE_PANEL_STATE.set(id, { open: true, tool: desiredTool });
+              log(`Switched sidepanel to tool: ${desiredTool} on tab: ${id}`);
+            } catch (storageErr) {
+              log(
+                "Failed to set chrome storage for tool:",
+                storageErr?.message || storageErr
+              );
+            }
+            return;
+          }
+
+          // Open sidepanel with the desired tool
           try {
             chrome.storage.local.set({
               sidePanelTool: desiredTool,

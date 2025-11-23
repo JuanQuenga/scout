@@ -131,7 +131,11 @@ export default defineContentScript({
     // Function to copy UPC to clipboard
     const copyUPCToClipboard = async (upcCode, element) => {
       try {
-        await navigator.clipboard.writeText(upcCode);
+        chrome.runtime.sendMessage({ action: "copyToClipboard", text: upcCode }, () => {
+            if (chrome.runtime.lastError) {
+                // Ignore error
+            }
+        });
         element.classList.add("scout-upc-copied");
         showTooltip(element, "UPC copied!");
 

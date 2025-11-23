@@ -33,7 +33,10 @@ import {
   Gamepad2,
   Layers,
   Settings,
+  ExternalLink,
+  Calculator,
 } from "lucide-react";
+import { SIDEPANEL_TOOLS, getToolLabel } from "@/src/lib/sidepanel-tools";
 import "./styles.css";
 
 const DEFAULT_ENABLED_SOURCES = {
@@ -306,6 +309,44 @@ export function CMDKPalette({
         } finally {
           onClose();
         }
+      } else if (toolId === "quick-links") {
+        // Send message to open quick links in sidebar and await ack before closing
+        try {
+          const response = await new Promise<any>((resolve) => {
+            try {
+              chrome.runtime.sendMessage(
+                { action: "openInSidebar", tool: "quick-links" },
+                (resp: any) => resolve(resp)
+              );
+            } catch (err) {
+              resolve({ success: false, error: String(err) });
+            }
+          });
+          if (!response?.success && chrome.runtime.lastError) {
+            console.error("Error opening sidebar:", chrome.runtime.lastError);
+          }
+        } finally {
+          onClose();
+        }
+      } else if (toolId === "pc-cost-breakdown") {
+        // Send message to open PC cost breakdown in sidebar and await ack before closing
+        try {
+          const response = await new Promise<any>((resolve) => {
+            try {
+              chrome.runtime.sendMessage(
+                { action: "openInSidebar", tool: "pc-cost-breakdown" },
+                (resp: any) => resolve(resp)
+              );
+            } catch (err) {
+              resolve({ success: false, error: String(err) });
+            }
+          });
+          if (!response?.success && chrome.runtime.lastError) {
+            console.error("Error opening sidebar:", chrome.runtime.lastError);
+          }
+        } finally {
+          onClose();
+        }
       }
     } else if (value.startsWith("ebay-cat-")) {
       // Copy category path to clipboard but keep the palette open and show feedback
@@ -413,17 +454,19 @@ export function CMDKPalette({
       ? []
       : filterHistory(history, search);
 
-  // Filter tools by search (always include controller testing)
+  // Filter tools by search (only show specific tools in command palette)
+  const commandPaletteToolIds: Array<"controller-testing" | "quick-links" | "pc-cost-breakdown"> = [
+    "controller-testing",
+    "quick-links",
+    "pc-cost-breakdown",
+  ];
+  
   const filteredTools =
     activeProvider || !enabledSources.tools
       ? []
-      : [
-          {
-            id: "controller-testing",
-            label: "Controller Testing",
-            description: "Test hardware controllers",
-          },
-        ];
+      : SIDEPANEL_TOOLS.filter((tool) =>
+          commandPaletteToolIds.includes(tool.id as any)
+        );
 
   const getUrlFromInput = (input: string): string | null => {
     const value = input.trim();
@@ -465,7 +508,7 @@ export function CMDKPalette({
 
   const openSettings = async () => {
     // Open settings page in a new tab
-    const optionsUrl = chrome.runtime.getURL('options.html');
+    const optionsUrl = chrome.runtime.getURL("options.html");
     await TabManager.openNewTab(optionsUrl);
     onClose();
   };
@@ -477,6 +520,48 @@ export function CMDKPalette({
         try {
           chrome.runtime.sendMessage(
             { action: "openInSidebar", tool: "controller-testing" },
+            (resp: any) => resolve(resp)
+          );
+        } catch (err) {
+          resolve({ success: false, error: String(err) });
+        }
+      });
+      if (!response?.success && chrome.runtime.lastError) {
+        console.error("Error opening sidebar:", chrome.runtime.lastError);
+      }
+    } finally {
+      onClose();
+    }
+  };
+
+  const openQuickLinks = async () => {
+    // Send message to open quick links in sidebar
+    try {
+      const response = await new Promise<any>((resolve) => {
+        try {
+          chrome.runtime.sendMessage(
+            { action: "openInSidebar", tool: "quick-links" },
+            (resp: any) => resolve(resp)
+          );
+        } catch (err) {
+          resolve({ success: false, error: String(err) });
+        }
+      });
+      if (!response?.success && chrome.runtime.lastError) {
+        console.error("Error opening sidebar:", chrome.runtime.lastError);
+      }
+    } finally {
+      onClose();
+    }
+  };
+
+  const openPCCostBreakdown = async () => {
+    // Send message to open PC cost breakdown in sidebar
+    try {
+      const response = await new Promise<any>((resolve) => {
+        try {
+          chrome.runtime.sendMessage(
+            { action: "openInSidebar", tool: "pc-cost-breakdown" },
             (resp: any) => resolve(resp)
           );
         } catch (err) {
@@ -608,6 +693,20 @@ export function CMDKPalette({
               title="Controller Testing"
             >
               <Gamepad2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={openQuickLinks}
+              className="cmdk-settings-button"
+              title="Quick Links"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </button>
+            <button
+              onClick={openPCCostBreakdown}
+              className="cmdk-settings-button"
+              title={getToolLabel("pc-cost-breakdown")}
+            >
+              <Calculator className="w-4 h-4" />
             </button>
             <button
               onClick={openSettings}
@@ -866,8 +965,26 @@ export function CMDKPalette({
                               className="cmdk-item"
                             >
                               <div className="flex items-center gap-3 px-4 py-3 w-full">
-                                <div className="p-2 rounded bg-blue-500">
-                                  <Gamepad2 className="w-4 h-4 text-white" />
+                                <div
+                                  className={`p-2 rounded ${
+                                    tool.id === "controller-testing"
+                                      ? "bg-blue-500"
+                                      : tool.id === "quick-links"
+                                      ? "bg-green-500"
+                                      : tool.id === "pc-cost-breakdown"
+                                      ? "bg-purple-500"
+                                      : "bg-gray-500"
+                                  }`}
+                                >
+                                  {tool.id === "controller-testing" ? (
+                                    <Gamepad2 className="w-4 h-4 text-white" />
+                                  ) : tool.id === "quick-links" ? (
+                                    <ExternalLink className="w-4 h-4 text-white" />
+                                  ) : tool.id === "pc-cost-breakdown" ? (
+                                    <Calculator className="w-4 h-4 text-white" />
+                                  ) : (
+                                    <Settings className="w-4 h-4 text-white" />
+                                  )}
                                 </div>
                                 <div className="flex-1">
                                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">

@@ -16,9 +16,9 @@ import {
   ExternalLink,
   Download,
   XCircle,
-  Printer,
   Settings,
-  Trash2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 /**
@@ -72,9 +72,21 @@ export default defineContentScript({
     };
     const openInSidebar = (tool: string) => {
       try {
-        chrome.runtime.sendMessage({
-          action: "openInSidebar",
-          tool,
+        // Get the current tab ID to ensure sidepanel opens correctly
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs && tabs[0] && tabs[0].id) {
+            chrome.runtime.sendMessage({
+              action: "openInSidebar",
+              tool,
+              tabId: tabs[0].id,
+            });
+          } else {
+            // Fallback without tabId if we can't get the active tab
+            chrome.runtime.sendMessage({
+              action: "openInSidebar",
+              tool,
+            });
+          }
         });
       } catch (_) {}
     };
@@ -93,12 +105,204 @@ export default defineContentScript({
     };
 
     const copyToClipboard = async (text: string) => {
-      try {
+      if (!text) return false;
+
+      const tryNavigatorApi = async () => {
+        if (!navigator?.clipboard?.writeText) return false;
         await navigator.clipboard.writeText(text);
+        return true;
+      };
+
+      const tryExecCommand = () => {
+        if (!document?.body) return false;
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "true");
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        textarea.style.opacity = "0";
+        textarea.style.pointerEvents = "none";
+        document.body.appendChild(textarea);
+
+        textarea.focus();
+        textarea.select();
+        const success = document.execCommand?.("copy");
+
+        document.body.removeChild(textarea);
+        return !!success;
+      };
+
+      const tryBackgroundFallback = async () => {
+        await new Promise<void>((resolve, reject) => {
+          try {
+            chrome.runtime.sendMessage(
+              { action: "copyToClipboard", text },
+              (response) => {
+                const lastError = chrome.runtime.lastError;
+                if (lastError) {
+                  reject(lastError);
+                  return;
+                }
+                if (response?.success === false) {
+                  reject(new Error(response.error || "copy_failed"));
+                  return;
+                }
+                resolve();
+              }
+            );
+          } catch (err) {
+            reject(err);
+          }
+        });
+        return true;
+      };
+
+      const strategies = [
+        () =>
+          tryNavigatorApi().catch((err) => {
+            log("navigator.clipboard.writeText failed", err);
+            return false;
+          }),
+        () => {
+          try {
+            return tryExecCommand();
+          } catch (err) {
+            log("document.execCommand copy failed", err);
+            return false;
+          }
+        },
+        () =>
+          tryBackgroundFallback().catch((err) => {
+            log("Background clipboard copy failed", err);
+            return false;
+          }),
+      ];
+
+      for (const strategy of strategies) {
+        const result = await strategy();
+        if (result) {
+          log("Copied text to clipboard");
+          return true;
+        }
+      }
+
+      log("Failed to copy text to clipboard after all strategies");
+      return false;
+    };
+
+    const readClipboardText = async () => {
+      const tryNavigatorApi = async () => {
+        if (!navigator?.clipboard?.readText) return "";
+        return navigator.clipboard.readText();
+      };
+
+      const tryExecCommand = () => {
+        if (!document?.body) return "";
+        const textarea = document.createElement("textarea");
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        textarea.style.opacity = "0";
+        textarea.style.pointerEvents = "none";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        const success = document.execCommand?.("paste");
+        const value = textarea.value || "";
+        document.body.removeChild(textarea);
+        return success ? value : "";
+      };
+
+      const tryBackgroundFallback = async () => {
+        const text = await new Promise<string>((resolve, reject) => {
+          try {
+            chrome.runtime.sendMessage(
+              { action: "readFromClipboard" },
+              (response) => {
+                const lastError = chrome.runtime.lastError;
+                if (lastError) {
+                  reject(lastError);
+                  return;
+                }
+                if (response?.success === false) {
+                  reject(new Error(response.error || "read_failed"));
+                  return;
+                }
+                resolve(response?.text || "");
+              }
+            );
+          } catch (err) {
+            reject(err);
+          }
+        });
+        return text;
+      };
+
+      const strategies = [
+        () =>
+          tryNavigatorApi().catch((err) => {
+            log("navigator.clipboard.readText failed", err);
+            return "";
+          }),
+        () => {
+          try {
+            return tryExecCommand();
+          } catch (err) {
+            log("document.execCommand paste failed", err);
+            return "";
+          }
+        },
+        () =>
+          tryBackgroundFallback().catch((err) => {
+            log("Background clipboard read failed", err);
+            return "";
+          }),
+      ];
+
+      for (const strategy of strategies) {
+        const value = await strategy();
+        if (value) {
+          log("Read text from clipboard");
+          return value;
+        }
+      }
+
+      log("Unable to read clipboard text");
+      return "";
+    };
+
+    const navigateTab = (direction: "left" | "right") => {
+      try {
+        chrome.runtime.sendMessage(
+          {
+            action: direction === "left" ? "previousTab" : "nextTab",
+          },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              log("Tab navigation error:", chrome.runtime.lastError);
+            }
+          }
+        );
       } catch (_) {}
     };
 
     const quickActions: MenuAction[] = [
+      {
+        id: "go-left",
+        label: "Go to Previous Tab",
+        icon: ChevronLeft,
+        onInvoke: () => {
+          navigateTab("left");
+          closeMenu();
+        },
+      },
+      {
+        id: "go-right",
+        label: "Go to Next Tab",
+        icon: ChevronRight,
+        onInvoke: () => {
+          navigateTab("right");
+          closeMenu();
+        },
+      },
       {
         id: "copy",
         label: "Copy",
@@ -112,9 +316,11 @@ export default defineContentScript({
         icon: Clipboard,
         onInvoke: async () => {
           try {
-            // Read from clipboard
-            const text = await navigator.clipboard.readText();
-            if (!text) return;
+            const text = await readClipboardText();
+            if (!text) {
+              log("Paste aborted: clipboard empty or inaccessible");
+              return;
+            }
 
             // Try to find the target element in this order:
             // 1. The focused element before menu opened
@@ -236,52 +442,6 @@ export default defineContentScript({
         },
       },
       {
-        id: "delete-element",
-        label: "Delete Element",
-        icon: Trash2,
-        onInvoke: () => {
-          try {
-            if (clickedElement) {
-              // Store the element to delete
-              const elementToDelete = clickedElement;
-
-              // Close menu first
-              closeMenu();
-
-              // Add a fade-out animation before removing
-              elementToDelete.style.transition = "opacity 0.2s";
-              elementToDelete.style.opacity = "0";
-
-              // Remove element after animation
-              setTimeout(() => {
-                elementToDelete.remove();
-                log("Element deleted:", elementToDelete);
-              }, 200);
-            } else {
-              log("No element to delete");
-            }
-          } catch (err) {
-            log("Delete element error:", err);
-          }
-        },
-      },
-      {
-        id: "print",
-        label: "Print",
-        icon: Printer,
-        onInvoke: () => {
-          try {
-            // Close menu first, then print after a brief delay to ensure menu is hidden
-            closeMenu();
-            setTimeout(() => {
-              window.print();
-            }, 100);
-          } catch (err) {
-            log("Print error:", err);
-          }
-        },
-      },
-      {
         id: "dismiss",
         label: "Close",
         icon: XCircle,
@@ -293,6 +453,16 @@ export default defineContentScript({
     ];
 
     const actions: MenuAction[] = [
+      {
+        id: "ebay-sold",
+        label: "Search eBay (Sold)",
+        shortcut: "E",
+        description: "Search for sold listings on eBay",
+        icon: PackageSearch,
+        requiresSelection: true,
+        onInvoke: ({ selection }) =>
+          selection && openUrl(buildEbaySoldUrl(selection)),
+      },
       {
         id: "upc-google",
         label: "Google for UPC",
@@ -323,16 +493,7 @@ export default defineContentScript({
             )}`
           ),
       },
-      {
-        id: "ebay-sold",
-        label: "Search eBay (Sold)",
-        shortcut: "E",
-        description: "Search for sold listings on eBay",
-        icon: PackageSearch,
-        requiresSelection: true,
-        onInvoke: ({ selection }) =>
-          selection && openUrl(buildEbaySoldUrl(selection)),
-      },
+
       {
         id: "upcitemdb",
         label: "Search UPCItemDB",
@@ -368,6 +529,22 @@ export default defineContentScript({
         description: "Test game controllers",
         icon: Gamepad2,
         onInvoke: () => openInSidebar("controller-testing"),
+      },
+      {
+        id: "top-offers",
+        label: "Top Offers Calculator",
+        shortcut: "T",
+        description: "Calculate top offer prices",
+        icon: TrendingUp,
+        onInvoke: () => openInSidebar("top-offers"),
+      },
+      {
+        id: "ebay-sold-tool",
+        label: "eBay Sold Tool",
+        shortcut: "B",
+        description: "Extract and analyze eBay sold listings",
+        icon: PackageSearch,
+        onInvoke: () => openInSidebar("ebay-sold-tool"),
       },
       {
         id: "settings",

@@ -39,9 +39,15 @@ export default defineConfig({
         js: ["ebay-sold-summary.js"],
         run_at: "document_idle",
       },
+      {
+        matches: ["<all_urls>"],
+        js: ["toolbar-mount.js"],
+        run_at: "document_idle",
+        all_frames: true,
+      },
     ],
-    name: "Scout",
-    version: "1.0.2",
+    name: "Volt",
+    version: "1.0.3",
     description:
       "A versatile Chrome extension with command palette, controller testing, and multi-provider search capabilities.",
     permissions: [
@@ -53,6 +59,8 @@ export default defineConfig({
       "system.display",
       // Needed for adding right-click context menu actions
       "contextMenus",
+      "clipboardRead",
+      "clipboardWrite",
       // Needed for CMDK bookmarks and history
       "bookmarks",
       "history",
@@ -61,17 +69,17 @@ export default defineConfig({
     ],
     host_permissions: ["<all_urls>"],
     icons: {
-      16: "assets/icons/dog-16.png",
-      32: "assets/icons/dog-32.png",
-      48: "assets/icons/dog-48.png",
-      128: "assets/icons/dog-128.png",
+      16: "assets/icons/logo-16.png",
+      32: "assets/icons/logo-32.png",
+      48: "assets/icons/logo-48.png",
+      128: "assets/icons/logo-128.png",
     },
     action: {
       default_icon: {
-        16: "assets/icons/dog-16.png",
-        32: "assets/icons/dog-32.png",
-        48: "assets/icons/dog-48.png",
-        128: "assets/icons/dog-128.png",
+        16: "assets/icons/logo-16.png",
+        32: "assets/icons/logo-32.png",
+        48: "assets/icons/logo-48.png",
+        128: "assets/icons/logo-128.png",
       },
       default_popup: "popup.html",
     },
@@ -113,7 +121,14 @@ export default defineConfig({
           default: "Ctrl+J",
           mac: "Command+J",
         },
-        description: "Open Controller Testing Sidepanel",
+        description: "Open Sidepanel (Controller Testing Tab)",
+      },
+      "open-quick-links": {
+        suggested_key: {
+          default: "Ctrl+Shift+L",
+          mac: "Command+Shift+L",
+        },
+        description: "Open Sidepanel (Quick Links Tab)",
       },
     },
   },
