@@ -2,9 +2,13 @@ import {
   Gamepad2,
   Calculator,
   Link as LinkIcon,
-  Cpu,
+  Boxes,
   Tag,
+  Layers,
+  ShoppingBag,
   LucideIcon,
+  Shapes,
+  HelpCircle,
 } from "lucide-react";
 
 export type SidepanelToolId =
@@ -12,7 +16,10 @@ export type SidepanelToolId =
   | "top-offers"
   | "quick-links"
   | "pc-cost-breakdown"
-  | "ebay-sold-tool";
+  | "ebay-sold-tool"
+  | "ebay-taxonomy-tool"
+  | "buying-guide"
+  | "shopify-help";
 
 export interface SidepanelToolMetadata {
   id: SidepanelToolId;
@@ -24,7 +31,7 @@ export interface SidepanelToolMetadata {
 export const SIDEPANEL_TOOLS: SidepanelToolMetadata[] = [
   {
     id: "controller-testing",
-    label: "Controller",
+    label: "Controller Testing",
     description: "Open controller testing in the sidepanel",
     icon: Gamepad2,
   },
@@ -42,23 +49,42 @@ export const SIDEPANEL_TOOLS: SidepanelToolMetadata[] = [
   },
   {
     id: "pc-cost-breakdown",
-    label: "Cost Breakdown",
+    label: "Breakdown Listing",
     description: "Open cost breakdown in the sidepanel",
-    icon: Cpu,
+    icon: Shapes,
   },
   {
     id: "ebay-sold-tool",
-    label: "eBay Sold",
+    label: "eBay Pricing",
     description: "Open eBay sold listings tool in the sidepanel",
     icon: Tag,
   },
+  {
+    id: "ebay-taxonomy-tool",
+    label: "eBay Categories",
+    description: "Search eBay categories",
+    icon: Layers,
+  },
+  {
+    id: "buying-guide",
+    label: "Buying Guide",
+    description: "View buying requirements and guidelines",
+    icon: ShoppingBag,
+  },
+  {
+    id: "shopify-help",
+    label: "Shopify Help",
+    description: "View Shopify tags and sales channels guide",
+    icon: HelpCircle,
+  },
 ];
 
-export function getToolById(id: SidepanelToolId): SidepanelToolMetadata | undefined {
+export function getToolById(
+  id: SidepanelToolId
+): SidepanelToolMetadata | undefined {
   return SIDEPANEL_TOOLS.find((tool) => tool.id === id);
 }
 
 export function getToolLabel(id: SidepanelToolId): string {
   return getToolById(id)?.label || id;
 }
-

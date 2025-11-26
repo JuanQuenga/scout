@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import Toolbar from "../src/components/toolbar/Toolbar";
 import { defineContentScript } from "wxt/utils/define-content-script";
+import { initializeSidePanelContext } from "../src/lib/sidepanel-gesture";
 
 function mountToolbar() {
   try {
@@ -22,8 +23,13 @@ function mountToolbar() {
 export default defineContentScript({
   matches: ["<all_urls>"],
   runAt: "document_idle",
-  allFrames: true,
+  allFrames: false,
   main() {
+    if (window.top !== window) return;
+
+    // Initialize side panel context early
+    initializeSidePanelContext();
+
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", mountToolbar, {
         once: true,
@@ -33,5 +39,3 @@ export default defineContentScript({
     }
   },
 });
-
-

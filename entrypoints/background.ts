@@ -31,10 +31,112 @@ export default defineBackground({
     let DEBUG = true;
 
     /**
-     * @type {Map<number, {open: boolean, tool: string}>}
+     * @type {Map<number, {open: boolean, tool: string|null}>}
      * Track side panel state per tab for toggle/switch functionality
      */
-    const SIDE_PANEL_STATE = new Map(); // tabId -> { open: boolean, tool: string }
+    const SIDE_PANEL_STATE = new Map(); // tabId -> { open: boolean, tool: string | null }
+    const PANEL_PAGE_PATH = "sidepanel.html";
+
+    function getSidePanelState(tabId) {
+      return (
+        SIDE_PANEL_STATE.get(tabId) || {
+          open: false,
+          tool: null,
+        }
+      );
+    }
+
+    function setSidePanelState(tabId, nextState) {
+      if (typeof tabId !== "number") return;
+      SIDE_PANEL_STATE.set(tabId, nextState);
+      broadcastSidePanelState(tabId, nextState);
+    }
+
+    function broadcastSidePanelState(tabId, state) {
+      if (typeof tabId !== "number") return;
+      const payload = state || getSidePanelState(tabId);
+      try {
+        chrome.tabs.sendMessage(
+          tabId,
+          { action: "sidePanelStateSync", state: payload },
+          () => {
+            const err = chrome.runtime.lastError;
+            if (
+              err &&
+              DEBUG &&
+              !String(err.message || "").includes("Receiving end")
+            ) {
+              log("sidePanelStateSync delivery issue", err.message);
+            }
+          }
+        );
+      } catch (e) {
+        if (DEBUG) {
+          log(
+            "sidePanelStateSync sendMessage error",
+            e?.message || e,
+            tabId
+          );
+        }
+      }
+    }
+
+    function configurePanelForTab(tabId) {
+      try {
+        chrome.sidePanel.setOptions({
+          tabId,
+          enabled: true,
+          path: PANEL_PAGE_PATH,
+        });
+      } catch (setErr) {
+        log("sidePanel setOptions error", setErr?.message || setErr);
+      }
+    }
+
+    function updatePreferredTool(tool) {
+      try {
+        chrome.storage.local.set({
+          sidePanelTool: tool,
+          sidePanelUrl: null,
+        });
+      } catch (storageErr) {
+        log(
+          "Failed to set chrome storage for tool:",
+          storageErr?.message || storageErr
+        );
+      }
+    }
+
+    function planSidePanelAction(tabId, desiredTool) {
+      if (typeof tabId !== "number" || !desiredTool) return null;
+      const prev = getSidePanelState(tabId);
+
+      if (prev.open && prev.tool === desiredTool) {
+        return {
+          mode: "close",
+          tabId,
+          tool: desiredTool,
+        };
+      }
+
+      updatePreferredTool(desiredTool);
+
+      if (prev.open && prev.tool !== desiredTool) {
+        setSidePanelState(tabId, { open: true, tool: desiredTool });
+        return {
+          mode: "switch",
+          tabId,
+          tool: desiredTool,
+        };
+      }
+
+      configurePanelForTab(tabId);
+      return {
+        mode: "open",
+        tabId,
+        tool: desiredTool,
+      };
+    }
 
     // Track controller connection state
     let CONTROLLER_CONNECTED = false;
@@ -116,6 +218,13 @@ export default defineBackground({
       });
     } catch (_) {}
 
+    // Listen for extension icon click
+    chrome.action.onClicked.addListener((tab) => {
+      if (tab.id) {
+        toggleSidePanelForTab(tab.id);
+      }
+    });
+
     // Listen for keyboard commands
     chrome.commands.onCommand.addListener((command) => {
       if (command === "open-options") {
@@ -124,11 +233,13 @@ export default defineBackground({
           log("openOptions command handler error", error)
         );
       } else if (command === "_execute_action") {
-        log("Command popup shortcut triggered");
-        // Open the action popup which will show the CMDK palette
-        chrome.action.openPopup(() => {
-          const err = chrome.runtime.lastError;
-          if (err) log("openPopup error", err.message);
+        log("Action shortcut triggered");
+        // Open the sidepanel instead of the popup
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          const active = tabs && tabs[0];
+          if (active?.id) {
+            toggleSidePanelForTab(active.id);
+          }
         });
       } else if (command === "open-controller-testing") {
         log("Controller testing shortcut triggered");
@@ -526,6 +637,41 @@ export default defineBackground({
           }
           break;
         }
+        case "getSidePanelStateForTab": {
+          const tabId = sender?.tab?.id ?? message?.tabId ?? null;
+          if (tabId === null) {
+            sendResponse({ success: false, error: "missing_tab" });
+            break;
+          }
+          sendResponse({
+            success: true,
+            tabId,
+            state: getSidePanelState(tabId),
+          });
+          break;
+        }
+        case "sidePanelToggleResult": {
+          const tabId = message?.tabId ?? sender?.tab?.id;
+          const status = message?.status;
+          const tool = message?.tool || null;
+          if (typeof tabId !== "number") {
+            sendResponse({ success: false, error: "missing_tab" });
+            break;
+          }
+          if (status === "opened") {
+            setSidePanelState(tabId, { open: true, tool });
+          } else if (status === "closed") {
+            setSidePanelState(tabId, { open: false, tool: null });
+          } else if (status === "error") {
+            log(
+              "sidePanelToggleResult error",
+              message?.error || "unknown_error",
+              { tool, tabId, source: message?.source }
+            );
+          }
+          sendResponse({ success: true });
+          break;
+        }
         case "openToolbarCustomization": {
           const intentKey = "popupIntent";
           const intentValue = "toolbar-customization";
@@ -581,15 +727,23 @@ export default defineBackground({
           break;
         }
         case "closeSidebar": {
-          const tabId = sender?.tab?.id;
-          if (tabId) {
+          const tabId = sender?.tab?.id ?? message?.tabId;
+          if (typeof tabId === "number") {
             try {
-              chrome.sidePanel.close({ tabId });
-              SIDE_PANEL_STATE.set(tabId, { open: false, tool: null });
-              log(`Sidepanel closed for tab: ${tabId}`);
+              chrome.sidePanel.close({ tabId }, () => {
+                const err = chrome.runtime.lastError;
+                if (err) {
+                  log("sidePanel close error", err.message);
+                } else {
+                  setSidePanelState(tabId, { open: false, tool: null });
+                  log(`Sidepanel closed for tab: ${tabId}`);
+                }
+              });
             } catch (e) {
               log("sidePanel close error", e?.message || e);
             }
+          } else {
+            log("closeSidebar missing tabId");
           }
           sendResponse({ success: true });
           break;
@@ -1192,7 +1346,19 @@ export default defineBackground({
     }
 
     function toggleSidePanelForTab(tabId, tool) {
-      const desiredTool = tool || "controller-testing";
+      if (!tool) {
+        chrome.storage.local.get(
+          { sidePanelTool: "controller-testing" },
+          (res) => {
+            toggleSidePanelForTab(
+              tabId,
+              res.sidePanelTool || "controller-testing"
+            );
+          }
+        );
+        return;
+      }
+      const desiredTool = tool;
 
       const asValidTabId = (value) => {
         if (typeof value === "number" && Number.isInteger(value) && value >= 0)
@@ -1206,64 +1372,29 @@ export default defineBackground({
 
       try {
         const openForTab = (id) => {
-          const prev = SIDE_PANEL_STATE.get(id) || { open: false, tool: null };
+          const plan = planSidePanelAction(id, desiredTool);
+          if (!plan) return;
 
-          // If sidepanel is already open with the same tool, close it
-          if (prev.open && prev.tool === desiredTool) {
+          if (plan.mode === "close") {
             try {
-              chrome.sidePanel.close({ tabId: id });
-              SIDE_PANEL_STATE.set(id, { open: false, tool: null });
-              log(`Sidepanel closed for tool: ${desiredTool}`);
+              chrome.sidePanel.close({ tabId: id }, () => {
+                const err = chrome.runtime.lastError;
+                if (err) {
+                  log("sidePanel close error", err.message);
+                } else {
+                  setSidePanelState(id, { open: false, tool: null });
+                  log(`Sidepanel closed for tool: ${desiredTool}`);
+                }
+              });
             } catch (closeErr) {
               log("sidePanel close error", closeErr?.message || closeErr);
             }
             return;
           }
 
-          // If sidepanel is open with a different tool, just switch the tab
-          if (prev.open && prev.tool !== desiredTool) {
-            try {
-              chrome.storage.local.set({
-                sidePanelTool: desiredTool,
-                sidePanelUrl: null,
-              });
-              SIDE_PANEL_STATE.set(id, { open: true, tool: desiredTool });
-              log(`Switched sidepanel to tool: ${desiredTool} on tab: ${id}`);
-            } catch (storageErr) {
-              log(
-                "Failed to set chrome storage for tool:",
-                storageErr?.message || storageErr
-              );
-            }
+          if (plan.mode === "switch") {
+            log(`Switched sidepanel to tool: ${desiredTool} on tab: ${id}`);
             return;
-          }
-
-          // Open sidepanel with the desired tool
-          try {
-            chrome.storage.local.set({
-              sidePanelTool: desiredTool,
-              sidePanelUrl: null,
-            });
-          } catch (storageErr) {
-            log(
-              "Failed to set chrome storage for tool:",
-              storageErr?.message || storageErr
-            );
-          }
-
-          try {
-            const setPromise = chrome.sidePanel.setOptions({
-              tabId: id,
-              enabled: true,
-              path: "sidepanel.html",
-            });
-            if (typeof setPromise?.catch === "function") {
-              setPromise.catch((setErr) =>
-                log("sidePanel setOptions error", setErr?.message || setErr)
-              );
-            }
-          } catch (setErr) {
-            log("sidePanel setOptions error", setErr?.message || setErr);
           }
 
           try {
@@ -1272,7 +1403,7 @@ export default defineBackground({
               if (err) {
                 log("sidePanel open lastError", err.message);
               } else {
-                SIDE_PANEL_STATE.set(id, { open: true, tool: desiredTool });
+                setSidePanelState(id, { open: true, tool: desiredTool });
                 log(`Sidepanel opened for tool: ${desiredTool} on tab: ${id}`);
               }
             });

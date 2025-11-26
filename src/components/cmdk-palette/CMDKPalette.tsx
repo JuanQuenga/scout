@@ -34,7 +34,9 @@ import {
   Layers,
   Settings,
   ExternalLink,
+  Boxes,
   Calculator,
+  PanelRight,
 } from "lucide-react";
 import { SIDEPANEL_TOOLS, getToolLabel } from "@/src/lib/sidepanel-tools";
 import "./styles.css";
@@ -513,64 +515,19 @@ export function CMDKPalette({
     onClose();
   };
 
-  const openControllerTesting = async () => {
-    // Send message to open controller testing in sidebar
+  const toggleSidepanel = async () => {
+    // Send message to toggle sidepanel
     try {
-      const response = await new Promise<any>((resolve) => {
+      await new Promise<any>((resolve) => {
         try {
           chrome.runtime.sendMessage(
-            { action: "openInSidebar", tool: "controller-testing" },
+            { action: "toggleSidepanelTool" },
             (resp: any) => resolve(resp)
           );
         } catch (err) {
           resolve({ success: false, error: String(err) });
         }
       });
-      if (!response?.success && chrome.runtime.lastError) {
-        console.error("Error opening sidebar:", chrome.runtime.lastError);
-      }
-    } finally {
-      onClose();
-    }
-  };
-
-  const openQuickLinks = async () => {
-    // Send message to open quick links in sidebar
-    try {
-      const response = await new Promise<any>((resolve) => {
-        try {
-          chrome.runtime.sendMessage(
-            { action: "openInSidebar", tool: "quick-links" },
-            (resp: any) => resolve(resp)
-          );
-        } catch (err) {
-          resolve({ success: false, error: String(err) });
-        }
-      });
-      if (!response?.success && chrome.runtime.lastError) {
-        console.error("Error opening sidebar:", chrome.runtime.lastError);
-      }
-    } finally {
-      onClose();
-    }
-  };
-
-  const openPCCostBreakdown = async () => {
-    // Send message to open PC cost breakdown in sidebar
-    try {
-      const response = await new Promise<any>((resolve) => {
-        try {
-          chrome.runtime.sendMessage(
-            { action: "openInSidebar", tool: "pc-cost-breakdown" },
-            (resp: any) => resolve(resp)
-          );
-        } catch (err) {
-          resolve({ success: false, error: String(err) });
-        }
-      });
-      if (!response?.success && chrome.runtime.lastError) {
-        console.error("Error opening sidebar:", chrome.runtime.lastError);
-      }
     } finally {
       onClose();
     }
@@ -688,25 +645,11 @@ export function CMDKPalette({
         {!trimmedSearch && !activeProvider && (
           <div className="flex gap-2">
             <button
-              onClick={openControllerTesting}
+              onClick={toggleSidepanel}
               className="cmdk-settings-button"
-              title="Controller Testing"
+              title="Toggle Sidepanel"
             >
-              <Gamepad2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={openQuickLinks}
-              className="cmdk-settings-button"
-              title="Quick Links"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </button>
-            <button
-              onClick={openPCCostBreakdown}
-              className="cmdk-settings-button"
-              title={getToolLabel("pc-cost-breakdown")}
-            >
-              <Calculator className="w-4 h-4" />
+              <PanelRight className="w-4 h-4" />
             </button>
             <button
               onClick={openSettings}

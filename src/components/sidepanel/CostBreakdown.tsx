@@ -1,8 +1,24 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { DollarSign, Plus, Trash2, TrendingUp } from "lucide-react";
+import {
+  Boxes,
+  Plus,
+  Trash2,
+  TrendingUp,
+  Save,
+  FolderOpen,
+  RotateCcw,
+} from "lucide-react";
 import SidepanelLayout from "./SidepanelLayout";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../ui/dialog";
+import { Label } from "../ui/label";
 
 interface OrderItem {
   id: string;
@@ -11,11 +27,78 @@ interface OrderItem {
   salePrice: string;
 }
 
+interface SavedBreakdown {
+  id: string;
+  name: string;
+  timestamp: number;
+  items: OrderItem[];
+  totalOrderCost: string;
+}
+
 export default function CostBreakdown() {
   const [totalOrderCost, setTotalOrderCost] = useState<string>("");
   const [items, setItems] = useState<OrderItem[]>([
-    { id: "1", name: "Item 1", cost: "", salePrice: "" },
+    { id: "1", name: "", cost: "", salePrice: "" },
   ]);
+  const [savedBreakdowns, setSavedBreakdowns] = useState<SavedBreakdown[]>([]);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [loadDialogOpen, setLoadDialogOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+
+  // Load saved breakdowns from storage on mount
+  useEffect(() => {
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.get(["scout_cost_breakdowns"], (result) => {
+        if (result.scout_cost_breakdowns) {
+          setSavedBreakdowns(result.scout_cost_breakdowns);
+        }
+      });
+    }
+  }, []);
+
+  const saveBreakdown = () => {
+    if (!saveName.trim()) return;
+
+    const newBreakdown: SavedBreakdown = {
+      id: Date.now().toString(),
+      name: saveName.trim(),
+      timestamp: Date.now(),
+      items,
+      totalOrderCost,
+    };
+
+    const updatedBreakdowns = [...savedBreakdowns, newBreakdown];
+    setSavedBreakdowns(updatedBreakdowns);
+
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.set({ scout_cost_breakdowns: updatedBreakdowns });
+    }
+
+    setSaveName("");
+    setSaveDialogOpen(false);
+  };
+
+  const loadBreakdown = (breakdown: SavedBreakdown) => {
+    setItems(breakdown.items);
+    setTotalOrderCost(breakdown.totalOrderCost);
+    setLoadDialogOpen(false);
+  };
+
+  const deleteBreakdown = (id: string) => {
+    const updatedBreakdowns = savedBreakdowns.filter((b) => b.id !== id);
+    setSavedBreakdowns(updatedBreakdowns);
+
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.set({ scout_cost_breakdowns: updatedBreakdowns });
+    }
+  };
+
+  const clearCurrent = () => {
+    setTotalOrderCost("");
+    setItems([
+      { id: Date.now().toString(), name: "", cost: "", salePrice: "" },
+    ]);
+  };
 
   const numericTotalOrderCost = parseFloat(totalOrderCost) || 0;
 
@@ -85,10 +168,7 @@ export default function CostBreakdown() {
 
   const addItem = () => {
     const newId = `${Date.now()}`;
-    setItems([
-      ...items,
-      { id: newId, name: `Item ${items.length + 1}`, cost: "", salePrice: "" },
-    ]);
+    setItems([...items, { id: newId, name: "", cost: "", salePrice: "" }]);
   };
 
   const removeItem = (id: string) => {
@@ -124,14 +204,52 @@ export default function CostBreakdown() {
       title="Order Cost Calculator"
       actions={
         <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-          <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <Boxes className="h-5 w-5 text-green-600 dark:text-green-400" />
         </div>
       }
     >
-      <div className="p-6 space-y-6">
+      <div className="p-4 space-y-4">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-md">
+              <Boxes className="h-4 w-4 text-green-600 dark:text-green-400" />
+            </div>
+            <span className="font-medium text-sm">Calculator</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSaveDialogOpen(true)}
+              className="h-10 w-10 p-0 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              title="Save Breakdown"
+            >
+              <Save className="h-6 w-6" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLoadDialogOpen(true)}
+              className="h-10 w-10 p-0 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              title="Load Breakdown"
+            >
+              <FolderOpen className="h-6 w-6" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearCurrent}
+              className="h-10 w-10 p-0 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              title="Clear Form"
+            >
+              <RotateCcw className="h-6 w-6" />
+            </Button>
+          </div>
+        </div>
+
         {/* Header with Total Order Cost */}
         <div className="space-y-3">
-
           <Input
             type="number"
             placeholder="Total order cost"
@@ -216,7 +334,7 @@ export default function CostBreakdown() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                    Sale Price
+                    Projection
                   </label>
                   <Input
                     type="number"
@@ -350,8 +468,95 @@ export default function CostBreakdown() {
             </div>
           </div>
         )}
+
+        {/* Save Dialog */}
+        <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+          <DialogContent className="max-w-[90%] rounded-lg bg-white dark:bg-slate-900">
+            <DialogHeader>
+              <DialogTitle>Save Breakdown</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder="Enter a name for this breakdown"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveBreakdown();
+                }}
+              />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button onClick={saveBreakdown} disabled={!saveName.trim()}>
+                Save
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSaveDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Load Dialog */}
+        <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
+          <DialogContent className="max-w-[90%] rounded-lg bg-white dark:bg-slate-900">
+            <DialogHeader>
+              <DialogTitle>Saved Breakdowns</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              {savedBreakdowns.length === 0 ? (
+                <div className="text-center text-sm text-slate-500 py-4">
+                  No saved breakdowns found.
+                </div>
+              ) : (
+                savedBreakdowns.map((b) => (
+                  <div
+                    key={b.id}
+                    className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0 mr-3">
+                      <div className="font-medium truncate">{b.name}</div>
+                      <div className="text-xs text-slate-500">
+                        {new Date(b.timestamp).toLocaleDateString()} •{" "}
+                        {b.items.length} items
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => loadBreakdown(b)}
+                      >
+                        Load
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteBreakdown(b.id)}
+                        className="text-slate-400 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setLoadDialogOpen(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </SidepanelLayout>
   );
 }
-

@@ -3,6 +3,11 @@
 /* global window, document */
 
 import { defineContentScript } from "wxt/utils/define-content-script";
+import {
+  triggerSidepanelToolFromContentScript,
+  isSidePanelApiAvailable,
+  initializeSidePanelContext,
+} from "../src/lib/sidepanel-gesture";
 
 /**
  * Adds an inline summary to eBay search result pages showing
@@ -22,6 +27,9 @@ export default defineContentScript({
       return;
     }
 
+    // Initialize side panel context early
+    initializeSidePanelContext();
+
     console.log("⚡ [Volt eBay Summary] SCRIPT LOADED");
 
     const SUMMARY_ID = "volt-ebay-summary";
@@ -33,6 +41,33 @@ export default defineContentScript({
       try {
         console.log("[Volt eBay Summary]", ...args);
       } catch {}
+    };
+
+    const fallbackOpenSidepanel = (tool: string) => {
+      try {
+        chrome.runtime.sendMessage({
+          action: "openInSidebar",
+          tool,
+        });
+      } catch (_) {}
+    };
+
+    const openSidepanelTool = (tool: string) => {
+      if (!isSidePanelApiAvailable()) {
+        fallbackOpenSidepanel(tool);
+        return;
+      }
+      try {
+        triggerSidepanelToolFromContentScript(tool, {
+          source: "ebay-summary",
+        }).catch((err) => {
+          log("sidepanel trigger failed", err?.message || err);
+          fallbackOpenSidepanel(tool);
+        });
+      } catch (err) {
+        log("sidepanel trigger threw", err?.message || err);
+        fallbackOpenSidepanel(tool);
+      }
     };
 
     const ensureStyles = () => {
@@ -140,6 +175,53 @@ export default defineContentScript({
           color: #dc2626;
         }
         
+        #${SUMMARY_ID} .volt-ebay-summary__sidepanel {
+          position: absolute;
+          top: 12px;
+          right: 76px;
+          background: rgba(0, 0, 0, 0.05);
+          border: none;
+          border-radius: 6px;
+          width: 24px;
+          height: 24px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          line-height: 1;
+          color: #64748b;
+          transition: all 0.2s ease;
+          z-index: 10;
+        }
+        #${SUMMARY_ID} .volt-ebay-summary__sidepanel:hover {
+          background: rgba(59, 130, 246, 0.1);
+          color: #2563eb;
+        }
+        
+        /* Tooltip styles */
+        [data-tooltip] {
+          position: relative;
+        }
+        [data-tooltip]:hover::after {
+          content: attr(data-tooltip);
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          margin-bottom: 8px;
+          padding: 4px 8px;
+          background: #0f172a;
+          color: #f8fafc;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: 500;
+          white-space: nowrap;
+          z-index: 20;
+          pointer-events: none;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
         #${SUMMARY_ID} .volt-ebay-summary__settings {
           position: absolute;
           top: 12px;
@@ -222,6 +304,47 @@ export default defineContentScript({
       }
     };
 
+    const handleContainerClick = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const actionBtn = target.closest('[data-action]');
+      if (!actionBtn) return;
+
+      const action = actionBtn.getAttribute("data-action");
+      if (!action) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (action === "open-sidepanel") {
+        openSidepanelTool("ebay-sold-tool");
+      } else if (action === "settings") {
+        chrome.runtime.sendMessage({
+          action: "open-settings",
+          section: "ebay",
+        });
+      } else if (action === "dismiss") {
+        isDismissed = true;
+        removeSummary();
+      } else if (action === "switch-to-sold") {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set("LH_Sold", "1");
+        currentUrl.searchParams.set("LH_Complete", "1");
+        window.location.href = currentUrl.toString();
+      } else if (action === "filter-used") {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set("LH_ItemCondition", "3000");
+        window.location.href = currentUrl.toString();
+      } else if (action === "filter-new") {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set("LH_ItemCondition", "1000");
+        window.location.href = currentUrl.toString();
+      } else if (action === "filter-all") {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.delete("LH_ItemCondition");
+        window.location.href = currentUrl.toString();
+      }
+    };
+
     const ensureSummaryContainer = () => {
       let container = document.getElementById(SUMMARY_ID);
       if (container) {
@@ -233,6 +356,7 @@ export default defineContentScript({
       if (srpControlsRow2) {
         container = document.createElement("section");
         container.id = SUMMARY_ID;
+        container.addEventListener("click", handleContainerClick);
         // Insert the summary as the last child of srp-controls__row-2
         srpControlsRow2.appendChild(container);
         log("✓ Summary container inserted into .srp-controls__row-2");
@@ -248,6 +372,7 @@ export default defineContentScript({
 
       container = document.createElement("section");
       container.id = SUMMARY_ID;
+      container.addEventListener("click", handleContainerClick);
       river.parentElement.insertBefore(container, river);
       log("✓ Summary container inserted before #srp-river-results (fallback)");
       return container;
@@ -306,149 +431,83 @@ export default defineContentScript({
       if (isSold) {
         if (conditionText === "All Conditions") {
           contentHtml += `
-            <span class="volt-ebay-summary__links">
-              — View <a href="#" data-action="filter-used">Used</a> or <a href="#" data-action="filter-new">New</a> only
-            </span>
-          `;
-        } else if (conditionParam === "3000") {
-          contentHtml += `
-            <span class="volt-ebay-summary__links">
-              — View <a href="#" data-action="filter-new">New</a> or <a href="#" data-action="filter-all">All Conditions</a>
-            </span>
-          `;
-        } else if (conditionParam === "1000") {
-          contentHtml += `
-            <span class="volt-ebay-summary__links">
-              — View <a href="#" data-action="filter-used">Used</a> or <a href="#" data-action="filter-all">All Conditions</a>
-            </span>
+            <div class="volt-ebay-summary__links">
+              Want more accuracy? Filter by <a data-action="filter-used">Used</a> or <a data-action="filter-new">New</a>.
+            </div>
           `;
         }
-      }
-
-      if (!isSold) {
+      } else {
         contentHtml += `
-          <div class="volt-ebay-summary__action" role="button" tabindex="0" data-action="switch-to-sold">
-            Switch to Sold Listings to view pricing data →
+          <div class="volt-ebay-summary__links">
+            Ready to analyze prices? <a data-action="switch-to-sold">Switch to Sold Listings</a>.
           </div>
         `;
       }
 
+      // Sidepanel button
+      const sidepanelBtn = `
+        <button class="volt-ebay-summary__sidepanel" data-action="open-sidepanel" data-tooltip="Open eBay Tool">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+        </button>
+      `;
+
+      // Settings button
+      const settingsBtn = `
+        <button class="volt-ebay-summary__settings" data-action="settings" data-tooltip="Settings">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      `;
+
+      // Dismiss button
+      const dismissBtn = `
+        <button class="volt-ebay-summary__dismiss" data-action="dismiss" data-tooltip="Dismiss">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      `;
+
       container.innerHTML = `
-        <button type="button" class="volt-ebay-summary__settings" title="Settings" data-action="settings">⚙</button>
-        <button type="button" class="volt-ebay-summary__dismiss" title="Dismiss" data-action="dismiss">×</button>
-        <h2><img src="${iconUrl}" alt="Volt" /> Volt</h2>
+        <h2>
+          <img src="${iconUrl}" alt="Volt Logo" />
+          eBay Summary
+        </h2>
         <div class="volt-ebay-summary__content">
           ${contentHtml}
         </div>
+        ${sidepanelBtn}
+        ${settingsBtn}
+        ${dismissBtn}
       `;
-
-      // Add click handlers
-      const settingsBtn = container.querySelector('[data-action="settings"]');
-      const dismissBtn = container.querySelector('[data-action="dismiss"]');
-      const switchToSoldBtn = container.querySelector('[data-action="switch-to-sold"]');
-      const filterUsedBtn = container.querySelector('[data-action="filter-used"]');
-      const filterNewBtn = container.querySelector('[data-action="filter-new"]');
-      const filterAllBtn = container.querySelector('[data-action="filter-all"]');
-
-      const handleFilterClick = (conditionId: string | null) => (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const currentUrl = new URL(window.location.href);
-        if (conditionId) {
-          currentUrl.searchParams.set("LH_ItemCondition", conditionId);
-        } else {
-          currentUrl.searchParams.delete("LH_ItemCondition");
-        }
-        window.location.href = currentUrl.toString();
-      };
-
-      if (filterUsedBtn) filterUsedBtn.addEventListener("click", handleFilterClick("3000"));
-      if (filterNewBtn) filterNewBtn.addEventListener("click", handleFilterClick("1000"));
-      if (filterAllBtn) filterAllBtn.addEventListener("click", handleFilterClick(null));
-
-      if (settingsBtn) {
-        settingsBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          // Open settings page and navigate to eBay section
-          chrome.runtime.sendMessage({
-            action: "open-settings",
-            section: "ebay",
-          });
-        });
-      }
-
-      if (dismissBtn) {
-        dismissBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          isDismissed = true;
-          removeSummary();
-        });
-      }
-
-      if (switchToSoldBtn) {
-        switchToSoldBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const currentUrl = new URL(window.location.href);
-          currentUrl.searchParams.set("LH_Sold", "1");
-          currentUrl.searchParams.set("LH_Complete", "1");
-          window.location.href = currentUrl.toString();
-        });
-      }
     };
 
-    const scheduleUpdate = () => {
+    // Use MutationObserver to detect when results load
+    const observer = new MutationObserver(() => {
       if (updateQueued) return;
-      updateQueued = true;
-      try {
-        window.requestAnimationFrame(renderSummary);
-      } catch {
-        setTimeout(renderSummary, 150);
-      }
-    };
-
-    const start = () => {
-      log("=== Volt eBay Summary Starting ===");
       
-      if (!document.body) {
-        setTimeout(start, 100);
-        return;
-      }
-
-      // Listen for settings changes from the settings page
-      chrome.runtime.onMessage.addListener((message) => {
-        if (message.action === "ebay-summary-settings-changed") {
-          scheduleUpdate();
-        }
-      });
-
-      // Hook into history changes for SPA-like navigation
-      ["pushState", "replaceState"].forEach((method) => {
-        try {
-          const original = (history as any)[method];
-          if (typeof original !== "function") return;
-          (history as any)[method] = function (...args: any[]) {
-            const result = original.apply(this, args);
-            isDismissed = false;
-            scheduleUpdate();
-            return result;
-          };
-        } catch (err) {}
-      });
-
-      window.addEventListener("popstate", () => {
-        isDismissed = false;
-        scheduleUpdate();
-      });
-
-      // Initial render - wait a bit for eBay's dynamic content to load
+      // Debounce updates
+      updateQueued = true;
       setTimeout(() => {
-        scheduleUpdate();
-      }, 500);
-    };
+        // If we already have a summary, check if it's still in DOM
+        if (!document.getElementById(SUMMARY_ID)) {
+          renderSummary();
+        }
+      }, 1000);
+    });
 
-    start();
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Initial render
+    setTimeout(renderSummary, 1500);
   },
 });

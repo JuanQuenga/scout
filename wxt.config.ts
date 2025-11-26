@@ -36,7 +36,7 @@ export default defineConfig({
       },
       {
         matches: ["https://www.ebay.com/sch/*"],
-        js: ["ebay-sold-summary.js"],
+        js: ["ebay-summary.js"],
         run_at: "document_idle",
       },
       {
@@ -81,7 +81,6 @@ export default defineConfig({
         48: "assets/icons/logo-48.png",
         128: "assets/icons/logo-128.png",
       },
-      default_popup: "popup.html",
     },
     side_panel: {
       default_path: "sidepanel.html",

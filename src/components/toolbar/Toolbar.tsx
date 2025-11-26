@@ -1,5 +1,12 @@
 import * as React from "react";
-import { SIDEPANEL_TOOLS, type SidepanelToolId } from "../../lib/sidepanel-tools";
+import {
+  SIDEPANEL_TOOLS,
+  type SidepanelToolId,
+} from "../../lib/sidepanel-tools";
+import {
+  triggerSidepanelToolFromContentScript,
+  isSidePanelApiAvailable,
+} from "../../lib/sidepanel-gesture";
 
 type ToolbarTool = {
   id: SidepanelToolId;
@@ -15,6 +22,8 @@ const buttonIdMap: Record<SidepanelToolId, string> = {
   "quick-links": "scout-tb-quick-links",
   "pc-cost-breakdown": "scout-tb-pc-costs",
   "ebay-sold-tool": "scout-tb-ebay-sold",
+  "ebay-taxonomy-tool": "scout-tb-ebay-taxonomy",
+  "buying-guide": "scout-tb-buying-guide",
 };
 
 const TOOLBAR_TOOLS: ToolbarTool[] = SIDEPANEL_TOOLS.map((tool) => ({
@@ -40,16 +49,35 @@ function getIconElement(tool: ToolbarTool) {
 export default function Toolbar() {
   const [dismissed, setDismissed] = React.useState(false);
 
-  const handleToolClick = (toolId: SidepanelToolId) => {
+  const openWithFallback = (toolId: SidepanelToolId) => {
     try {
-      // Ask background to open/switch the sidepanel tool for the current tab.
       chrome.runtime.sendMessage({
         action: "openInSidebar",
         tool: toolId,
       });
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[Scout Toolbar] Fallback sidepanel open failed:", error);
+    }
+  };
+
+  const handleToolClick = (toolId: SidepanelToolId) => {
+    if (!isSidePanelApiAvailable()) {
+      openWithFallback(toolId);
+      return;
+    }
+    try {
+      triggerSidepanelToolFromContentScript(toolId, {
+        source: "toolbar",
+      }).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error("[Scout Toolbar] Sidepanel trigger error:", err);
+        openWithFallback(toolId);
+      });
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("[Scout Toolbar] Failed to open sidepanel tool:", e);
+      openWithFallback(toolId);
     }
   };
 

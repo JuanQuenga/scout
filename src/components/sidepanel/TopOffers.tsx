@@ -1,6 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { Input } from "../ui/input";
+import { Check, Calculator } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../ui/accordion";
 import SidepanelLayout from "./SidepanelLayout";
 
 // Helper function to implement FLOOR functionality
@@ -60,7 +68,13 @@ function TopOfferCalculator() {
     topOfferPremium: 0,
     topOfferCheckout: 0,
   });
-  const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const handleCopy = (amount: number, id: string) => {
+    navigator.clipboard.writeText(amount.toString());
+    setCopied(id);
+    setTimeout(() => setCopied(null), 1500);
+  };
 
   const handleProjectionChange = (value: string) => {
     const numericValue = value.replace(/[^0-9.-]/g, "");
@@ -80,171 +94,153 @@ function TopOfferCalculator() {
   };
 
   return (
-    <SidepanelLayout
-      title="Top Offer Calculator"
-      className="h-screen bg-background"
-    >
-      <div className="max-w-7xl mx-auto w-full p-2 flex flex-col flex-1 min-h-0">
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className=" space-y-4">
-            {/* Input Section */}
-            <div>
+    <SidepanelLayout>
+      <div className="p-4 space-y-4">
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <Input
+              type="text"
+              value={projectionAmount}
+              onChange={(e) => handleProjectionChange(e.target.value)}
+              className="text-lg h-12 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900"
+              placeholder="Enter estimated projection"
+            />
+          </div>
 
-              <div className="max-w-md">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">
-                    Projection Amount
-                  </label>
-                  <input
-                    type="text"
-                    value={projectionAmount}
-                    onChange={(e) => handleProjectionChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground placeholder:text-muted-foreground"
-                    placeholder="Enter estimated projection"
-                  />
+          {/* Results Section */}
+          <div className="space-y-4">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="info" className="border-none">
+                <AccordionTrigger className="py-2 text-sm text-muted-foreground hover:no-underline justify-start gap-2">
+                  <span>How offers are calculated</span>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4 text-sm text-muted-foreground pt-2">
+                    <div>
+                      <h6 className="font-semibold text-foreground mb-1">
+                        Top Offer
+                      </h6>
+                      <p className="mb-1.5">
+                        Standard offer calculated as a percentage of projection,
+                        rounded down to the nearest $5.
+                      </p>
+                      <ul className="list-disc list-inside ml-2 space-y-0.5 text-xs">
+                        <li>
+                          Under $50: <strong>20%</strong>
+                        </li>
+                        <li>
+                          $50–$99.99: <strong>30%</strong>
+                        </li>
+                        <li>
+                          $100–$249.99: <strong>40%</strong>
+                        </li>
+                        <li>
+                          $250–$499.99: <strong>50%</strong>
+                        </li>
+                        <li>
+                          $500–$749.99: <strong>55%</strong>
+                        </li>
+                        <li>
+                          $750+: <strong>65%</strong>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h6 className="font-semibold text-foreground mb-1">
+                        Top Offer (Premium)
+                      </h6>
+                      <p>
+                        Higher offer for premium items with better rates for
+                        larger projections, rounded down to the nearest $5.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h6 className="font-semibold text-foreground mb-1">
+                        Top Offer (Checkout)
+                      </h6>
+                      <p>
+                        Always <strong>75%</strong> of projection, rounded down
+                        to the nearest $5. Highest offer amount.
+                      </p>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            <div className="grid grid-cols-1 gap-3">
+              <div
+                onClick={() => handleCopy(results.topOffer, "standard")}
+                className="text-center p-4 bg-secondary/50 rounded-lg border border-border/50 cursor-pointer hover:bg-secondary transition-colors select-none"
+              >
+                <div className="text-3xl font-bold text-primary">
+                  ${formatCurrency(results.topOffer)}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1 flex items-center justify-center gap-1.5">
+                  {copied === "standard" ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-green-500" />
+                      <span className="text-green-500 font-medium">
+                        Copied!
+                      </span>
+                    </>
+                  ) : (
+                    "Top Offer"
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Results Section */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-semibold text-foreground">
-                  Offer Results
-                </h4>
-                <button
-                  aria-label="How offers are calculated"
-                  onClick={() => setIsInfoOpen(true)}
-                  className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zm-9-3a1 1 0 112 0 1 1 0 01-2 0zM9 9a1 1 0 012 0v4a1 1 0 11-2 0V9z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
+              <div
+                onClick={() => handleCopy(results.topOfferPremium, "premium")}
+                className="text-center p-4 bg-secondary/50 rounded-lg border border-border/50 cursor-pointer hover:bg-secondary transition-colors select-none"
+              >
+                <div className="text-3xl font-bold text-primary">
+                  ${formatCurrency(results.topOfferPremium)}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1 flex items-center justify-center gap-1.5">
+                  {copied === "premium" ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-green-500" />
+                      <span className="text-green-500 font-medium">
+                        Copied!
+                      </span>
+                    </>
+                  ) : (
+                    "Top Offer (Premium)"
+                  )}
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-2">
-                <div className="text-center p-4 bg-secondary/50 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">
-                    ${formatCurrency(results.topOffer)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Top Offer</div>
+              <div
+                onClick={() => handleCopy(results.topOfferCheckout, "checkout")}
+                className="text-center p-4 bg-secondary/50 rounded-lg border border-border/50 cursor-pointer hover:bg-secondary transition-colors select-none"
+              >
+                <div className="text-3xl font-bold text-primary">
+                  ${formatCurrency(results.topOfferCheckout)}
                 </div>
-
-                <div className="text-center p-4 bg-secondary/50 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">
-                    ${formatCurrency(results.topOfferPremium)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Top Offer (Premium)
-                  </div>
-                </div>
-
-                <div className="text-center p-4 bg-secondary/50 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">
-                    ${formatCurrency(results.topOfferCheckout)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Top Offer (Checkout)
-                  </div>
+                <div className="text-sm text-muted-foreground mt-1 flex items-center justify-center gap-1.5">
+                  {copied === "checkout" ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-green-500" />
+                      <span className="text-green-500 font-medium">
+                        Copied!
+                      </span>
+                    </>
+                  ) : (
+                    "Top Offer (Checkout)"
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Info Modal */}
-      {isInfoOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="bg-card rounded-lg shadow-xl max-w-lg w-full mx-4 p-4 border border-border">
-            <div className="flex items-start justify-between mb-3">
-              <h5 className="text-lg font-semibold text-foreground">
-                How Top Offers Work
-              </h5>
-              <button
-                aria-label="Close info"
-                onClick={() => setIsInfoOpen(false)}
-                className="text-muted-foreground hover:text-foreground text-lg leading-none"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-sm text-muted-foreground">
-              <div>
-                <h6 className="font-semibold text-foreground mb-1">Top Offer</h6>
-                <p className="mb-1.5">
-                  Standard offer calculated as a percentage of projection,
-                  rounded down to the nearest $5.
-                </p>
-                <ul className="list-disc list-inside ml-2 space-y-0.5 text-xs">
-                  <li>
-                    Under $50: <strong>20%</strong>
-                  </li>
-                  <li>
-                    $50–$99.99: <strong>30%</strong>
-                  </li>
-                  <li>
-                    $100–$249.99: <strong>40%</strong>
-                  </li>
-                  <li>
-                    $250–$499.99: <strong>50%</strong>
-                  </li>
-                  <li>
-                    $500–$749.99: <strong>55%</strong>
-                  </li>
-                  <li>
-                    $750+: <strong>65%</strong>
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <h6 className="font-semibold text-foreground mb-1">
-                  Top Offer (Premium)
-                </h6>
-                <p>
-                  Higher offer for premium items with better rates for larger
-                  projections, rounded down to the nearest $5.
-                </p>
-              </div>
-
-              <div>
-                <h6 className="font-semibold text-foreground mb-1">
-                  Top Offer (Checkout)
-                </h6>
-                <p>
-                  Always <strong>75%</strong> of projection, rounded down to the
-                  nearest $5. Highest offer amount.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 text-right">
-              <button
-                onClick={() => setIsInfoOpen(false)}
-                className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                Got it
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </SidepanelLayout>
   );
 }
 
-export default function TopOffersPage() {
+export default function TopOffersPage({ onClose }: { onClose?: () => void }) {
   return <TopOfferCalculator />;
 }

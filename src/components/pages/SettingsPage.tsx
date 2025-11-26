@@ -783,9 +783,9 @@ export default function SettingsPage() {
         <div className="flex h-16 items-center px-6">
           <div className="flex items-center gap-3">
             <img
-              src="/assets/icons/dog.png"
-              alt="Scout"
-              className="w-8 h-8 rounded-lg shadow-sm"
+              src="/assets/icons/volt.webp"
+              alt="Volt"
+              className="w-10 h-10"
             />
             <div>
               <h1 className="text-lg font-bold">Volt Settings</h1>
@@ -858,7 +858,7 @@ export default function SettingsPage() {
               className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors text-foreground"
             >
               <TrendingUp className="w-4 h-4" />
-              eBay Price Summary
+              eBay Summary
             </a>
             <a
               href="#upc"
@@ -1541,9 +1541,9 @@ export default function SettingsPage() {
           {/* eBay Price Summary Section */}
           <section id="ebay" className="scroll-mt-20">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">eBay Price Summary</h2>
+              <h2 className="text-2xl font-bold mb-2">eBay Summary</h2>
               <p className="text-muted-foreground">
-                Configure the price summary feature for eBay sold listings
+                Configure the summary feature for eBay sold listings
               </p>
             </div>
 
@@ -1554,7 +1554,7 @@ export default function SettingsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-semibold text-base">
-                        Enable Price Summary
+                        Enable eBay Summary
                       </h3>
                       {settings.ebaySummary?.enabled && (
                         <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">

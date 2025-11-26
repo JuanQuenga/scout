@@ -4,6 +4,9 @@ import TopOffersPage from "./TopOffers";
 import QuickLinks from "./QuickLinks";
 import CostBreakdown from "./CostBreakdown";
 import EbaySoldTool from "./EbaySoldTool";
+import EbayTaxonomyTool from "./EbayTaxonomyTool";
+import BuyingGuide from "./BuyingGuide";
+import ShopifyHelp from "./ShopifyHelp";
 import { ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -61,11 +64,19 @@ export default function UnifiedSidepanel() {
   // Send ready message to background
   useEffect(() => {
     try {
-      chrome.runtime.sendMessage({
-        action: "sidepanelReady",
-        tool: activeTool,
-        timestamp: Date.now(),
-      });
+      // Only send if runtime is available
+      if (chrome?.runtime?.id) {
+        // We don't strictly need to notify background on every render,
+        // but if we do, use a known action or ignore the error.
+        // For now, we can remove this message if it's not handled.
+        /*
+        chrome.runtime.sendMessage({
+          action: "sidepanelReady",
+          tool: activeTool,
+          timestamp: Date.now(),
+        });
+        */
+      }
     } catch (e) {
       console.error("Error sending sidepanel ready message:", e);
     }
@@ -92,12 +103,18 @@ export default function UnifiedSidepanel() {
     };
   }, []);
 
-  const componentMap: Record<SidepanelToolId, React.ComponentType> = {
+  const componentMap: Record<
+    SidepanelToolId,
+    React.ComponentType<{ onClose?: () => void }>
+  > = {
     "controller-testing": ControllerTesting,
     "top-offers": TopOffersPage,
     "quick-links": QuickLinks,
     "pc-cost-breakdown": CostBreakdown,
     "ebay-sold-tool": EbaySoldTool,
+    "ebay-taxonomy-tool": EbayTaxonomyTool,
+    "buying-guide": BuyingGuide,
+    "shopify-help": ShopifyHelp,
   };
 
   const tools = SIDEPANEL_TOOLS.map((tool) => ({
@@ -155,7 +172,9 @@ export default function UnifiedSidepanel() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <ActiveComponent />
+        <ActiveComponent
+          onClose={() => handleToolChange("controller-testing")}
+        />
       </div>
     </div>
   );
