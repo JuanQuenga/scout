@@ -4,6 +4,7 @@ import TopOffersPage from "./TopOffers";
 import QuickLinks from "./QuickLinks";
 import CostBreakdown from "./CostBreakdown";
 import EbaySoldTool from "./EbaySoldTool";
+import PriceChartingTool from "./PriceChartingTool";
 import EbayTaxonomyTool from "./EbayTaxonomyTool";
 import BuyingGuide from "./BuyingGuide";
 import ShopifyHelp from "./ShopifyHelp";
@@ -112,6 +113,7 @@ export default function UnifiedSidepanel() {
     "quick-links": QuickLinks,
     "pc-cost-breakdown": CostBreakdown,
     "ebay-sold-tool": EbaySoldTool,
+    "price-charting-tool": PriceChartingTool,
     "ebay-taxonomy-tool": EbayTaxonomyTool,
     "buying-guide": BuyingGuide,
     "shopify-help": ShopifyHelp,

@@ -9,6 +9,7 @@ import {
   LucideIcon,
   Shapes,
   HelpCircle,
+  LineChart,
 } from "lucide-react";
 
 export type SidepanelToolId =
@@ -19,7 +20,8 @@ export type SidepanelToolId =
   | "ebay-sold-tool"
   | "ebay-taxonomy-tool"
   | "buying-guide"
-  | "shopify-help";
+  | "shopify-help"
+  | "price-charting-tool";
 
 export interface SidepanelToolMetadata {
   id: SidepanelToolId;
@@ -58,6 +60,12 @@ export const SIDEPANEL_TOOLS: SidepanelToolMetadata[] = [
     label: "eBay Pricing",
     description: "Open eBay sold listings tool in the sidepanel",
     icon: Tag,
+  },
+  {
+    id: "price-charting-tool",
+    label: "PriceCharting Lot",
+    description: "Search and build game lots with PriceCharting",
+    icon: LineChart,
   },
   {
     id: "ebay-taxonomy-tool",
