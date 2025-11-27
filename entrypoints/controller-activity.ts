@@ -39,25 +39,18 @@ export default defineContentScript({
     });
 
     const notifyActivity = (reason) => {
+      // Disable auto-opening of sidepanel when controller activity is detected
+      // This prevents the sidepanel from automatically opening when a controller is connected
       if (!autoOpen) return;
 
       const now = Date.now();
       if (now - lastNotify < 1000) return; // Debounce to prevent spam
       lastNotify = now;
 
-      // Only auto-open once on first input, don't repeatedly open
+      // Only log controller activity but don't open sidepanel
       if (reason === "input" && !hasOpenedOnce) {
-        try {
-          chrome.runtime.sendMessage({
-            action: "openInSidebar",
-            tool: "controller-testing",
-            source: "controller-activity",
-          });
-          log("Controller input detected, opening sidebar for first time");
-          hasOpenedOnce = true; // Mark that we've opened once
-        } catch (e) {
-          log("failed to open sidebar for controller input", e);
-        }
+        log("Controller input detected, but sidepanel auto-open is disabled");
+        hasOpenedOnce = true; // Mark that we've detected input once
       }
     };
 

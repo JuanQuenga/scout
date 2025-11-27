@@ -72,11 +72,7 @@ export default defineBackground({
         );
       } catch (e) {
         if (DEBUG) {
-          log(
-            "sidePanelStateSync sendMessage error",
-            e?.message || e,
-            tabId
-          );
+          log("sidePanelStateSync sendMessage error", e?.message || e, tabId);
         }
       }
     }
@@ -574,13 +570,15 @@ export default defineBackground({
       // Create offscreen document if needed
       const offscreenCreated = await createOffscreenDocument();
       if (!offscreenCreated) {
-        throw new Error("Failed to create offscreen document for clipboard access");
+        throw new Error(
+          "Failed to create offscreen document for clipboard access"
+        );
       }
-      
+
       // Send message to offscreen document
       return chrome.runtime.sendMessage({
         action,
-        text
+        text,
       });
     }
 
@@ -1096,7 +1094,7 @@ export default defineBackground({
             sendResponse({ success: false, error: "missing_text" });
             break;
           }
-          
+
           // Try offscreen document for clipboard operations
           handleClipboardWithOffscreen("copyToClipboard", text)
             .then((response) => {
@@ -1106,9 +1104,12 @@ export default defineBackground({
               log("copyToClipboard offscreen error:", err);
               // Fallback to navigator.clipboard in SW (requires permission)
               if (navigator.clipboard) {
-                navigator.clipboard.writeText(text)
+                navigator.clipboard
+                  .writeText(text)
                   .then(() => sendResponse({ success: true }))
-                  .catch((e) => sendResponse({ success: false, error: String(e) }));
+                  .catch((e) =>
+                    sendResponse({ success: false, error: String(e) })
+                  );
               } else {
                 sendResponse({ success: false, error: String(err) });
               }
@@ -1122,15 +1123,18 @@ export default defineBackground({
               sendResponse(response);
             })
             .catch((err) => {
-               log("readFromClipboard offscreen error:", err);
-               // Fallback to navigator.clipboard in SW (requires permission)
-               if (navigator.clipboard) {
-                 navigator.clipboard.readText()
-                   .then((text) => sendResponse({ success: true, text }))
-                   .catch((e) => sendResponse({ success: false, error: String(e) }));
-               } else {
-                 sendResponse({ success: false, error: String(err) });
-               }
+              log("readFromClipboard offscreen error:", err);
+              // Fallback to navigator.clipboard in SW (requires permission)
+              if (navigator.clipboard) {
+                navigator.clipboard
+                  .readText()
+                  .then((text) => sendResponse({ success: true, text }))
+                  .catch((e) =>
+                    sendResponse({ success: false, error: String(e) })
+                  );
+              } else {
+                sendResponse({ success: false, error: String(err) });
+              }
             });
           return true;
         }
@@ -1969,8 +1973,8 @@ export default defineBackground({
             LAST_CONTROLLER_COUNT = connectedCount;
             CONTROLLER_CONNECTED = true;
 
-            // Open the controller testing sidepanel
-            toggleSidePanelForTab(activeTab.id, "controller-testing");
+            // Controller detected but sidepanel auto-open is disabled
+            log("Controller connected, but sidepanel auto-open is disabled");
           } else if (connectedCount === 0 && LAST_CONTROLLER_COUNT > 0) {
             log("All controllers disconnected");
             LAST_CONTROLLER_COUNT = 0;
@@ -2052,8 +2056,10 @@ export default defineBackground({
                   LAST_CONTROLLER_COUNT = connectedCount;
                   CONTROLLER_CONNECTED = true;
 
-                  // Open the controller testing sidepanel
-                  toggleSidePanelForTab(activeTab.id, "controller-testing");
+                  // Controller detected but sidepanel auto-open is disabled
+                  log(
+                    "Controller connected, but sidepanel auto-open is disabled"
+                  );
                 } else if (connectedCount === 0 && LAST_CONTROLLER_COUNT > 0) {
                   log("All controllers disconnected");
                   LAST_CONTROLLER_COUNT = 0;
