@@ -456,31 +456,18 @@ export default function ControllerTesting() {
       }
     >
       <div className="flex flex-col min-h-0 h-full">
-        {!connectedController ? (
-          <div className="p-4">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>No Controller Detected</AlertTitle>
-              <AlertDescription>
-                Please connect a gamepad or controller and press a button to
-                begin testing.
-              </AlertDescription>
-            </Alert>
+        <div className="px-4 py-2 border-b bg-muted/10">
+          <div
+            className="text-sm font-medium truncate"
+            title={connectedController?.name ?? "No Controller Detected"}
+          >
+            {connectedController?.name ?? "No Controller Detected"}
           </div>
-        ) : (
-          <div className="px-4 py-2 border-b bg-muted/10">
-            <div
-              className="text-sm font-medium truncate"
-              title={connectedController.name}
-            >
-              {connectedController.name}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Index: {connectedController.index} •{" "}
-              {controllerState.buttons.length} Buttons • 4 Axes
-            </div>
+          <div className="text-xs text-muted-foreground">
+            Index: {connectedController?.index ?? "N/A"} •{" "}
+            {controllerState.buttons.length} Buttons • 4 Axes
           </div>
-        )}
+        </div>
 
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-6">
