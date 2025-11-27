@@ -516,22 +516,13 @@ export default function ControllerTesting() {
                     y="100"
                     width="120"
                     height="80"
-                    rx="4"
+                    rx="10"
                     fill="rgba(64,64,64,0.1)"
                     stroke="currentColor"
                     strokeWidth="2"
                     className="text-foreground"
                   />
-                  {/* PS Button */}
-                  <circle
-                    cx="220.5"
-                    cy="225"
-                    r="12"
-                    fill="rgba(64,64,64,0.1)"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="text-foreground"
-                  />
+
                   <circle
                     id="LStickOutline"
                     cx="163"
