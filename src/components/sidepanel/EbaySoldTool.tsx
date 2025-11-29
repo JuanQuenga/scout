@@ -173,7 +173,8 @@ export default function EbaySoldTool() {
         const soldDateElement =
           element.querySelector(".su-styled-text.positive") ||
           element.querySelector(".s-item__title--tagblock .POSITIVE") ||
-          element.querySelector(".s-item__ended-date");
+          element.querySelector(".s-item__ended-date") ||
+          element.querySelector(".s-card__caption .positive");
 
         if (!soldDateElement) return null;
         const text = soldDateElement.textContent?.trim();
@@ -217,9 +218,20 @@ export default function EbaySoldTool() {
     }
 
     const getListings = () => {
-         const mainResultsContainer = document.querySelector("ul.srp-results.srp-grid") || document.querySelector("#srp-river-results");
+         const mainResultsContainer = 
+            document.querySelector("ul.srp-results") || 
+            document.querySelector(".srp-river-results") || 
+            document.querySelector("#srp-river-results") ||
+            document.querySelector(".srp-results");
+            
          if (!mainResultsContainer) return [];
-         return Array.from(mainResultsContainer.querySelectorAll("li.s-item"));
+         
+         return [
+             ...Array.from(mainResultsContainer.querySelectorAll("li.s-item")),
+             ...Array.from(mainResultsContainer.querySelectorAll("div.s-item")),
+             ...Array.from(mainResultsContainer.querySelectorAll("li.s-card")),
+             ...Array.from(mainResultsContainer.querySelectorAll("div.s-card"))
+         ];
     };
 
     const listings = getListings();
@@ -243,10 +255,10 @@ export default function EbaySoldTool() {
         
         const item = e.currentTarget as HTMLElement;
         
-        const titleEl = item.querySelector(".s-item__title");
-        const priceEl = item.querySelector(".s-item__price");
-        const linkEl = item.querySelector(".s-item__link") as HTMLAnchorElement;
-        const imgEl = item.querySelector(".s-item__image-img") as HTMLImageElement;
+        const titleEl = item.querySelector(".s-item__title") || item.querySelector(".s-card__title");
+        const priceEl = item.querySelector(".s-item__price") || item.querySelector(".s-card__price");
+        const linkEl = (item.querySelector(".s-item__link") || item.querySelector(".s-card__link")) as HTMLAnchorElement;
+        const imgEl = (item.querySelector(".s-item__image-img") || item.querySelector(".s-card__image")) as HTMLImageElement;
 
         if (titleEl && priceEl) {
              const priceText = priceEl.textContent?.trim() || "";

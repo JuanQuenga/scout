@@ -154,20 +154,31 @@ export default function PriceChartingTool() {
                 position: relative;
             }
             .scout-selectable-row:hover {
-                outline: 2px solid #22c55e !important;
                 background-color: rgba(34, 197, 94, 0.1) !important;
             }
-            .scout-selectable-row:hover::after {
-                content: "Click to Add";
+            /* Highlight specific price cells on hover */
+            .scout-selectable-row td.price:hover {
+                background-color: rgba(34, 197, 94, 0.3) !important;
+                outline: 2px solid #22c55e !important;
+                cursor: pointer;
+                position: relative;
+            }
+            /* Tooltip for price cells */
+            .scout-selectable-row td.price:hover::after {
+                content: attr(data-condition);
                 position: absolute;
-                right: 0;
-                top: 0;
+                z-index: 100;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
                 background: #22c55e;
                 color: white;
                 padding: 2px 6px;
                 font-size: 10px;
-                border-radius: 0 0 0 4px;
+                border-radius: 4px;
                 pointer-events: none;
+                white-space: nowrap;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
         `;
         document.head.appendChild(style);
@@ -177,7 +188,6 @@ export default function PriceChartingTool() {
 
     // PriceCharting tables
     // Search results: #games_table tr
-    // Game page: might be different, but let's focus on search results for "lot building"
     const rows = document.querySelectorAll("table#games_table tr");
     
     const handleClick = (e: MouseEvent) => {
@@ -188,39 +198,53 @@ export default function PriceChartingTool() {
         const titleEl = row.querySelector(".title a");
         const consoleEl = row.querySelector(".console");
         
-        // PriceCharting columns: Title, Console, Loose, CIB, New
-        // indices might vary but usually:
-        // td.title, td.console, td.price (multiple)
-        
-        // Let's try to get prices. 
-        // In search results, valid prices are usually in tds with class 'price' or just nth-child.
-        // Common layout: Title | Console | Loose Price | CIB Price | New Price
-        
-        const priceCells = row.querySelectorAll("td.price");
-        // We need to know which price the user clicked? 
-        // Or just grab the Loose price by default? Or ask?
-        // Let's grab the Loose price if available, else CIB.
-        
-        let price = 0;
-        let condition = 'loose';
+        // Determine clicked element
+        const target = e.target as HTMLElement;
+        const clickedCell = target.closest("td");
         
         // Parse a price string like "$12.50"
         const parsePrice = (str: string) => {
-            const match = str.match(/[\d,.]+/);
+            const match = str.match(/[\\d,.]+/);
             return match ? parseFloat(match[0].replace(/,/g, "")) : 0;
         };
 
-        // Heuristic: 1st price col is Loose, 2nd is CIB, 3rd is New
-        if (priceCells.length > 0) {
-            const p1 = parsePrice(priceCells[0].textContent || "");
-            if (p1 > 0) {
-                price = p1;
+        let price = 0;
+        let condition = 'loose';
+
+        // Check if a specific price cell was clicked
+        if (clickedCell) {
+            if (clickedCell.classList.contains("used_price")) {
                 condition = 'loose';
-            } else if (priceCells.length > 1) {
-                const p2 = parsePrice(priceCells[1].textContent || "");
-                if (p2 > 0) {
-                    price = p2;
-                    condition = 'cib';
+                price = parsePrice(clickedCell.textContent || "");
+            } else if (clickedCell.classList.contains("cib_price")) {
+                condition = 'cib';
+                price = parsePrice(clickedCell.textContent || "");
+            } else if (clickedCell.classList.contains("new_price")) {
+                condition = 'new';
+                price = parsePrice(clickedCell.textContent || "");
+            }
+        }
+
+        // If no valid price found from specific click (or clicked 0), fallback to default heuristic
+        if (price === 0) {
+             const priceCells = row.querySelectorAll("td.price");
+             // Default to loose if available, else CIB
+             if (priceCells.length > 0) {
+                // First price column is typically Loose/Used
+                const p1Text = row.querySelector("td.used_price")?.textContent || priceCells[0].textContent || "";
+                const p1 = parsePrice(p1Text);
+                
+                if (p1 > 0) {
+                    price = p1;
+                    condition = 'loose';
+                } else {
+                    // Try CIB
+                    const p2Text = row.querySelector("td.cib_price")?.textContent || (priceCells.length > 1 ? priceCells[1].textContent : "") || "";
+                    const p2 = parsePrice(p2Text);
+                    if (p2 > 0) {
+                        price = p2;
+                        condition = 'cib';
+                    }
                 }
             }
         }
@@ -251,8 +275,18 @@ export default function PriceChartingTool() {
         if (row.querySelector("th")) return;
         
         row.classList.add("scout-selectable-row");
+        
+        // Add data-condition attributes for the CSS tooltip
+        const used = row.querySelector("td.used_price");
+        if (used) used.setAttribute("data-condition", "Loose");
+        
+        const cib = row.querySelector("td.cib_price");
+        if (cib) cib.setAttribute("data-condition", "CIB");
+        
+        const newItem = row.querySelector("td.new_price");
+        if (newItem) newItem.setAttribute("data-condition", "New");
+        
         // Remove old listener to avoid dupes if re-run
-        // (Hard to do with anonymous func, but basic protection)
         row.removeEventListener("click", handleClick as any, true);
         row.addEventListener("click", handleClick as any, true);
     });
@@ -273,7 +307,12 @@ export default function PriceChartingTool() {
     }
   };
 
-  const totalValue = savedItems.reduce((acc, item) => acc + item.price, 0);
+  const getItemPrice = (item: PriceChartingItem) => {
+    const value = typeof item.price === "number" ? item.price : Number(item.price);
+    return Number.isFinite(value) ? value : 0;
+  };
+
+  const totalValue = savedItems.reduce((acc, item) => acc + getItemPrice(item), 0);
 
   return (
     <SidepanelLayout className="h-full flex flex-col">
@@ -355,7 +394,7 @@ export default function PriceChartingTool() {
                                     </div>
                                 </div>
                                 <div className="font-bold text-sm">
-                                    ${item.price.toFixed(2)}
+                                    ${getItemPrice(item).toFixed(2)}
                                 </div>
                             </div>
                             <Button
@@ -382,4 +421,3 @@ export default function PriceChartingTool() {
     </SidepanelLayout>
   );
 }
-

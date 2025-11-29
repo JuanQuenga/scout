@@ -1,8 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "../ui/input";
-import { Check, Calculator } from "lucide-react";
+import { Button } from "../ui/button";
+import { Check, Calculator, Save, RotateCcw, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../ui/dialog";
+import { Label } from "../ui/label";
 import {
   Accordion,
   AccordionContent,
@@ -10,6 +19,13 @@ import {
   AccordionTrigger,
 } from "../ui/accordion";
 import SidepanelLayout from "./SidepanelLayout";
+
+interface SavedTopOffer {
+  id: string;
+  name: string;
+  timestamp: number;
+  projectionAmount: string;
+}
 
 // Helper function to implement FLOOR functionality
 function floorToMultiple(value: number, multiple: number): number {
@@ -69,6 +85,65 @@ function TopOfferCalculator() {
     topOfferCheckout: 0,
   });
   const [copied, setCopied] = useState<string | null>(null);
+  
+  // Saved functionality state
+  const [savedOffers, setSavedOffers] = useState<SavedTopOffer[]>([]);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+
+  // Load saved offers from storage on mount
+  useEffect(() => {
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.get(["scout_top_offers"], (result) => {
+        if (result.scout_top_offers) {
+          setSavedOffers(result.scout_top_offers);
+        }
+      });
+    }
+  }, []);
+
+  const saveOffer = () => {
+    if (!saveName.trim()) return;
+
+    const newOffer: SavedTopOffer = {
+      id: Date.now().toString(),
+      name: saveName.trim(),
+      timestamp: Date.now(),
+      projectionAmount,
+    };
+
+    const updatedOffers = [...savedOffers, newOffer];
+    setSavedOffers(updatedOffers);
+
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.set({ scout_top_offers: updatedOffers });
+    }
+
+    setSaveName("");
+    setSaveDialogOpen(false);
+  };
+
+  const loadOffer = (offer: SavedTopOffer) => {
+    handleProjectionChange(offer.projectionAmount);
+  };
+
+  const deleteOffer = (id: string) => {
+    const updatedOffers = savedOffers.filter((o) => o.id !== id);
+    setSavedOffers(updatedOffers);
+
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.set({ scout_top_offers: updatedOffers });
+    }
+  };
+
+  const clearCurrent = () => {
+    setProjectionAmount("");
+    setResults({
+      topOffer: 0,
+      topOfferPremium: 0,
+      topOfferCheckout: 0,
+    });
+  };
 
   const handleCopy = (amount: number, id: string) => {
     navigator.clipboard.writeText(amount.toString());
@@ -96,6 +171,36 @@ function TopOfferCalculator() {
   return (
     <SidepanelLayout>
       <div className="p-4 space-y-4">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md">
+              <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span className="font-medium text-sm">Calculator</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSaveDialogOpen(true)}
+              className="h-10 w-10 p-0 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              title="Save Offer"
+            >
+              <Save className="h-6 w-6" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearCurrent}
+              className="h-10 w-10 p-0 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              title="Clear Form"
+            >
+              <RotateCcw className="h-6 w-6" />
+            </Button>
+          </div>
+        </div>
+
         <div className="space-y-4">
           <div className="space-y-3">
             <Input
@@ -236,6 +341,75 @@ function TopOfferCalculator() {
             </div>
           </div>
         </div>
+
+        {/* Saved Offers List */}
+        {savedOffers.length > 0 && (
+          <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+              Saved Offers
+            </h3>
+            <div className="space-y-2">
+              {savedOffers.map((o) => (
+                <div
+                  key={o.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer group"
+                  onClick={() => loadOffer(o)}
+                >
+                  <div className="flex-1 min-w-0 mr-3">
+                    <div className="font-medium truncate text-sm">{o.name}</div>
+                    <div className="text-xs text-slate-500">
+                      {new Date(o.timestamp).toLocaleDateString()} •{" "}
+                      ${o.projectionAmount}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteOffer(o.id);
+                    }}
+                    className="h-8 w-8 p-0 text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Save Dialog */}
+        <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+          <DialogContent className="max-w-[90%] rounded-lg bg-white dark:bg-slate-900">
+            <DialogHeader>
+              <DialogTitle>Save Offer</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder="Enter a name for this offer"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveOffer();
+                }}
+              />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button onClick={saveOffer} disabled={!saveName.trim()}>
+                Save
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSaveDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </SidepanelLayout>
   );
